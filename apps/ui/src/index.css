@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #1e1e2e transparent;
+}
+
+[data-search-highlight] {
+  outline: 2px solid #6c5ce7;
+  outline-offset: 2px;
+  border-radius: 6px;
+  transition: outline 0.15s ease;
+}

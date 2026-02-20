@@ -1,0 +1,8 @@
+{
+  "name": "lens",
+  "version": "1.0.0",
+  "description": "A web dashboard to scan, browse, and edit all Claude Code configuration surfaces across all scope levels",
+  "author": {
+    "name": "Mahesh"
+  }
+}

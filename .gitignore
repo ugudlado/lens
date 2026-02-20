@@ -8,6 +8,11 @@ build/
 .next/
 out/
 
+# Unignore plugin dist artifacts (required for zero-build-step install)
+!apps/server/dist/
+!apps/ui/dist/
+!packages/schema/dist/
+
 # Development
 .vite/
 .playwright-mcp/
@@ -28,7 +33,19 @@ config.env
 .DS_Store
 Thumbs.db
 
+# Database
+*.db
+*.db-wal
+*.db-shm
+
 # Logs
 *.log
 npm-debug.log*
 pnpm-debug.log*
+
+.playwright-mcp
+.pnpm-store
+logs
+tasks
+specs
+docs

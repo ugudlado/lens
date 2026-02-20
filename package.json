@@ -1,0 +1,15 @@
+{
+  "name": "lens",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"pnpm --filter @lens/server dev\" \"pnpm --filter @lens/ui dev\"",
+    "dev:server": "pnpm --filter @lens/server dev",
+    "dev:ui": "pnpm --filter @lens/ui dev",
+    "build": "pnpm --filter @lens/schema build && pnpm --filter @lens/server build && pnpm --filter @lens/ui build",
+    "type-check": "pnpm -r type-check",
+    "start": "node apps/server/dist/index.js"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

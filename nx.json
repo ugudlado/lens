@@ -1,0 +1,34 @@
+{
+  "$schema": "./node_modules/nx/schemas/nx-schema.json",
+
+  "extends": "nx/presets/npm.json",
+
+  "affected": {
+    "defaultBase": "main"
+  },
+
+  "namedInputs": {
+    "default": [
+      "{projectRoot}/**/*",
+      "!{projectRoot}/dist/**",
+      "!{projectRoot}/build/**",
+      "!{projectRoot}/coverage/**",
+      "!{projectRoot}/.nx/**"
+    ],
+    "production": [
+      "default",
+      "!{projectRoot}/**/*.spec.*",
+      "!{projectRoot}/**/*.test.*"
+    ]
+  },
+
+  "targetDefaults": {
+    "build": {
+      "cache": true,
+      "dependsOn": ["^build"]
+    },
+    "dev": {
+      "cache": false
+    }
+  }
+}

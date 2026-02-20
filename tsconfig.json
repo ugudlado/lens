@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "noEmit": true,
+    "noImplicitAny": true,
+    "allowJs": true,
+    "strict": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "lib": ["ES2020", "DOM"]
+  },
+  "include": [
+    "apps/**/src/**/*.ts",
+    "apps/**/src/**/*.js",
+    "apps/**/src/**/*.tsx",
+    "apps/**/tests/**/*.ts",
+    "apps/**/tests/**/*.js",
+    "apps/**/tests/*/*.tsx",
+    "packages/**/src/**/*.ts",
+    "packages/**/src/**/*.js",
+    "packages/**/src/**/*.tsx",
+    "packages/**/tests/**/*.ts",
+    "packages/**/tests/**/*.js",
+    "packages/**/tests/*/*.tsx",
+    "**/tailwind.config.js",
+    "**/postcss.config.cjs",
+    "**/vite.config.ts"
+  ],
+  "exclude": ["**/assets/**/*", "node_modules", "dist"]
+}
