@@ -4,5 +4,8 @@
       "Bash"
     ]
   },
-  "enableAllProjectMcpServers": true
+  "enableAllProjectMcpServers": true,
+  "enabledPlugins": {
+    "lens@ugudlado": true
+  }
 }
