@@ -1,0 +1,21 @@
+{
+  "name": "ugudlado",
+  "owner": {
+    "name": "Mahesh"
+  },
+  "metadata": {
+    "description": "Claude Code plugins by Mahesh",
+    "homepage": "https://github.com/ugudlado"
+  },
+  "plugins": [
+    {
+      "name": "lens",
+      "version": "1.0.0",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/ugudlado/lens.git"
+      },
+      "description": "A web dashboard to scan, browse, and edit all Claude Code configuration surfaces across all scope levels"
+    }
+  ]
+}
