@@ -1,7 +1,6 @@
 import { Hono } from 'hono';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { execFileSync } from 'node:child_process';
 import { join, basename } from 'node:path';
 import { homedir } from 'node:os';
 import { restartWatcher } from '../watcher.js';
@@ -20,15 +19,6 @@ async function readRegistry() {
 async function writeRegistry(workspaces) {
     await mkdir(REGISTRY_DIR, { recursive: true });
     await writeFile(REGISTRY_FILE, JSON.stringify(workspaces, null, 2), 'utf-8');
-}
-function isGitRepo(path) {
-    try {
-        execFileSync('git', ['-C', path, 'rev-parse', '--git-dir'], { encoding: 'utf-8' });
-        return true;
-    }
-    catch {
-        return false;
-    }
 }
 /** Auto-seed with the current project if registry is empty */
 async function ensureSeeded() {
@@ -57,9 +47,6 @@ app.post('/', async (c) => {
     }
     if (!existsSync(inputPath)) {
         return c.json({ error: 'Path does not exist' }, 400);
-    }
-    if (!isGitRepo(inputPath)) {
-        return c.json({ error: 'Path is not a git repository' }, 400);
     }
     const workspaces = await ensureSeeded();
     if (workspaces.some(w => w.path === inputPath)) {
