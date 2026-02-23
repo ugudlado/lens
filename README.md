@@ -32,6 +32,10 @@ A web dashboard for Claude Code. See and edit all 13 configuration surfaces — 
 
 The overview shows every surface with counts — click any card to drill in. Hooks, skills, agents, MCP servers, commands, permissions and more, all in one place.
 
+### Switch between repos instantly
+
+Lens works across all your projects. Switch workspaces from the sidebar to inspect any repo's config without leaving the dashboard.
+
 ### Scope-aware display
 
 Every entry shows which scope it lives in — Global, Project, or Local. The **Effective** view merges all scopes to show what Claude actually sees. The **Files** view breaks it down file-by-file.
@@ -47,6 +51,12 @@ Bootstrap a new project by pulling config from an existing one. Select a workspa
 ### Edit in place
 
 Add, edit, enable/disable, or delete config entries directly. Copy or move entries between scope levels.
+
+### Universal search
+
+Hit `⌘K` to search across all config surfaces and workspaces at once — find any MCP server, hook, skill, or permission across all your repos.
+
+![Universal search showing results across MCP servers, permissions, and settings](docs/screenshots/universal-search.png)
 
 ### Live reload
 
