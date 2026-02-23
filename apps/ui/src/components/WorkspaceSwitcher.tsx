@@ -77,9 +77,8 @@ export function WorkspaceSwitcher({ workspaces, activeProject, onSelect, onAdd, 
 
   return (
     <div className="px-3 py-3 border-b border-border relative" ref={dropdownRef}>
-      <label className="text-[10px] uppercase tracking-wider text-gray-500 mb-1.5 flex items-center justify-between">
-        <span>Workspace</span>
-        <span className="text-gray-700 font-mono normal-case tracking-normal">⌘⇧L</span>
+      <label className="text-[10px] uppercase tracking-wider text-gray-500 mb-1.5 block">
+        Workspace
       </label>
 
       {/* Dropdown trigger */}
@@ -161,7 +160,7 @@ export function WorkspaceSwitcher({ workspaces, activeProject, onSelect, onAdd, 
                     ) : (
                       <button
                         onClick={(e) => { e.stopPropagation(); setConfirmRemoveId(ws.name); }}
-                        className="opacity-0 group-hover:opacity-100 flex-shrink-0 text-[10px] text-gray-600 hover:text-red-400 transition-colors"
+                        className="flex-shrink-0 text-[10px] text-gray-600 hover:text-red-400 transition-colors"
                         title="Remove workspace"
                       >✕</button>
                     )

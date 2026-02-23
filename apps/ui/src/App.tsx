@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { NavSection } from '@lens/schema';
 import type { ConfigSnapshot, Workspace } from '@lens/schema';
 import { APP_NAME } from './constants.js';
@@ -124,15 +124,6 @@ export default function App() {
         setPaletteInitialQuery('');
         setPaletteOpen(true);
       }
-      // ⌘⇧L / Ctrl+Shift+L — cycle to next workspace
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'l') {
-        e.preventDefault();
-        const wsList = workspacesRef.current;
-        if (wsList.length < 2) return;
-        const idx = wsList.findIndex(w => w.path === activeProjectRef.current);
-        const next = wsList[(idx + 1) % wsList.length];
-        setActiveProject(next.path);
-      }
     }
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
@@ -161,10 +152,6 @@ export default function App() {
   }, [allowGlobalWrites, fetchConfig, activeProject]);
 
   // Keep a ref to workspaces/activeProject for use in keyboard handler
-  const workspacesRef = useRef(workspaces);
-  const activeProjectRef = useRef(activeProject);
-  useEffect(() => { workspacesRef.current = workspaces; }, [workspaces]);
-  useEffect(() => { activeProjectRef.current = activeProject; }, [activeProject]);
 
   const { search } = useUniversalSearch(config);
 
