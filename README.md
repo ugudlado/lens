@@ -1,8 +1,10 @@
 # Lens
 
-A web dashboard for Claude Code that lets you view and edit all 13 configuration surfaces — CLAUDE.md files, settings, permissions, MCP servers, hooks, skills, agents, rules, commands, plugins, models, memory, and sandbox config — across all scope levels (managed, global, project, local).
+A web dashboard for Claude Code. See and edit all 13 configuration surfaces — CLAUDE.md, settings, permissions, MCP servers, hooks, skills, agents, rules, commands, plugins, memory, models, sandbox — across every scope level in one place.
 
-## Install as Claude Code Plugin
+![Lens dashboard overview](docs/screenshots/dashboard-overview.png)
+
+## Install
 
 **Step 1:** Add the Lens marketplace (one-time):
 
@@ -22,12 +24,33 @@ A web dashboard for Claude Code that lets you view and edit all 13 configuration
 /lens:open
 ```
 
-> Global config (`~/.claude/`) is read-only by default. Use the toggle in the top-right corner of the dashboard to enable global writes.
+> Global config (`~/.claude/`) is read-only by default. Use the toggle in the top-right to enable global writes.
 
-## Prerequisites (for development)
+## Features
 
-- Node.js 18+
-- pnpm 8+
+### All 13 config surfaces in one view
+
+The overview shows every surface with counts — click any card to drill in. Hooks, skills, agents, MCP servers, commands, permissions and more, all in one place.
+
+### Scope-aware display
+
+Every entry shows which scope it lives in — Global, Project, or Local. The **Effective** view merges all scopes to show what Claude actually sees. The **Files** view breaks it down file-by-file.
+
+![MCP Servers with scope labels and expanded detail](docs/screenshots/mcp-servers-expanded.png)
+
+### Import from another workspace
+
+Bootstrap a new project by pulling config from an existing one. Select a workspace, review what's new, pick what to import.
+
+![Import workflow](docs/screenshots/import-loaded.png)
+
+### Edit in place
+
+Add, edit, enable/disable, or delete config entries directly. Copy or move entries between scope levels.
+
+### Live reload
+
+File watcher pushes changes to the UI the moment a config file changes on disk — no manual refresh needed.
 
 ## Development
 
@@ -45,30 +68,7 @@ pnpm build        # Build all packages (schema → server → UI)
 pnpm type-check   # Type-check all packages
 ```
 
-## Features
-
-- **13 config surfaces** — CLAUDE.md, settings.json, permissions, MCP servers, hooks, skills, agents, rules, commands, plugins, models, memory, sandbox
-- **4 scope levels** — Managed, global, project, and local with effective value merging
-- **Live reload** — File watcher pushes config changes to the UI via SSE
-- **Edit in place** — Modify config values directly in the dashboard
-- **Dark theme** — Tailwind CSS with purple accents
-
-## Architecture
-
-```
-├── packages/schema/    @lens/schema — shared TypeScript types
-├── apps/server/        @lens/server — Hono 4 backend, scanner, file watcher
-└── apps/ui/            @lens/ui — React 19 + Vite 6 dashboard
-```
-
-**Backend**: Hono 4 on Node.js. Pure filesystem reads/writes — no database. SSE for live reload.
-
-**Frontend**: React 19 SPA with Tailwind CSS. No router library — `useState`-based navigation.
-
-**API**:
-- `GET /api/config` — Scan and return all config surfaces
-- `PATCH /api/update` — Write config changes back to files
-- `GET /api/events` — SSE stream for live config reload
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for technical details.
 
 ## Contributing
 
