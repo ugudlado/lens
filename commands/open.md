@@ -1,5 +1,4 @@
 ---
-name: open
 description: Open the Lens dashboard in the browser
 allowed-tools: [Bash]
 ---
