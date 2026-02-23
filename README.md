@@ -4,11 +4,19 @@ A web dashboard for Claude Code that lets you view and edit all 13 configuration
 
 ## Install as Claude Code Plugin
 
-```bash
-/plugins install github:ugudlado/lens
+**Step 1:** Add the Lens marketplace (one-time):
+
+```
+/plugins add-marketplace github:ugudlado/lens
 ```
 
-Then open the dashboard:
+**Step 2:** Install the plugin:
+
+```
+/plugins install lens@ugudlado
+```
+
+**Step 3:** Open the dashboard:
 
 ```
 /lens:open
