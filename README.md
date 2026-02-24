@@ -6,16 +6,16 @@ A web dashboard for Claude Code. See and edit all 13 configuration surfaces — 
 
 ## Install
 
-**Step 1:** Add the Lens marketplace (one-time):
+**Step 1:** Add the marketplace (one-time):
 
 ```
-/plugins add-marketplace github:ugudlado/claude-marketplace
+claude plugin marketplace add ugudlado/claude-marketplace
 ```
 
 **Step 2:** Install the plugin:
 
 ```
-/plugins install lens@ugudlado
+claude plugin install lens@ugudlado
 ```
 
 **Step 3:** Open the dashboard:
