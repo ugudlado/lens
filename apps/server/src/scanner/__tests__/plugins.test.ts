@@ -97,6 +97,9 @@ describe('scanPlugins', () => {
     expect(plugin.marketplace).toBe('old-marketplace');
     expect(plugin.version).toBe('0.1.0');
     expect(plugin.scope).toBe(PluginScope.User);
+    expect(plugin.installPath).toBe(installPath);
+    expect(plugin.installedAt).toBe('2023-06-01T00:00:00.000Z');
+    expect(plugin.enabled).toBe(true);
   });
 
   it('suppresses orphaned plugin entry when same plugin exists from known marketplace', async () => {
@@ -153,21 +156,29 @@ describe('scanPlugins', () => {
       JSON.stringify(installedJson),
     );
 
+    // Global settings: plugin disabled
     await writeFile(
       join(globalDir, 'settings.json'),
       JSON.stringify({ enabledPlugins: { 'toggled-plugin@test-marketplace': false } }),
     );
 
+    // Verify global disables the plugin
+    vi.resetModules();
+    const scanPlugins1 = await (await import('../plugins.js')).scanPlugins;
+    const result1 = await scanPlugins1(projectDir);
+    expect(result1.plugins[0].enabled).toBe(false);
+
+    // Project settings: override to enabled
     await writeFile(
       join(projectDir, '.claude', 'settings.json'),
       JSON.stringify({ enabledPlugins: { 'toggled-plugin@test-marketplace': true } }),
     );
 
-    const scanPlugins = await getScanPlugins();
-    const result = await scanPlugins(projectDir);
-
-    expect(result.plugins).toHaveLength(1);
-    expect(result.plugins[0].enabled).toBe(true);
+    // Must reset modules again so the new settings file is picked up
+    vi.resetModules();
+    const { scanPlugins: scanPlugins2 } = await import('../plugins.js');
+    const result2 = await scanPlugins2(projectDir);
+    expect(result2.plugins[0].enabled).toBe(true);
   });
 
   it('scans marketplace plugins/ directory and marks installed status', async () => {
@@ -217,6 +228,7 @@ describe('scanPlugins', () => {
 
     expect(result.marketplaces).toHaveLength(1);
     expect(result.marketplaces[0].name).toBe('test-marketplace');
+    expect(result.marketplaces[0].url).toBe('https://github.com/example/marketplace');
   });
 
   it('sets updateAvailable correctly based on version comparison', async () => {
@@ -279,5 +291,12 @@ describe('scanPlugins', () => {
 
     expect(upToDate?.latestVersion).toBe('1.0.0');
     expect(upToDate?.updateAvailable).toBe(false);
+
+    // available[] should contain both marketplace plugins
+    expect(result.available).toHaveLength(2);
+    const availableSemver = result.available.find(p => p.name === 'semver-plugin');
+    const availableUpToDate = result.available.find(p => p.name === 'up-to-date-plugin');
+    expect(availableSemver?.installed).toBe(true);
+    expect(availableUpToDate?.installed).toBe(true);
   });
 });
