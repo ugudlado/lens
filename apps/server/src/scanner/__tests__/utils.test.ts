@@ -3,7 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ConfigScope } from '@lens/schema';
-import { scopeForPath, isEditable, setAllowGlobalWrites } from '../utils.js';
+import { scopeForPath, isEditable, setAllowGlobalWrites, GLOBAL_DIR } from '../utils.js';
 
 describe('GLOBAL_DIR override', () => {
   let tmpDir: string;
@@ -38,14 +38,17 @@ describe('scopeForPath', () => {
     expect(result).toBe(ConfigScope.Local);
   });
 
-  it('classifies ~/.claude paths as Global scope', async () => {
-    const { GLOBAL_DIR } = await import('../utils.js');
+  it('classifies ~/.claude paths as Global scope', () => {
     const result = scopeForPath(`${GLOBAL_DIR}/settings.json`, projectPath);
     expect(result).toBe(ConfigScope.Global);
   });
 });
 
 describe('isEditable', () => {
+  afterEach(() => {
+    setAllowGlobalWrites(false); // restore default
+  });
+
   it('Managed scope is never editable', () => {
     expect(isEditable(ConfigScope.Managed)).toBe(false);
   });
@@ -63,6 +66,6 @@ describe('isEditable', () => {
     expect(isEditable(ConfigScope.Global)).toBe(false);
     setAllowGlobalWrites(true);
     expect(isEditable(ConfigScope.Global)).toBe(true);
-    setAllowGlobalWrites(false); // reset
+    // no manual reset needed — afterEach handles it
   });
 });
