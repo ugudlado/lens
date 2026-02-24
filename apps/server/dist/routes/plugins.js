@@ -1,12 +1,33 @@
 import { Hono } from 'hono';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
+import { spawn } from 'node:child_process';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { homedir } from 'node:os';
 import { PluginAction } from '@lens/schema';
 import { detectProjectRoot } from '../scanner/utils.js';
-const execFileAsync = promisify(execFile);
+/** Spawn `claude` without inheriting Claude Code's sandbox file descriptors (avoids EBADF). */
+function spawnClaude(args, cwd) {
+    return new Promise((resolve, reject) => {
+        const child = spawn('claude', args, {
+            env: { ...process.env, CLAUDECODE: '' },
+            cwd,
+            stdio: ['ignore', 'pipe', 'pipe'],
+        });
+        let stdout = '';
+        let stderr = '';
+        child.stdout.on('data', (d) => { stdout += d.toString(); });
+        child.stderr.on('data', (d) => { stderr += d.toString(); });
+        const timer = setTimeout(() => { child.kill(); reject(new Error('timeout')); }, 30000);
+        child.on('close', (code) => {
+            clearTimeout(timer);
+            if (code === 0)
+                resolve({ stdout, stderr });
+            else
+                reject(Object.assign(new Error(`claude exited with code ${code}`), { stdout, stderr }));
+        });
+        child.on('error', (err) => { clearTimeout(timer); reject(err); });
+    });
+}
 /** Read JSON, update enabledPlugins, write back. */
 async function setPluginEnabled(settingsPath, pluginKey, enabled) {
     await mkdir(dirname(settingsPath), { recursive: true });
@@ -71,11 +92,7 @@ app.post('/', async (c) => {
     if (action === PluginAction.MarketplaceAdd || action === PluginAction.MarketplaceRemove) {
         try {
             const subcommand = action === PluginAction.MarketplaceAdd ? 'add' : 'remove';
-            const { stdout, stderr } = await execFileAsync('claude', ['plugin', 'marketplace', subcommand, plugin], {
-                env: { ...process.env, CLAUDECODE: '' },
-                cwd: detectProjectRoot(),
-                timeout: 30000,
-            });
+            const { stdout, stderr } = await spawnClaude(['plugin', 'marketplace', subcommand, plugin], detectProjectRoot());
             const output = (stdout + stderr).trim();
             return c.json({ success: true, output });
         }
@@ -92,11 +109,7 @@ app.post('/', async (c) => {
         if (scope) {
             args.push('--scope', scope);
         }
-        const { stdout, stderr } = await execFileAsync('claude', args, {
-            env: { ...process.env, CLAUDECODE: '' },
-            cwd: detectProjectRoot(),
-            timeout: 30000,
-        });
+        const { stdout, stderr } = await spawnClaude(args, detectProjectRoot());
         const output = (stdout + stderr).trim();
         return c.json({ success: true, output });
     }
