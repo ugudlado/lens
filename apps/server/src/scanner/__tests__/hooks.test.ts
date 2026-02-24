@@ -92,6 +92,7 @@ describe('scanHooks', () => {
     expect(hook.event).toBe(HookEvent.PreToolUse);
     expect(hook.matcher).toBe('Bash');
     expect(hook.command).toBe('hookify: block');
+    expect(hook.type).toBe(HookType.Command);
     expect(hook.source).toBe(HookSource.Hookify);
     expect(hook.scope).toBe(ConfigScope.Global);
   });
@@ -125,6 +126,7 @@ describe('scanHooks', () => {
     expect(result.hooks).toHaveLength(1);
     const hook = result.hooks[0];
     expect(hook.command).toBe(`${pluginInstallPath}/bin/run.sh`);
+    expect(hook.matcher).toBe('Write');
     expect(hook.source).toBe(HookSource.Plugin);
     expect(hook.pluginName).toBe('my-plugin');
     expect(hook.event).toBe(HookEvent.PostToolUse);
