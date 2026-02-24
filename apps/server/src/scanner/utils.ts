@@ -41,7 +41,7 @@ export function isEditable(scope: ConfigScope): boolean {
   return true;
 }
 
-export const GLOBAL_DIR = join(homedir(), '.claude');
+export const GLOBAL_DIR = process.env.__TEST_GLOBAL_DIR ?? join(homedir(), '.claude');
 function getManagedDir(): string {
   if (platform === 'darwin') return '/Library/Application Support/ClaudeCode';
   if (platform === 'win32') return 'C:\\Program Files\\ClaudeCode';
