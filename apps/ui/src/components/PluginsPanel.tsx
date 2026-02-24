@@ -178,9 +178,12 @@ export function PluginsPanel({ config, onRescan }: Props) {
 
             return (
               <div key={mp} className="bg-card border border-border rounded-lg overflow-hidden">
-                <button
+                <div
+                  role="button"
+                  tabIndex={0}
                   onClick={() => toggleMarketplace(mp)}
-                  className="w-full text-left px-4 py-5 flex items-center gap-3 hover:bg-white/[0.02] transition-colors"
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleMarketplace(mp); } }}
+                  className="w-full text-left px-4 py-5 flex items-center gap-3 hover:bg-white/[0.02] transition-colors cursor-pointer"
                 >
                   <svg
                     className={`w-4 h-4 text-gray-500 flex-shrink-0 transition-transform duration-150 ${open ? 'rotate-90' : ''}`}
@@ -237,7 +240,7 @@ export function PluginsPanel({ config, onRescan }: Props) {
                       Remove
                     </button>
                   )}
-                </button>
+                </div>
 
                 {open && (
                   <div className="border-t border-border/50">
