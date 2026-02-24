@@ -196,6 +196,13 @@ async function listPluginFiles(installPath) {
 export async function scanPlugins(projectPath) {
     const plugins = [];
     const marketplaces = [];
+    // Read known marketplaces so we can flag orphaned plugins
+    const knownMarketplaces = new Set();
+    const knownRaw = await readJsonOrNull(join(GLOBAL_DIR, 'plugins', 'known_marketplaces.json'));
+    if (knownRaw && typeof knownRaw === 'object') {
+        for (const key of Object.keys(knownRaw))
+            knownMarketplaces.add(key);
+    }
     // Read enabledPlugins from global and project settings to determine enabled/disabled state
     const enabledPlugins = new Map();
     const globalSettings = await readJsonOrNull(join(GLOBAL_DIR, 'settings.json'));
@@ -219,6 +226,18 @@ export async function scanPlugins(projectPath) {
         const pluginsObj = (raw.version === 2 && raw.plugins && typeof raw.plugins === 'object')
             ? raw.plugins
             : raw;
+        // First pass: collect plugin names that have at least one entry from a known marketplace.
+        // Used to suppress orphaned duplicates (e.g. feature-dev@old-marketplace when
+        // feature-dev@claude-plugins-official is also installed).
+        const namesWithKnownMarketplace = new Set();
+        for (const key of Object.keys(pluginsObj)) {
+            if (key === 'version')
+                continue;
+            const [pluginName, marketplace] = key.split('@');
+            if (pluginName && marketplace && knownMarketplaces.has(marketplace)) {
+                namesWithKnownMarketplace.add(pluginName);
+            }
+        }
         for (const [key, val] of Object.entries(pluginsObj)) {
             if (key === 'version')
                 continue;
@@ -227,6 +246,10 @@ export async function scanPlugins(projectPath) {
             for (const entry of entries) {
                 const v = entry;
                 const [pluginName, marketplace] = key.split('@');
+                const isOrphaned = marketplace ? !knownMarketplaces.has(marketplace) : false;
+                // Suppress orphaned entries when the same plugin is installed from a known marketplace
+                if (isOrphaned && namesWithKnownMarketplace.has(pluginName))
+                    continue;
                 const scopeStr = v.scope || PluginScope.User;
                 const scope = scopeStr === PluginScope.Project ? PluginScope.Project : PluginScope.User;
                 // For project-scoped plugins, only include if they match this project

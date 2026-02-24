@@ -101,7 +101,7 @@ app.get('/*', async (c) => {
         return c.notFound();
     }
 });
-const port = Number(process.env.PORT) || 3001;
+const port = Number(process.env.PORT) || 37001;
 console.log(`Lens server on http://localhost:${port}`);
 serve({ fetch: app.fetch, port });
 startWatcher();
