@@ -7,7 +7,8 @@
     "dev:ui": "pnpm --filter @lens/ui dev",
     "build": "pnpm --filter @lens/schema build && pnpm --filter @lens/server build && pnpm --filter @lens/ui build",
     "type-check": "pnpm -r type-check",
-    "start": "node apps/server/dist/index.js"
+    "start": "node apps/server/dist/index.js",
+    "test": "pnpm --filter @lens/server test"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
