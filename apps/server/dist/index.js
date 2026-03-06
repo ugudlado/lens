@@ -86,13 +86,14 @@ app.delete('/api/file', async (c) => {
 });
 app.get('/api/health', (c) => c.json({ status: 'ok' }));
 // Serve built UI static files (production/plugin mode)
-// serveStatic root is relative to CWD; when run from repo root, UI dist is at apps/ui/dist
-app.use('/*', serveStatic({ root: 'apps/ui/dist' }));
+// Use absolute path derived from __dirname so it works regardless of CWD
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const uiDistPath = resolve(__dirname, '..', '..', 'ui', 'dist');
+app.use('/*', serveStatic({ root: uiDistPath }));
 // SPA fallback: serve index.html for client-side routing
 app.get('/*', async (c) => {
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = dirname(__filename);
-    const indexPath = resolve(__dirname, '..', '..', 'ui', 'dist', 'index.html');
+    const indexPath = resolve(uiDistPath, 'index.html');
     try {
         const html = await readFile(indexPath, 'utf-8');
         return c.html(html);

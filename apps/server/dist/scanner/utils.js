@@ -39,7 +39,7 @@ export function isEditable(scope) {
         return _allowGlobalWrites;
     return true;
 }
-export const GLOBAL_DIR = join(homedir(), '.claude');
+export const GLOBAL_DIR = process.env.__TEST_GLOBAL_DIR ?? join(homedir(), '.claude');
 function getManagedDir() {
     if (platform === 'darwin')
         return '/Library/Application Support/ClaudeCode';
