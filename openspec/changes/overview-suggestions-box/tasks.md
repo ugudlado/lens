@@ -2,19 +2,19 @@
 
 ## Phase 1: Schema & Types
 
-- [ ] T-1 Add types to `packages/schema/src/index.ts`: `SuggestionCategory` enum, `SuggestionSeverity` enum, `Suggestion` interface (with `navSection: NavSection` field — NOT `surface`), `SuggestionsResponse` interface, `SuggestionRule` type (depends: T-1)
+- [x] T-1 Add types to `packages/schema/src/index.ts`: `SuggestionCategory` enum, `SuggestionSeverity` enum, `Suggestion` interface (with `navSection: NavSection` field — NOT `surface`), `SuggestionsResponse` interface, `SuggestionRule` type (depends: T-1)
 - [ ] T-2 Run `pnpm type-check` to validate schema changes
 - [ ] T-3 Review checkpoint (phase gate)
 
 ## Phase 2: Server — Rule Engine & Endpoint
 
-- [ ] T-4 Create `apps/server/src/suggestions/health-rules.ts` with 4 health check rules (depends: T-1)
-- [ ] T-5 Create `apps/server/src/suggestions/best-practice-rules.ts` with 3 best-practice rules [P] (depends: T-1). Note: `bp-sandbox-disabled` fires only when `enabled === null` (not configured), NOT when explicitly `false`.
-- [ ] T-6 Create `apps/server/src/suggestions/contextual-rules.ts` with 3 contextual rules [P] (depends: T-1). Note: `ctx-mcp-no-hooks` is suppressed when `health-no-hooks` already fires. `ctx-commands-no-skills` replaces original `ctx-skills-no-commands` (reversed logic).
-- [ ] T-7 Create `apps/server/src/suggestions/index.ts` — aggregator that runs all rules with error isolation and deduplication (suppress contextual rules when a health rule already covers the same navSection) (depends: T-4, T-5, T-6)
-- [ ] T-8 Create `apps/server/src/routes/suggestions.ts` — `GET /api/suggestions` endpoint (depends: T-7)
-- [ ] T-9 Mount suggestions route at `app.route('/api/suggestions', suggestionsRoutes)` in `apps/server/src/index.ts` (depends: T-8)
-- [ ] T-10 Run `pnpm type-check` to validate server changes
+- [x] T-4 Create `apps/server/src/suggestions/health-rules.ts` with 4 health check rules (depends: T-1)
+- [x] T-5 Create `apps/server/src/suggestions/best-practice-rules.ts` with 3 best-practice rules [P] (depends: T-1). Note: `bp-sandbox-disabled` fires only when `enabled === null` (not configured), NOT when explicitly `false`.
+- [x] T-6 Create `apps/server/src/suggestions/contextual-rules.ts` with 3 contextual rules [P] (depends: T-1). Note: `ctx-mcp-no-hooks` is suppressed when `health-no-hooks` already fires. `ctx-commands-no-skills` replaces original `ctx-skills-no-commands` (reversed logic).
+- [x] T-7 Create `apps/server/src/suggestions/index.ts` — aggregator that runs all rules with error isolation and deduplication (suppress contextual rules when a health rule already covers the same navSection) (depends: T-4, T-5, T-6)
+- [x] T-8 Create `apps/server/src/routes/suggestions.ts` — `GET /api/suggestions` endpoint (depends: T-7)
+- [x] T-9 Mount suggestions route at `app.route('/api/suggestions', suggestionsRoutes)` in `apps/server/src/index.ts` (depends: T-8)
+- [x] T-10 Run `pnpm type-check` to validate server changes
 - [ ] T-11 Review checkpoint (phase gate)
 
 ## Phase 3: UI — SuggestionsBox Component
