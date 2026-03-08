@@ -452,3 +452,32 @@ export interface PluginActionResponse {
   output?: string;
   error?: string;
 }
+
+// ─── Suggestions ─────────────────────────────────────
+
+export enum SuggestionCategory {
+  Health = "health",
+  BestPractice = "best-practice",
+  Contextual = "contextual",
+}
+
+export enum SuggestionSeverity {
+  Warning = "warning",
+  Info = "info",
+}
+
+export interface Suggestion {
+  id: string;
+  category: SuggestionCategory;
+  title: string;
+  description: string;
+  navSection: NavSection;
+  severity: SuggestionSeverity;
+}
+
+export interface SuggestionsResponse {
+  suggestions: Suggestion[];
+  scannedAt: string;
+}
+
+export type SuggestionRule = (config: ConfigSnapshot) => Suggestion[];

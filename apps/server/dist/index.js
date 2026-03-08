@@ -5514,14 +5514,14 @@ var Hono = class _Hono {
    * app.route("/api", app2) // GET /api/user
    * ```
    */
-  route(path2, app7) {
+  route(path2, app8) {
     const subApp = this.basePath(path2);
-    app7.routes.map((r) => {
+    app8.routes.map((r) => {
       let handler;
-      if (app7.errorHandler === errorHandler) {
+      if (app8.errorHandler === errorHandler) {
         handler = r.handler;
       } else {
-        handler = async (c, next) => (await compose([], app7.errorHandler)(c, () => r.handler(c, next))).res;
+        handler = async (c, next) => (await compose([], app8.errorHandler)(c, () => r.handler(c, next))).res;
         handler[COMPOSED_HANDLER] = r.handler;
       }
       subApp.#addRoute(r.method, r.path, handler);
@@ -6799,6 +6799,17 @@ var HookEvent;
   HookEvent2["PreCompact"] = "PreCompact";
   HookEvent2["SessionEnd"] = "SessionEnd";
 })(HookEvent || (HookEvent = {}));
+var SuggestionCategory;
+(function(SuggestionCategory2) {
+  SuggestionCategory2["Health"] = "health";
+  SuggestionCategory2["BestPractice"] = "best-practice";
+  SuggestionCategory2["Contextual"] = "contextual";
+})(SuggestionCategory || (SuggestionCategory = {}));
+var SuggestionSeverity;
+(function(SuggestionSeverity2) {
+  SuggestionSeverity2["Warning"] = "warning";
+  SuggestionSeverity2["Info"] = "info";
+})(SuggestionSeverity || (SuggestionSeverity = {}));
 
 // src/scanner/utils.ts
 function detectProjectRoot() {
@@ -13752,14 +13763,220 @@ app3.post("/", async (c) => {
 });
 var plugins_default = app3;
 
+// src/routes/suggestions.ts
+init_cjs_shim();
+
+// src/suggestions/index.ts
+init_cjs_shim();
+
+// src/suggestions/health-rules.ts
+init_cjs_shim();
+var healthRules = [
+  // Rule 1: No project-level CLAUDE.md
+  (config) => {
+    const hasProjectClaude = config.claudeMd.files.some(
+      (f) => f.scope === ConfigScope.Project || f.scope === ConfigScope.Local
+    );
+    if (hasProjectClaude) return [];
+    return [{
+      id: "health-no-claude-md",
+      category: SuggestionCategory.Health,
+      severity: SuggestionSeverity.Warning,
+      navSection: NavSection.ClaudeMd,
+      title: "No project CLAUDE.md found",
+      description: "Add a CLAUDE.md to your project to give Claude context about your codebase, conventions, and workflow."
+    }];
+  },
+  // Rule 2: No hooks configured
+  (config) => {
+    if (config.hooks.hooks.length > 0) return [];
+    return [{
+      id: "health-no-hooks",
+      category: SuggestionCategory.Health,
+      severity: SuggestionSeverity.Warning,
+      navSection: NavSection.Hooks,
+      title: "No hooks configured",
+      description: "Hooks let you run scripts or prompts on Claude Code events. Add hooks to control tool behavior, enforce policies, or automate tasks."
+    }];
+  },
+  // Rule 3: No permission rules
+  (config) => {
+    if (config.permissions.rules.length > 0) return [];
+    return [{
+      id: "health-no-permissions",
+      category: SuggestionCategory.Health,
+      severity: SuggestionSeverity.Warning,
+      navSection: NavSection.Permissions,
+      title: "No permission rules defined",
+      description: "Permission rules control which tools Claude can use without asking. Define allow/deny rules to customize Claude's access."
+    }];
+  },
+  // Rule 4: No MCP servers
+  (config) => {
+    const enabledServers = config.mcp.servers.filter((s) => s.enabled && s.pluginInstalled !== false);
+    if (enabledServers.length > 0) return [];
+    return [{
+      id: "health-no-mcp",
+      category: SuggestionCategory.Health,
+      severity: SuggestionSeverity.Warning,
+      navSection: NavSection.Mcp,
+      title: "No MCP servers configured",
+      description: "MCP servers extend Claude with tools like databases, APIs, and external services. Configure at least one to unlock more capabilities."
+    }];
+  }
+];
+
+// src/suggestions/best-practice-rules.ts
+init_cjs_shim();
+var bestPracticeRules = [
+  // Rule 1: No project-level settings file
+  (config) => {
+    const hasProjectSettings = config.settings.files.some((f) => f.scope === ConfigScope.Project || f.scope === ConfigScope.Local);
+    if (hasProjectSettings) return [];
+    return [{
+      id: "bp-no-project-settings",
+      category: SuggestionCategory.BestPractice,
+      severity: SuggestionSeverity.Info,
+      navSection: NavSection.Settings,
+      title: "No project settings file",
+      description: "A project-level settings.json ensures consistent Claude behavior for all contributors. Add one to share settings across your team."
+    }];
+  },
+  // Rule 2: Sandbox not configured (enabled === null means never touched)
+  // IMPORTANT: Only fires when null (not configured). Does NOT fire when explicitly false.
+  (config) => {
+    if (config.sandbox.enabled !== null) return [];
+    return [{
+      id: "bp-sandbox-disabled",
+      category: SuggestionCategory.BestPractice,
+      severity: SuggestionSeverity.Info,
+      navSection: NavSection.Sandbox,
+      title: "Sandbox not configured",
+      description: "The sandbox restricts file and network access during Claude's tool use. Enable it for safer execution, especially when using MCP servers."
+    }];
+  },
+  // Rule 3: No memory files
+  (config) => {
+    if (config.memory.files.length > 0) return [];
+    return [{
+      id: "bp-no-memory",
+      category: SuggestionCategory.BestPractice,
+      severity: SuggestionSeverity.Info,
+      navSection: NavSection.Memory,
+      title: "No memory files found",
+      description: "Memory files let Claude persist context across sessions. Create a memory directory to help Claude remember project-specific information."
+    }];
+  }
+];
+
+// src/suggestions/contextual-rules.ts
+init_cjs_shim();
+var contextualRules = [
+  // Rule 1: Has MCP servers but no hooks
+  // Note: suppressed by aggregator when health-no-hooks is also active
+  (config) => {
+    const hasEnabledMcp = config.mcp.servers.some((s) => s.enabled && s.pluginInstalled !== false);
+    const hasHooks = config.hooks.hooks.length > 0;
+    if (!hasEnabledMcp || hasHooks) return [];
+    return [{
+      id: "ctx-mcp-no-hooks",
+      category: SuggestionCategory.Contextual,
+      severity: SuggestionSeverity.Info,
+      navSection: NavSection.Hooks,
+      title: "MCP servers configured but no hooks",
+      description: "You have MCP servers configured. Consider adding pre-tool hooks to validate or log MCP tool calls for better visibility and control."
+    }];
+  },
+  // Rule 2: Has legacy commands but no skills (skills supersede commands)
+  (config) => {
+    const hasCommands = config.commands.commands.length > 0;
+    const hasSkills = config.skills.skills.filter((s) => !s.pluginName).length > 0;
+    if (!hasCommands || hasSkills) return [];
+    return [{
+      id: "ctx-commands-no-skills",
+      category: SuggestionCategory.Contextual,
+      severity: SuggestionSeverity.Info,
+      navSection: NavSection.Skills,
+      title: "Legacy commands without skills",
+      description: "You have commands configured. Skills are the modern replacement \u2014 they support tools, models, and hooks. Consider migrating your commands to skills."
+    }];
+  },
+  // Rule 3: Has plugins but no project settings
+  (config) => {
+    const hasPlugins = config.plugins.plugins.some((p) => p.enabled);
+    const hasProjectSettings = config.settings.files.some(
+      (f) => f.scope === ConfigScope.Project || f.scope === ConfigScope.Local
+    );
+    if (!hasPlugins || hasProjectSettings) return [];
+    return [{
+      id: "ctx-plugins-no-settings",
+      category: SuggestionCategory.Contextual,
+      severity: SuggestionSeverity.Info,
+      navSection: NavSection.Settings,
+      title: "Plugins installed but no project settings",
+      description: "You have plugins but no project-level settings file. Add one to configure plugin behavior consistently for your project."
+    }];
+  }
+];
+
+// src/suggestions/index.ts
+function getSuggestions(config) {
+  const suggestions = [];
+  for (const rule of healthRules) {
+    try {
+      suggestions.push(...rule(config));
+    } catch (err) {
+      console.error("[suggestions] health rule failed:", err);
+    }
+  }
+  for (const rule of bestPracticeRules) {
+    try {
+      suggestions.push(...rule(config));
+    } catch (err) {
+      console.error("[suggestions] best-practice rule failed:", err);
+    }
+  }
+  const healthNavSections = new Set(
+    suggestions.filter((s) => s.category === SuggestionCategory.Health).map((s) => s.navSection)
+  );
+  for (const rule of contextualRules) {
+    try {
+      const results = rule(config);
+      for (const suggestion of results) {
+        if (!healthNavSections.has(suggestion.navSection)) {
+          suggestions.push(suggestion);
+        }
+      }
+    } catch (err) {
+      console.error("[suggestions] contextual rule failed:", err);
+    }
+  }
+  return suggestions;
+}
+
+// src/routes/suggestions.ts
+var app4 = new Hono2();
+app4.get("/", async (c) => {
+  const projectPath = c.req.query("project") || detectProjectRoot();
+  try {
+    const config = await scanConfig(projectPath);
+    const suggestions = getSuggestions(config);
+    return c.json({ suggestions, scannedAt: (/* @__PURE__ */ new Date()).toISOString() });
+  } catch (err) {
+    console.error("[suggestions] scan failed:", err);
+    return c.json({ error: "scan failed" }, 500);
+  }
+});
+var suggestions_default = app4;
+
 // src/routes/update.ts
 init_cjs_shim();
 import { readFile as readFile4, writeFile as writeFile2, mkdir as mkdir2 } from "node:fs/promises";
 import { realpathSync as realpathSync2 } from "node:fs";
 import { dirname as dirname2, resolve as resolve2 } from "node:path";
 import { homedir as homedir4 } from "node:os";
-var app4 = new Hono2();
-app4.patch("/", async (c) => {
+var app5 = new Hono2();
+app5.patch("/", async (c) => {
   const body = await c.req.json();
   const { filePath, key, value, scope } = body;
   const deleteKey = body.delete === true;
@@ -13828,7 +14045,7 @@ app4.patch("/", async (c) => {
     }, 500);
   }
 });
-var update_default = app4;
+var update_default = app5;
 
 // src/routes/workspaces.ts
 init_cjs_shim();
@@ -15636,12 +15853,12 @@ async function ensureSeeded() {
   }
   return workspaces;
 }
-var app5 = new Hono2();
-app5.get("/", async (c) => {
+var app6 = new Hono2();
+app6.get("/", async (c) => {
   const workspaces = await ensureSeeded();
   return c.json(workspaces);
 });
-app5.post("/", async (c) => {
+app6.post("/", async (c) => {
   const body = await c.req.json();
   const { path: inputPath } = body;
   if (!inputPath || typeof inputPath !== "string") {
@@ -15665,7 +15882,7 @@ app5.post("/", async (c) => {
   restartWatcher(workspaces.map((w) => w.path));
   return c.json(workspace, 201);
 });
-app5.delete("/:name", async (c) => {
+app6.delete("/:name", async (c) => {
   const name = c.req.param("name");
   const workspaces = await readRegistry();
   const filtered = workspaces.filter((w) => w.name !== name);
@@ -15676,17 +15893,18 @@ app5.delete("/:name", async (c) => {
   restartWatcher(filtered.map((w) => w.path));
   return c.json({ success: true });
 });
-var workspaces_default = app5;
+var workspaces_default = app6;
 
 // src/index.ts
-var app6 = new Hono2();
-app6.use("*", cors());
-app6.route("/api/config", config_default);
-app6.route("/api/update", update_default);
-app6.route("/api/plugins", plugins_default);
-app6.route("/api/workspaces", workspaces_default);
-app6.route("/api/global-writes", global_writes_default);
-app6.get("/api/events", (c) => {
+var app7 = new Hono2();
+app7.use("*", cors());
+app7.route("/api/config", config_default);
+app7.route("/api/update", update_default);
+app7.route("/api/plugins", plugins_default);
+app7.route("/api/workspaces", workspaces_default);
+app7.route("/api/global-writes", global_writes_default);
+app7.route("/api/suggestions", suggestions_default);
+app7.get("/api/events", (c) => {
   return streamSSE(c, async (stream3) => {
     const unsubscribe = onConfigChange((event) => {
       stream3.writeSSE({ event: "config-changed", data: JSON.stringify(event) }).catch(() => {
@@ -15700,7 +15918,7 @@ app6.get("/api/events", (c) => {
     });
   });
 });
-app6.get("/api/file", async (c) => {
+app7.get("/api/file", async (c) => {
   const filePath = c.req.query("path");
   if (!filePath) return c.json({ error: "Missing path" }, 400);
   let realHome;
@@ -15725,7 +15943,7 @@ app6.get("/api/file", async (c) => {
     return c.json({ error: "File not found" }, 404);
   }
 });
-app6.delete("/api/file", async (c) => {
+app7.delete("/api/file", async (c) => {
   const filePath = c.req.query("path");
   if (!filePath) return c.json({ error: "Missing path" }, 400);
   const abs = resolve5(filePath);
@@ -15740,12 +15958,12 @@ app6.delete("/api/file", async (c) => {
     return c.json({ error: err instanceof Error ? err.message : "Unknown error" }, 500);
   }
 });
-app6.get("/api/health", (c) => c.json({ status: "ok" }));
+app7.get("/api/health", (c) => c.json({ status: "ok" }));
 var __filename = fileURLToPath3(import.meta.url);
 var __dirname = dirname5(__filename);
 var uiDistPath = resolve5(__dirname, "..", "..", "ui", "dist");
-app6.use("/*", serveStatic({ root: uiDistPath }));
-app6.get("/*", async (c) => {
+app7.use("/*", serveStatic({ root: uiDistPath }));
+app7.get("/*", async (c) => {
   const indexPath = resolve5(uiDistPath, "index.html");
   try {
     const html = await readFile6(indexPath, "utf-8");
@@ -15756,7 +15974,7 @@ app6.get("/*", async (c) => {
 });
 var port = Number(process.env.PORT) || 37001;
 console.log(`Lens server on http://localhost:${port}`);
-serve({ fetch: app6.fetch, port });
+serve({ fetch: app7.fetch, port });
 startWatcher();
 /*! Bundled license information:
 

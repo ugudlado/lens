@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import configRoutes from './routes/config.js';
 import globalWritesRoutes from './routes/global-writes.js';
 import pluginRoutes from './routes/plugins.js';
+import suggestionsRoutes from './routes/suggestions.js';
 import updateRoutes from './routes/update.js';
 import workspaceRoutes from './routes/workspaces.js';
 import { onConfigChange, startWatcher } from './watcher.js';
@@ -23,6 +24,7 @@ app.route('/api/update', updateRoutes);
 app.route('/api/plugins', pluginRoutes);
 app.route('/api/workspaces', workspaceRoutes);
 app.route('/api/global-writes', globalWritesRoutes);
+app.route('/api/suggestions', suggestionsRoutes);
 
 app.get('/api/events', (c) => {
   return streamSSE(c, async (stream) => {

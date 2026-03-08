@@ -116,3 +116,15 @@ export var HookEvent;
     HookEvent["PreCompact"] = "PreCompact";
     HookEvent["SessionEnd"] = "SessionEnd";
 })(HookEvent || (HookEvent = {}));
+// ─── Suggestions ─────────────────────────────────────
+export var SuggestionCategory;
+(function (SuggestionCategory) {
+    SuggestionCategory["Health"] = "health";
+    SuggestionCategory["BestPractice"] = "best-practice";
+    SuggestionCategory["Contextual"] = "contextual";
+})(SuggestionCategory || (SuggestionCategory = {}));
+export var SuggestionSeverity;
+(function (SuggestionSeverity) {
+    SuggestionSeverity["Warning"] = "warning";
+    SuggestionSeverity["Info"] = "info";
+})(SuggestionSeverity || (SuggestionSeverity = {}));
