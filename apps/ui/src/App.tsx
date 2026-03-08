@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { NavSection } from '@lens/schema';
-import type { ConfigSnapshot, Workspace } from '@lens/schema';
+import type { ConfigSnapshot, Workspace, Suggestion } from '@lens/schema';
 import { APP_NAME } from './constants.js';
 import { useUniversalSearch } from './hooks/useUniversalSearch.js';
 import { SearchPalette } from './components/SearchPalette.js';
@@ -38,6 +38,7 @@ export default function App() {
   const [paletteInitialQuery, setPaletteInitialQuery] = useState('');
   const [allowGlobalWrites, setAllowGlobalWrites] = useState(false);
   const [togglingGlobal, setTogglingGlobal] = useState(false);
+  const [suggestions, setSuggestions] = useState<Suggestion[] | null>(null);
 
   useEffect(() => { document.title = APP_NAME; }, []);
 
@@ -86,19 +87,36 @@ export default function App() {
       });
   }, [activeProject]);
 
+  const fetchSuggestions = useCallback((projectPath?: string) => {
+    const project = projectPath ?? activeProject;
+    const url = project ? `/api/suggestions?project=${encodeURIComponent(project)}` : '/api/suggestions';
+    return fetch(url)
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((data: { suggestions: Suggestion[] }) => {
+        setSuggestions(data.suggestions);
+      })
+      .catch(() => {
+        setSuggestions([]);
+      });
+  }, [activeProject]);
+
   // Fetch workspaces on mount
   useEffect(() => {
     fetchWorkspaces();
   }, [fetchWorkspaces]);
 
-  // Fetch config when active project changes
+  // Fetch config and suggestions when active project changes
   useEffect(() => {
     if (activeProject) {
       setLoading(true);
       setError(null);
-      fetchConfig(activeProject);
+      setSuggestions(null);
+      Promise.all([fetchConfig(activeProject), fetchSuggestions(activeProject)]);
     }
-  }, [activeProject, fetchConfig]);
+  }, [activeProject, fetchConfig, fetchSuggestions]);
 
   // SSE: only rescan if the changed project matches the active one
   useEffect(() => {
@@ -109,13 +127,15 @@ export default function App() {
         // Rescan if no projectPath (global change) or if it matches active
         if (!data.projectPath || data.projectPath === activeProject) {
           fetchConfig(activeProject ?? undefined);
+          fetchSuggestions(activeProject ?? undefined);
         }
       } catch {
         fetchConfig(activeProject ?? undefined);
+        fetchSuggestions(activeProject ?? undefined);
       }
     });
     return () => { eventSource.close(); };
-  }, [fetchConfig, activeProject]);
+  }, [fetchConfig, fetchSuggestions, activeProject]);
 
   useEffect(() => {
     function handler(e: KeyboardEvent) {
@@ -131,7 +151,8 @@ export default function App() {
 
   const rescan = useCallback(() => {
     fetchConfig(activeProject ?? undefined);
-  }, [fetchConfig, activeProject]);
+    fetchSuggestions(activeProject ?? undefined);
+  }, [fetchConfig, fetchSuggestions, activeProject]);
 
   const toggleGlobalWrites = useCallback(async () => {
     setTogglingGlobal(true);
@@ -145,11 +166,12 @@ export default function App() {
       if (res.ok) {
         setAllowGlobalWrites(next);
         fetchConfig(activeProject ?? undefined);
+        fetchSuggestions(activeProject ?? undefined);
       }
     } finally {
       setTogglingGlobal(false);
     }
-  }, [allowGlobalWrites, fetchConfig, activeProject]);
+  }, [allowGlobalWrites, fetchConfig, fetchSuggestions, activeProject]);
 
   // Keep a ref to workspaces/activeProject for use in keyboard handler
 
@@ -227,7 +249,7 @@ export default function App() {
 
     switch (section) {
       case NavSection.Overview:
-        return <Dashboard config={config} onNavigate={navigate} workspaces={workspaces} activeProject={activeProject ?? ''} onRescan={rescan} />;
+        return <Dashboard config={config} onNavigate={navigate} workspaces={workspaces} activeProject={activeProject ?? ''} onRescan={rescan} suggestions={suggestions} />;
       case NavSection.ClaudeMd:
         return <ClaudeMdPanel config={config} onRescan={rescan} />;
       case NavSection.Settings:

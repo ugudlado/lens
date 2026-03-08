@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { NavSection, ConfigScope } from '@lens/schema';
-import type { ConfigSnapshot, Workspace } from '@lens/schema';
+import type { ConfigSnapshot, Workspace, Suggestion } from '@lens/schema';
 import { WorkspaceConfigImportModal } from './WorkspaceConfigImportModal.js';
+import { SuggestionsBox } from './SuggestionsBox.js';
 
 interface DashboardProps {
   config: ConfigSnapshot;
@@ -9,6 +10,7 @@ interface DashboardProps {
   workspaces?: Workspace[];
   activeProject?: string;
   onRescan?: () => void;
+  suggestions?: Suggestion[] | null;
 }
 
 interface CardDef {
@@ -119,7 +121,7 @@ const SCOPE_TEXT_COLORS: Record<string, string> = {
   [ConfigScope.Local]: 'text-yellow-400',
 };
 
-export function Dashboard({ config, onNavigate, workspaces = [], activeProject = '', onRescan }: DashboardProps) {
+export function Dashboard({ config, onNavigate, workspaces = [], activeProject = '', onRescan, suggestions }: DashboardProps) {
   const [showImport, setShowImport] = useState(false);
   const otherWorkspaces = workspaces.filter(w => w.path !== activeProject);
 
@@ -193,6 +195,8 @@ export function Dashboard({ config, onNavigate, workspaces = [], activeProject =
           );
         })}
       </div>
+
+      <SuggestionsBox suggestions={suggestions ?? null} onNavigate={onNavigate} />
     </div>
   );
 }
