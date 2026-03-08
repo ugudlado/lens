@@ -1,0 +1,39 @@
+schema: claude-code-plugin
+
+context: |
+  Development modes: TDD (tests before impl, >= 90% coverage) or Non-TDD (prototypes/spikes).
+  Mode is set per-feature in spec.md frontmatter: `mode: tdd` or `mode: non-tdd`.
+
+  Issue tracking: Linear (team: Home Labs, prefix: HL).
+  Feature IDs: HL-<number>-<slug> (with Linear) or YYYY-MM-DD-<slug> (without).
+
+  Git: feature/<FEATURE-ID> branches, worktrees at ~/code/feature_worktrees/<FEATURE-ID>.
+  Merge strategy: --no-ff. Never rebase unless requested.
+
+  Review gates: Score >= 9/10 required at phase boundaries.
+  Criteria: spec adherence, functionality, test coverage (TDD mode only).
+
+rules:
+  proposal:
+    - Search for existing libraries (Context7, npm, web) before proposing custom implementations
+    - Document library search results in "Alternatives Considered" section
+    - Include Linear ticket ID if available
+
+  spec:
+    - Include frontmatter with mode (tdd/non-tdd), feature-id, and linear-ticket
+    - Use TypeScript enums or `as const` over string literals for state values
+    - Define acceptance criteria that map to testable scenarios
+    - TDD mode: specify test files and coverage targets in spec
+
+  design:
+    - Prefer existing libraries over custom code — document decision
+    - Include error handling strategy and data flow diagrams
+    - Document platform-specific behavior or limitations
+
+  tasks:
+    - "Use format: T-<number> <description> with status markers [ ] [→] [x]"
+    - Group tasks into numbered phases with clear boundaries
+    - Mark parallelizable tasks with [P] suffix
+    - Include dependency annotations (depends: T-xxx)
+    - TDD mode: test tasks precede implementation tasks within each phase
+    - Each phase must have a review checkpoint as final task

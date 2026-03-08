@@ -1,0 +1,41 @@
+name: claude-code-plugin
+version: 1
+description: Spec-driven development for Claude Code plugins with Linear tracking, phase gates, and review scores
+
+artifacts:
+  - id: proposal
+    generates: proposal.md
+    description: Initial brainstorm output — goals, constraints, alternatives considered
+    template: proposal.md
+    requires: []
+
+  - id: spec
+    generates: spec.md
+    description: Full feature specification with architecture and decisions
+    template: spec.md
+    requires:
+      - proposal
+
+  - id: design
+    generates: design.md
+    description: Technical design — components, data flow, error handling
+    template: design.md
+    requires:
+      - proposal
+
+  - id: tasks
+    generates: tasks.md
+    description: Phased task list with dependencies and parallel markers
+    template: tasks.md
+    requires:
+      - spec
+      - design
+
+apply:
+  requires: [tasks]
+  tracks: tasks.md
+  instruction: |
+    Work through tasks in phase order. Mark [→] when starting, [x] when done.
+    Tasks marked [P] can run in parallel. Respect (depends: Txxx) annotations.
+    Pause at phase boundaries for review — require score >= 9/10 before continuing.
+    Commit after each logical group of tasks.
