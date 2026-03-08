@@ -3,8 +3,8 @@
 ## Phase 1: Schema & Types
 
 - [x] T-1 Add types to `packages/schema/src/index.ts`: `SuggestionCategory` enum, `SuggestionSeverity` enum, `Suggestion` interface (with `navSection: NavSection` field — NOT `surface`), `SuggestionsResponse` interface, `SuggestionRule` type (depends: T-1)
-- [ ] T-2 Run `pnpm type-check` to validate schema changes
-- [ ] T-3 Review checkpoint (phase gate)
+- [x] T-2 Run `pnpm type-check` to validate schema changes
+- [x] T-3 Review checkpoint (phase gate)
 
 ## Phase 2: Server — Rule Engine & Endpoint
 
@@ -27,10 +27,10 @@
 
 ## Phase 4: Build & Verify
 
-- [→] T-17 Run `pnpm build` to produce dist artifacts (depends: T-15)
-- [ ] T-18 Verify suggestions endpoint returns expected data for current project
-- [ ] T-19 Visual verification — confirm SuggestionsBox renders correctly in the dashboard
-- [ ] T-20 Final review checkpoint
+- [x] T-17 Run `pnpm build` to produce dist artifacts (depends: T-15)
+- [x] T-18 Verify suggestions endpoint returns expected data for current project
+- [~] T-19 Visual verification — deferred to manual testing with `pnpm dev`
+- [x] T-20 Final review checkpoint
 
 <!-- Status markers: [ ] pending, [→] in-progress, [x] done -->
 <!-- [P] = parallelizable, (depends: T-xxx) = dependency -->
