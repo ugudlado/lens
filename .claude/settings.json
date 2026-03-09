@@ -5,7 +5,5 @@
     ]
   },
   "enableAllProjectMcpServers": true,
-  "enabledPlugins": {
-    "lens@ugudlado": true
-  }
+  "enabledPlugins": {}
 }
