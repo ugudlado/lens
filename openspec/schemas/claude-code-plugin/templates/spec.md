@@ -1,5 +1,5 @@
 ---
-mode: tdd  # tdd or non-tdd
+mode: tdd # tdd or non-tdd
 feature-id: FEATURE-ID
 linear-ticket: HL-XXX
 ---
@@ -13,9 +13,11 @@ linear-ticket: HL-XXX
 ## Requirements
 
 ### Functional
+
 <!-- Numbered list of functional requirements -->
 
 ### Non-Functional
+
 <!-- Performance, security, accessibility requirements -->
 
 ## Architecture

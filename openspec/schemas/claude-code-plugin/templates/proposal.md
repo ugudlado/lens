@@ -11,9 +11,11 @@
 ## Capabilities
 
 ### New
+
 <!-- List new capabilities this introduces -->
 
 ### Modified
+
 <!-- List existing capabilities this changes -->
 
 ## Alternatives Considered
