@@ -856,7 +856,7 @@ export function WorkspaceConfigImportModal({
                       ).length} new
                     </span>
                   </span>
-                  {sourceItems[activeSection].length > 0 && (
+                  {sourceItems[activeSection].some(item => !existingKeys[activeSection].has(getKey(activeSection, item))) && (
                     <button
                       onClick={() => {
                         const newKeys = sourceItems[activeSection]

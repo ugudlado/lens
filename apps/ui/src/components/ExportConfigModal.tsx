@@ -64,7 +64,7 @@ export function ExportConfigModal({ config, onClose }: ExportConfigModalProps) {
 
   const pluginItems: SectionItem[] = config.plugins.plugins
     .filter(p => p.scope === PluginScope.Project)
-    .map(p => ({ key: `${p.name}@${p.marketplace}`, label: p.name }));
+    .map(p => ({ key: `${p.name}@${p.marketplace}`, label: `${p.name} (${p.marketplace})` }));
 
   const sectionItemsMap: Record<ExportSectionId, SectionItem[]> = {
     mcp: mcpItems,
