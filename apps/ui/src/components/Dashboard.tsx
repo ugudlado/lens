@@ -162,13 +162,13 @@ export function Dashboard({ config, onNavigate, workspaces = [], activeProject =
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {otherWorkspaces.length > 0 && onRescan && (
+            {onRescan && (
               <button
                 onClick={() => setShowImport(true)}
                 className="px-3 py-1.5 text-xs font-medium rounded bg-accent/20 text-accent hover:bg-accent/30 transition-colors flex items-center gap-1.5 flex-shrink-0"
               >
                 <span>↓</span>
-                Import from Workspace
+                Import Config
               </button>
             )}
             <button

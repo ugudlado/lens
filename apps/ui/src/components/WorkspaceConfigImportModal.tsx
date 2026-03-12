@@ -107,6 +107,7 @@ export function WorkspaceConfigImportModal({
   const otherWorkspaces = workspaces.filter(w => w.path !== activeProject);
 
   const [importSource, setImportSource] = useState<'workspace' | 'file'>('workspace');
+  const [importFileName, setImportFileName] = useState<string>('');
   const [state, setState] = useState<ModalState>('pick-workspace');
   const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -133,7 +134,7 @@ export function WorkspaceConfigImportModal({
     rules: new Set(currentConfig.rules.rules.map(ruleKey)),
     commands: new Set(currentConfig.commands.commands.filter(c => !c.pluginName).map(commandKey)),
     permissions: new Set(currentConfig.permissions.rules.map(permKey)),
-    plugins: new Set(currentConfig.plugins.plugins.map(pluginKey)),
+    plugins: new Set(currentConfig.plugins.plugins.filter(p => p.scope === PluginScope.Project).map(pluginKey)),
   };
 
   useEffect(() => {
@@ -193,6 +194,7 @@ export function WorkspaceConfigImportModal({
   }
 
   function loadFromFile(file: File) {
+    setImportFileName(file.name);
     setLoading(true);
     setLoadError(null);
 
@@ -200,11 +202,29 @@ export function WorkspaceConfigImportModal({
     reader.onload = (e) => {
       try {
         const text = e.target?.result as string;
-        const data = JSON.parse(text) as ExportData;
+        const raw = JSON.parse(text);
 
-        if (data.version !== 1) {
-          throw new Error('Unsupported export format version');
+        // Validate export file structure
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+          throw new Error('Invalid file: expected a JSON object');
         }
+        if (typeof raw.version !== 'number') {
+          throw new Error('Invalid file: missing "version" field. This does not appear to be a Claude export file.');
+        }
+        if (raw.version !== 1) {
+          throw new Error(`Unsupported export format version: ${raw.version}`);
+        }
+        if (!raw.sections || typeof raw.sections !== 'object' || Array.isArray(raw.sections)) {
+          throw new Error('Invalid file: missing "sections" field. This does not appear to be a Claude export file.');
+        }
+        // Validate that section values are arrays (if present)
+        const knownSections = ['mcpServers', 'hooks', 'skills', 'agents', 'rules', 'commands', 'permissions', 'claudeMd', 'plugins'];
+        for (const key of Object.keys(raw.sections)) {
+          if (knownSections.includes(key) && !Array.isArray(raw.sections[key])) {
+            throw new Error(`Invalid file: section "${key}" must be an array`);
+          }
+        }
+        const data = raw as ExportData;
 
         // Sanitize names from untrusted JSON to prevent path traversal
         const safeName = (name: unknown): string => {
@@ -281,7 +301,15 @@ export function WorkspaceConfigImportModal({
             scope: ConfigScope.Project,
             filePath: '',
           } as PermissionRule)),
-          plugins: [],
+          plugins: (data.sections.plugins ?? []).map(p => ({
+            name: safeName(p.name),
+            marketplace: safeName(p.marketplace),
+            version: '',
+            installPath: '',
+            installedAt: '',
+            enabled: typeof p.enabled === 'boolean' ? p.enabled : true,
+            scope: PluginScope.Project,
+          } as PluginEntry)),
         };
 
         setSourceItems(items);
@@ -298,6 +326,7 @@ export function WorkspaceConfigImportModal({
         for (const r of items.rules) { if (!existingKeys.rules.has(ruleKey(r))) newChecked.rules.add(ruleKey(r)); }
         for (const c of items.commands) { if (!existingKeys.commands.has(commandKey(c))) newChecked.commands.add(commandKey(c)); }
         for (const p of items.permissions) { if (!existingKeys.permissions.has(permKey(p))) newChecked.permissions.add(permKey(p)); }
+        for (const p of items.plugins) { if (!existingKeys.plugins.has(pluginKey(p))) newChecked.plugins.add(pluginKey(p)); }
 
         setChecked(newChecked);
         setState('checklist');
@@ -478,11 +507,27 @@ export function WorkspaceConfigImportModal({
       // ── Plugins → POST /api/plugins (project-scoped install) ────────────
       for (const p of sourceItems.plugins) {
         if (!checked.plugins.has(pluginKey(p))) continue;
-        await fetch('/api/plugins', {
+        const res = await fetch('/api/plugins', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: PluginAction.Install, plugin: pluginKey(p), scope: PluginScope.Project }),
         });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({})) as { error?: string };
+          throw new Error(body.error ?? `Plugin install failed: ${pluginKey(p)}`);
+        }
+        // Apply enabled state if it differs from default (true)
+        if (p.enabled === false) {
+          const disableRes = await fetch('/api/plugins', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: PluginAction.Disable, plugin: pluginKey(p), scope: PluginScope.Project }),
+          });
+          if (!disableRes.ok) {
+            const body = await disableRes.json().catch(() => ({})) as { error?: string };
+            throw new Error(body.error ?? `Plugin disable failed: ${pluginKey(p)}`);
+          }
+        }
       }
 
       onRescan();
@@ -684,7 +729,7 @@ export function WorkspaceConfigImportModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
           <h3 className="text-base font-semibold text-gray-200">
-            Import from Workspace
+            Import Configuration
           </h3>
           <button
             onClick={onClose}
@@ -787,7 +832,7 @@ export function WorkspaceConfigImportModal({
                           file:cursor-pointer cursor-pointer"
                       />
                       <p className="text-xs text-gray-500 mt-3">
-                        Accepts .claude-export.json files
+                        Accepts .json export files
                       </p>
                     </div>
                   </>
@@ -804,7 +849,7 @@ export function WorkspaceConfigImportModal({
               {/* Section sidebar */}
               <div className="w-44 flex-shrink-0 border-r border-border py-3 overflow-y-auto">
                 <div className="text-[10px] uppercase tracking-wider text-gray-600 px-4 mb-2">
-                  From: {selectedWorkspace?.name}
+                  From: {importSource === 'file' ? importFileName : selectedWorkspace?.name}
                 </div>
                 {sections.map(s => (
                   <button
@@ -836,22 +881,10 @@ export function WorkspaceConfigImportModal({
                     {SECTION_LABELS[activeSection]}
                     {' — '}
                     <span className="text-green-400">
-                      {sourceItems[activeSection].length - Array.from(existingKeys[activeSection]).filter(k =>
-                        sourceItems[activeSection].some(item => {
-                          switch (activeSection) {
-                            case 'mcp': return mcpKey(item as McpServer) === k;
-                            case 'hooks': return hookKey(item as HookEntry) === k;
-                            case 'skills': return skillKey(item as SkillEntry) === k;
-                            case 'agents': return agentKey(item as AgentEntry) === k;
-                            case 'rules': return ruleKey(item as RuleEntry) === k;
-                            case 'commands': return commandKey(item as CommandEntry) === k;
-                            case 'permissions': return permKey(item as PermissionRule) === k;
-                          }
-                        })
-                      ).length} new
+                      {sourceItems[activeSection].filter(item => !existingKeys[activeSection].has(getKey(activeSection, item))).length} new
                     </span>
                   </span>
-                  {sourceItems[activeSection].length > 0 && (
+                  {sourceItems[activeSection].some(item => !existingKeys[activeSection].has(getKey(activeSection, item))) && (
                     <button
                       onClick={() => {
                         const newKeys = sourceItems[activeSection]
