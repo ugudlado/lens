@@ -93,8 +93,12 @@ async function scanAvailablePluginMcps(installedNames: Set<string>): Promise<Mcp
         const versions = await readdir(pluginDir);
         if (versions.length === 0) continue;
 
-        // Use the first (or only) version directory
-        const versionDir = join(pluginDir, versions[0]);
+        // Pick the most recently modified version directory
+        const versionStats = await Promise.all(
+          versions.map(async v => ({ v, mtime: (await stat(join(pluginDir, v)).catch(() => null))?.mtimeMs ?? 0 }))
+        );
+        const latestVersion = versionStats.sort((a, b) => b.mtime - a.mtime)[0].v;
+        const versionDir = join(pluginDir, latestVersion);
         const vStat = await stat(versionDir).catch(() => null);
         if (!vStat?.isDirectory()) continue;
 

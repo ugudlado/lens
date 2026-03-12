@@ -222,7 +222,9 @@ export async function scanPlugins(projectPath: string): Promise<PluginsSurface> 
       if (key === 'version') continue;
 
       // v2: value is an array of entries; v1: value is a single entry object
-      const entries = Array.isArray(val) ? val : [val];
+      // Use only the last entry — arrays are append-only version history, latest is last
+      const allEntries = Array.isArray(val) ? val : [val];
+      const entries = allEntries.length > 0 ? [allEntries[allEntries.length - 1]] : allEntries;
       for (const entry of entries) {
         const v = entry as Record<string, unknown>;
         const [pluginName, marketplace] = key.split('@');
@@ -286,9 +288,6 @@ export async function scanPlugins(projectPath: string): Promise<PluginsSurface> 
       const installLocation = v.installLocation as string;
       if (!installLocation) continue;
 
-      // Read the marketplace git HEAD SHA once per marketplace (used for SHA-versioned plugins)
-      const marketplaceHeadSha = await readGitSha(installLocation);
-
       try {
         const pluginsDir = join(installLocation, 'plugins');
         const entries = await readdir(pluginsDir);
@@ -301,10 +300,10 @@ export async function scanPlugins(projectPath: string): Promise<PluginsSurface> 
           const isInstalled = installedNames.has(`${entry}@${mpName}`);
           const installedPlugin = plugins.find(p => p.name === entry && p.marketplace === mpName);
 
-          // Per-plugin version from plugin.json; fall back to marketplace HEAD SHA
+          // Only use explicit per-plugin semver from plugin.json — marketplace HEAD SHA
+          // is shared across all plugins in the repo and can't indicate per-plugin updates
           const pluginJsonVersion = await readPluginJsonVersion(pluginPath);
-          const latestVersion = pluginJsonVersion || marketplaceHeadSha;
-          if (latestVersion) latestVersionMap.set(`${entry}@${mpName}`, latestVersion);
+          if (pluginJsonVersion) latestVersionMap.set(`${entry}@${mpName}`, pluginJsonVersion);
 
           const desc = await extractReadmeDescription(pluginPath);
 
@@ -361,8 +360,7 @@ export async function scanPlugins(projectPath: string): Promise<PluginsSurface> 
           const installedPlugin = plugins.find(p => p.name === pluginName && p.marketplace === mpName);
           const desc = (pj.description as string) || await extractReadmeDescription(installLocation);
           const pluginJsonVersion = pj.version as string | undefined;
-          const latestVersion = pluginJsonVersion || marketplaceHeadSha;
-          if (latestVersion) latestVersionMap.set(`${pluginName}@${mpName}`, latestVersion);
+          if (pluginJsonVersion) latestVersionMap.set(`${pluginName}@${mpName}`, pluginJsonVersion);
           available.push({
             name: pluginName,
             marketplace: mpName,
@@ -383,18 +381,29 @@ export async function scanPlugins(projectPath: string): Promise<PluginsSurface> 
       plugin.latestVersion = latest;
       // Determine the installed reference to compare against
       const installedRef = plugin.gitSha || plugin.version;
-      // Only flag update available if both sides use the same versioning scheme.
-      // A semver-versioned plugin (e.g. "1.0.0") must not be compared against a
-      // marketplace SHA (40-char hex) — that comparison always mismatch-falsely.
-      const isSemver = (v: string) => /^\d+\.\d+/.test(v);
-      const isSha = (v: string) => /^[0-9a-f]{7,40}$/.test(v);
-      const mixedScheme = (isSemver(installedRef) && isSha(latest)) ||
-                          (isSha(installedRef) && isSemver(latest));
-      if (mixedScheme) {
-        // Can't reliably compare — don't flag as outdated
+      // Can't compare if the installed version is unknown
+      if (!installedRef || installedRef === 'unknown') {
         plugin.updateAvailable = false;
       } else {
-        plugin.updateAvailable = !latest.startsWith(installedRef) && !installedRef.startsWith(latest);
+        // Only flag update available if both sides use the same versioning scheme.
+        // A semver-versioned plugin (e.g. "1.0.0") must not be compared against a
+        // marketplace SHA (40-char hex) — that comparison always mismatch-falsely.
+        const isSemver = (v: string) => /^\d+\.\d+/.test(v);
+        const isSha = (v: string) => /^[0-9a-f]{7,40}$/.test(v);
+        const mixedScheme = (isSemver(installedRef) && isSha(latest)) ||
+                            (isSha(installedRef) && isSemver(latest));
+        if (mixedScheme) {
+          // Can't reliably compare — don't flag as outdated
+          plugin.updateAvailable = false;
+        } else if (isSemver(installedRef) && isSemver(latest)) {
+          // Semver: only flag update if latest is strictly greater than installed
+          const parse = (v: string) => v.split('.').map(n => parseInt(n, 10) || 0);
+          const [ia, ib, ic] = parse(installedRef);
+          const [la, lb, lc] = parse(latest);
+          plugin.updateAvailable = la > ia || (la === ia && lb > ib) || (la === ia && lb === ib && lc > ic);
+        } else {
+          plugin.updateAvailable = !latest.startsWith(installedRef) && !installedRef.startsWith(latest);
+        }
       }
     }
   }

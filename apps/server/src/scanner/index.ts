@@ -30,13 +30,19 @@ export async function scanConfig(projectPath: string): Promise<ConfigSnapshot> {
       scanKeybindings(),
     ]);
 
-  const pluginPaths = plugins.plugins.map(p => ({ name: p.name, installPath: p.installPath, enabled: p.enabled }));
+  // Deduplicate plugin paths by name — same plugin may appear with multiple version entries
+  const pluginPathsMap = new Map<string, { name: string; installPath: string; enabled: boolean }>();
+  for (const p of plugins.plugins) {
+    pluginPathsMap.set(p.name, { name: p.name, installPath: p.installPath, enabled: p.enabled });
+  }
+  const pluginPaths = [...pluginPathsMap.values()];
 
   // Scan plugin-provided MCP servers and merge into MCP surface
   const pluginMcpServers = await scanPluginMcpServers(pluginPaths);
   const existingNames = new Set(mcp.servers.map(s => s.name));
   for (const server of pluginMcpServers) {
     if (!existingNames.has(server.name)) {
+      existingNames.add(server.name);
       mcp.servers.push(server);
     }
   }
