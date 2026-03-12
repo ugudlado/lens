@@ -12,11 +12,17 @@ pnpm build                  # Build all (schema → server → UI, order matters
 pnpm type-check             # Type-check all packages (tsc --noEmit)
 pnpm --filter @lens/server type-check  # Type-check server only
 pnpm --filter @lens/ui type-check      # Type-check UI only
+pnpm lint                   # ESLint across all workspaces (type-checked)
+pnpm format                 # Prettier format all source files
+pnpm format:check           # Check formatting without writing
+pnpm knip                   # Detect unused files, exports, and dependencies
+pnpm knip:fix               # Auto-fix knip findings
 ```
 
-No test runner is configured. No linter is configured. Validate with `pnpm type-check`.
+Validate with `pnpm type-check && pnpm lint`.
 
 **Environment variables** (server):
+
 - `PORT` — port to listen on (default: `37001`)
 
 ## Architecture
@@ -43,15 +49,18 @@ This is **Lens** — a web dashboard that scans, displays, and edits all 13 Clau
 **Storage**: Pure filesystem — no database. Reads/writes Claude Code config files directly.
 
 **Scanner** (`src/scanner/`):
+
 - Individual scanner modules for each config surface (CLAUDE.md, settings.json, MCP configs, hooks, etc.)
 - Each scanner knows the file paths for all scope levels (managed, global, project, local)
 - Returns typed config objects with source file metadata
 
 **Watcher** (`src/watcher.ts`):
+
 - Uses chokidar to watch config file paths for changes
 - Triggers SSE events to connected clients on file changes
 
 **Key patterns**:
+
 - Route files export `new Hono()` instances mounted in `index.ts`
 - Scanner modules export scan functions that return typed config objects
 - SSE stream for live config reload (no WebSocket)
@@ -83,6 +92,7 @@ Lens supports exporting and importing project-level config via a JSON bundle.
 **Export** (`GET /api/export`): Returns an `ExportData` JSON object with all project-scoped config sections. Optional `?sections=mcp,hooks,...` query param to limit sections. Optional `?project=/path` to override the project path (validated against home directory).
 
 **Export file format** (version 1):
+
 ```json
 { "version": 1, "exportedAt": "ISO timestamp", "projectPath": "/path", "sections": { "mcpServers": [...], "hooks": [...], "skills": [...], "agents": [...], "rules": [...], "commands": [...], "permissions": [...], "claudeMd": [...] } }
 ```

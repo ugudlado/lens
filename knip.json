@@ -1,0 +1,13 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "ignoreExportsUsedInFile": true,
+  "ignoreBinaries": ["eslint"],
+  "workspaces": {
+    "apps/ui": {
+      "project": ["src/**/*.{ts,tsx}"]
+    },
+    "apps/server": {
+      "project": ["src/**/*.ts"]
+    }
+  }
+}
