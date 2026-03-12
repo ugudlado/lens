@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { ConfigScope, PluginScope, PluginAction } from '@lens/schema';
-import type { ConfigSnapshot, PluginEntry, PluginContentItem, MarketplacePlugin, McpServer } from '@lens/schema';
+import type { ConfigSnapshot, PluginEntry, PluginContentItem, MarketplacePlugin, McpServer, PluginActionRequest } from '@lens/schema';
 import { SearchBar } from './SearchBar';
 import { ScopeIndicator } from './ScopeIndicator.js';
 import { ScopeMoveButton } from './ScopeMoveButton.js';
@@ -42,7 +42,9 @@ export function PluginsPanel({ config, onRescan }: Props) {
   const [addMarketplaceOpen, setAddMarketplaceOpen] = useState(false);
   const [addMarketplaceInput, setAddMarketplaceInput] = useState('');
 
-  const { run, acting, error, clearError } = usePluginAction(onRescan);
+  const { run, acting, output, error, clearError, clearOutput } = usePluginAction(onRescan);
+  const [actingPlugin, setActingPlugin] = useState<string | null>(null);
+  const [pluginOutputs, setPluginOutputs] = useState<Map<string, string>>(new Map());
 
   const q = search.toLowerCase();
 
@@ -92,10 +94,22 @@ export function PluginsPanel({ config, onRescan }: Props) {
 
   const isExpanded = (mp: string) => q ? true : expandedMarketplaces.has(mp);
 
+  const runForPlugin = useCallback(async (pluginKey: string, req: PluginActionRequest) => {
+    setActingPlugin(pluginKey);
+    setPluginOutputs(prev => { const m = new Map(prev); m.delete(pluginKey); return m; });
+    clearOutput();
+    const result = await run(req);
+    setActingPlugin(null);
+    if (result.output) {
+      setPluginOutputs(prev => new Map(prev).set(pluginKey, result.output!));
+    }
+    return result;
+  }, [run, clearOutput]);
+
   const updatablePlugins = plugins.filter(p => p.updateAvailable && p.enabled);
   const updateAll = async () => {
     for (const p of updatablePlugins) {
-      const result = await run({ action: PluginAction.Update, plugin: `${p.name}@${p.marketplace}`, scope: p.scope });
+      const result = await runForPlugin(`${p.name}@${p.marketplace}`, { action: PluginAction.Update, plugin: `${p.name}@${p.marketplace}`, scope: p.scope });
       if (!result.success) break;
     }
   };
@@ -104,15 +118,6 @@ export function PluginsPanel({ config, onRescan }: Props) {
     <PanelShell
       title="Plugins"
       subtitle={`${plugins.length} installed${notInstalledCount > 0 ? `, ${notInstalledCount} available` : ''}`}
-      actions={updatablePlugins.length > 0 ? (
-        <button
-          onClick={updateAll}
-          disabled={acting}
-          className="px-3 py-1 text-xs font-medium rounded bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors disabled:opacity-50"
-        >
-          Update all ({updatablePlugins.length})
-        </button>
-      ) : undefined}
     >
       {/* Summary badges */}
       {plugins.length > 0 && (
@@ -142,6 +147,48 @@ export function PluginsPanel({ config, onRescan }: Props) {
               {totalMcps} MCPs
             </span>
           )}
+        </div>
+      )}
+
+      {/* Updates banner */}
+      {updatablePlugins.length > 0 && (
+        <div className="mb-6 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-amber-400 uppercase tracking-wide">
+              {updatablePlugins.length} update{updatablePlugins.length !== 1 ? 's' : ''} available
+            </span>
+            <button
+              onClick={updateAll}
+              disabled={acting}
+              className="px-3 py-1 text-xs font-medium rounded bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors disabled:opacity-50"
+            >
+              {acting ? 'Updating...' : 'Update all'}
+            </button>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            {updatablePlugins.map(p => {
+              const key = `${p.name}@${p.marketplace}`;
+              const isActing = acting && actingPlugin === key;
+              return (
+                <div key={key} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-sm text-gray-200 font-medium">{p.name}</span>
+                    <span className="text-xs text-gray-500 font-mono">{p.marketplace}</span>
+                    <span className="text-xs text-gray-600">→</span>
+                    <span className="text-xs text-amber-400 font-mono">{p.latestVersion?.slice(0, 12)}</span>
+                  </div>
+                  <button
+                    onClick={() => runForPlugin(key, { action: PluginAction.Update, plugin: key, scope: p.scope })}
+                    disabled={acting}
+                    className="ml-3 px-2 py-0.5 text-xs font-medium rounded bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 transition-colors disabled:opacity-50 flex-shrink-0 flex items-center gap-1"
+                  >
+                    {isActing && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />}
+                    {isActing ? 'Updating...' : 'Update'}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -254,20 +301,22 @@ export function PluginsPanel({ config, onRescan }: Props) {
                             mcpServers={config.mcp.servers.filter(s => s.pluginName === item.name)}
                             expanded={expandedPlugin === key}
                             onToggle={() => togglePlugin(key)}
-                            onEnable={() => run({ action: PluginAction.Enable, plugin: `${item.name}@${item.marketplace}` })}
-                            onDisable={() => run({ action: PluginAction.Disable, plugin: `${item.name}@${item.marketplace}` })}
-                            onUninstall={() => run({ action: PluginAction.Uninstall, plugin: `${item.name}@${item.marketplace}`, scope: item.plugin.scope })}
-                            onUpdate={() => run({ action: PluginAction.Update, plugin: `${item.name}@${item.marketplace}`, scope: item.plugin.scope })}
+                            onEnable={() => runForPlugin(key, { action: PluginAction.Enable, plugin: `${item.name}@${item.marketplace}` })}
+                            onDisable={() => runForPlugin(key, { action: PluginAction.Disable, plugin: `${item.name}@${item.marketplace}` })}
+                            onUninstall={() => runForPlugin(key, { action: PluginAction.Uninstall, plugin: `${item.name}@${item.marketplace}`, scope: item.plugin.scope })}
+                            onUpdate={() => runForPlugin(key, { action: PluginAction.Update, plugin: `${item.name}@${item.marketplace}`, scope: item.plugin.scope })}
                             onCopy={async () => {
                               const targetScope = item.plugin.scope === PluginScope.User ? PluginScope.Project : PluginScope.User;
-                              await run({ action: PluginAction.Install, plugin: `${item.name}@${item.marketplace}`, scope: targetScope });
+                              await runForPlugin(key, { action: PluginAction.Install, plugin: `${item.name}@${item.marketplace}`, scope: targetScope });
                             }}
                             onMove={async () => {
                               const targetScope = item.plugin.scope === PluginScope.User ? PluginScope.Project : PluginScope.User;
-                              const result = await run({ action: PluginAction.Install, plugin: `${item.name}@${item.marketplace}`, scope: targetScope });
-                              if (result.success) await run({ action: PluginAction.Uninstall, plugin: `${item.name}@${item.marketplace}`, scope: item.plugin.scope });
+                              const result = await runForPlugin(key, { action: PluginAction.Install, plugin: `${item.name}@${item.marketplace}`, scope: targetScope });
+                              if (result.success) await runForPlugin(key, { action: PluginAction.Uninstall, plugin: `${item.name}@${item.marketplace}`, scope: item.plugin.scope });
                             }}
-                            acting={acting}
+                            acting={acting && actingPlugin === key}
+                            actingOutput={actingPlugin === key ? output : (pluginOutputs.get(key) ?? null)}
+                            onDismissOutput={() => setPluginOutputs(prev => { const m = new Map(prev); m.delete(key); return m; })}
                           />
                         );
                       } else {
@@ -354,6 +403,8 @@ function InstalledPluginRow({
   onCopy,
   onMove,
   acting,
+  actingOutput,
+  onDismissOutput,
 }: {
   plugin: PluginEntry;
   mcpServers: McpServer[];
@@ -366,6 +417,8 @@ function InstalledPluginRow({
   onCopy: () => Promise<void>;
   onMove: () => Promise<void>;
   acting: boolean;
+  actingOutput: string | null;
+  onDismissOutput: () => void;
 }) {
   const [showFiles, setShowFiles] = useState(false);
   const [confirmUninstall, setConfirmUninstall] = useState(false);
@@ -427,10 +480,11 @@ function InstalledPluginRow({
               <button
                 onClick={(e) => { e.stopPropagation(); onUpdate(); }}
                 disabled={acting}
-                className="px-2 py-0.5 text-xs font-medium rounded bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors disabled:opacity-50"
+                className="px-2 py-0.5 text-xs font-medium rounded bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors disabled:opacity-50 flex items-center gap-1"
                 title={`Update available: ${plugin.latestVersion}`}
               >
-                Update
+                {acting ? <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse inline-block" /> : null}
+                {acting ? 'Updating...' : 'Update'}
               </button>
             )}
             <span onClick={e => e.stopPropagation()}>
@@ -478,8 +532,29 @@ function InstalledPluginRow({
         </button>
       </div>
 
-      {!expanded && plugin.description && (
+      {!expanded && plugin.description && !acting && !actingOutput && (
         <p className="text-xs text-gray-500 px-4 pb-4 ml-[52px] truncate">{plugin.description}</p>
+      )}
+
+      {(acting || actingOutput) && (
+        <div className="mx-4 mb-3 rounded border border-amber-500/20 bg-amber-500/5 px-3 py-2">
+          <div className="flex items-center justify-between mb-1">
+            {acting ? (
+              <div className="flex items-center gap-2 text-xs text-amber-400 animate-pulse">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                Running claude plugin...
+              </div>
+            ) : (
+              <span className="text-xs text-gray-500">Output</span>
+            )}
+            {!acting && (
+              <button onClick={onDismissOutput} className="text-xs text-gray-600 hover:text-gray-400 transition-colors">✕</button>
+            )}
+          </div>
+          {actingOutput && (
+            <pre className="text-xs text-gray-300 whitespace-pre-wrap font-mono">{actingOutput}</pre>
+          )}
+        </div>
       )}
 
       {expanded && (

@@ -10,6 +10,15 @@ export default defineConfig({
       "/ws": {
         target: "ws://localhost:37001",
         ws: true,
+        configure: (proxy) => {
+          proxy.on("error", (err: NodeJS.ErrnoException) => {
+            if (err.code === "ECONNRESET") {
+              console.warn("ws proxy: client disconnected (ECONNRESET)");
+              return;
+            }
+            console.error("ws proxy error:", err);
+          });
+        },
       },
     },
   },
