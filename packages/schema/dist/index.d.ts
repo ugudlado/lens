@@ -393,7 +393,7 @@ export interface SuggestionsResponse {
 export type SuggestionRule = (config: ConfigSnapshot) => Suggestion[];
 export interface McpServerExport {
     name: string;
-    type: 'stdio' | 'http' | 'sse';
+    type: "stdio" | "http" | "sse";
     command?: string;
     args?: string[];
     url?: string;
@@ -401,7 +401,7 @@ export interface McpServerExport {
 }
 export interface HookExport {
     event: string;
-    type: 'command' | 'prompt' | 'agent';
+    type: "command" | "prompt" | "agent";
     command?: string;
     prompt?: string;
     matcher?: string;
@@ -418,24 +418,24 @@ export interface AgentExport {
 export interface RuleExport {
     name: string;
     content: string;
-    ext: 'md' | 'mdc';
+    ext: "md" | "mdc";
 }
 export interface CommandExport {
     name: string;
     content: string;
 }
 export interface PermissionExport {
-    type: 'allow' | 'deny' | 'ask';
+    type: "allow" | "deny" | "ask";
     rule: string;
-}
-export interface ClaudeMdExport {
-    slot: 'root' | '.claude/CLAUDE.md';
-    content: string;
 }
 export interface PluginExport {
     name: string;
     marketplace: string;
     enabled: boolean;
+}
+export interface SettingsKeyExport {
+    key: string;
+    value: unknown;
 }
 export interface ExportSections {
     mcpServers?: McpServerExport[];
@@ -445,8 +445,8 @@ export interface ExportSections {
     rules?: RuleExport[];
     commands?: CommandExport[];
     permissions?: PermissionExport[];
-    claudeMd?: ClaudeMdExport[];
     plugins?: PluginExport[];
+    settings?: SettingsKeyExport[];
 }
 export interface ExportData {
     version: number;

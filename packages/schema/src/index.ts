@@ -1,120 +1,120 @@
 // ─── Enums ───────────────────────────────────────────
 
 export enum ConfigScope {
-  Managed = 'managed',
-  Global = 'global',
-  Project = 'project',
-  Local = 'local',
+  Managed = "managed",
+  Global = "global",
+  Project = "project",
+  Local = "local",
 }
 
 export enum McpServerType {
-  Stdio = 'stdio',
-  Http = 'http',
-  Sse = 'sse',
+  Stdio = "stdio",
+  Http = "http",
+  Sse = "sse",
 }
 
 export enum PermissionType {
-  Allow = 'allow',
-  Ask = 'ask',
-  Deny = 'deny',
+  Allow = "allow",
+  Ask = "ask",
+  Deny = "deny",
 }
 
 export enum HookType {
-  Command = 'command',
-  Prompt = 'prompt',
-  Agent = 'agent',
+  Command = "command",
+  Prompt = "prompt",
+  Agent = "agent",
 }
 
 export enum HookSource {
-  Settings = 'settings',
-  Plugin = 'plugin',
-  Skill = 'skill',
-  Agent = 'agent',
-  Hookify = 'hookify',
+  Settings = "settings",
+  Plugin = "plugin",
+  Skill = "skill",
+  Agent = "agent",
+  Hookify = "hookify",
 }
 
 export enum EntrySource {
-  Project = 'project',
-  Global = 'global',
-  Plugin = 'plugin',
+  Project = "project",
+  Global = "global",
+  Plugin = "plugin",
 }
 
 export enum PluginScope {
-  User = 'user',
-  Project = 'project',
+  User = "user",
+  Project = "project",
 }
 
 export enum AgentMemory {
-  User = 'user',
-  Project = 'project',
-  Local = 'local',
+  User = "user",
+  Project = "project",
+  Local = "local",
 }
 
 export enum PluginAction {
-  Enable = 'enable',
-  Disable = 'disable',
-  Install = 'install',
-  Uninstall = 'uninstall',
-  Update = 'update',
-  MarketplaceAdd = 'marketplace-add',
-  MarketplaceRemove = 'marketplace-remove',
+  Enable = "enable",
+  Disable = "disable",
+  Install = "install",
+  Uninstall = "uninstall",
+  Update = "update",
+  MarketplaceAdd = "marketplace-add",
+  MarketplaceRemove = "marketplace-remove",
 }
 
 export enum Surface {
-  ClaudeMd = 'claude-md',
-  Settings = 'settings',
-  Permissions = 'permissions',
-  Mcp = 'mcp',
-  Hooks = 'hooks',
-  Skills = 'skills',
-  Agents = 'agents',
-  Rules = 'rules',
-  Commands = 'commands',
-  Plugins = 'plugins',
-  Models = 'models',
-  Memory = 'memory',
-  Sandbox = 'sandbox',
-  Keybindings = 'keybindings',
+  ClaudeMd = "claude-md",
+  Settings = "settings",
+  Permissions = "permissions",
+  Mcp = "mcp",
+  Hooks = "hooks",
+  Skills = "skills",
+  Agents = "agents",
+  Rules = "rules",
+  Commands = "commands",
+  Plugins = "plugins",
+  Models = "models",
+  Memory = "memory",
+  Sandbox = "sandbox",
+  Keybindings = "keybindings",
 }
 
 export enum ModelProviderType {
-  Anthropic = 'anthropic',
-  Ollama = 'ollama',
-  Bedrock = 'bedrock',
-  Vertex = 'vertex',
+  Anthropic = "anthropic",
+  Ollama = "ollama",
+  Bedrock = "bedrock",
+  Vertex = "vertex",
 }
 
 export enum NavSection {
-  Overview = 'overview',
-  ClaudeMd = 'claude-md',
-  Settings = 'settings',
-  Permissions = 'permissions',
-  Mcp = 'mcp',
-  Hooks = 'hooks',
-  Skills = 'skills',
-  Agents = 'agents',
-  Rules = 'rules',
-  Commands = 'commands',
-  Memory = 'memory',
-  Plugins = 'plugins',
-  Sandbox = 'sandbox',
+  Overview = "overview",
+  ClaudeMd = "claude-md",
+  Settings = "settings",
+  Permissions = "permissions",
+  Mcp = "mcp",
+  Hooks = "hooks",
+  Skills = "skills",
+  Agents = "agents",
+  Rules = "rules",
+  Commands = "commands",
+  Memory = "memory",
+  Plugins = "plugins",
+  Sandbox = "sandbox",
 }
 
 export enum HookEvent {
-  SessionStart = 'SessionStart',
-  UserPromptSubmit = 'UserPromptSubmit',
-  PreToolUse = 'PreToolUse',
-  PermissionRequest = 'PermissionRequest',
-  PostToolUse = 'PostToolUse',
-  PostToolUseFailure = 'PostToolUseFailure',
-  Notification = 'Notification',
-  SubagentStart = 'SubagentStart',
-  SubagentStop = 'SubagentStop',
-  Stop = 'Stop',
-  TeammateIdle = 'TeammateIdle',
-  TaskCompleted = 'TaskCompleted',
-  PreCompact = 'PreCompact',
-  SessionEnd = 'SessionEnd',
+  SessionStart = "SessionStart",
+  UserPromptSubmit = "UserPromptSubmit",
+  PreToolUse = "PreToolUse",
+  PermissionRequest = "PermissionRequest",
+  PostToolUse = "PostToolUse",
+  PostToolUseFailure = "PostToolUseFailure",
+  Notification = "Notification",
+  SubagentStart = "SubagentStart",
+  SubagentStop = "SubagentStop",
+  Stop = "Stop",
+  TeammateIdle = "TeammateIdle",
+  TaskCompleted = "TaskCompleted",
+  PreCompact = "PreCompact",
+  SessionEnd = "SessionEnd",
 }
 
 // ─── Scope & Meta ───────────────────────────────────
@@ -486,7 +486,7 @@ export type SuggestionRule = (config: ConfigSnapshot) => Suggestion[];
 
 export interface McpServerExport {
   name: string;
-  type: 'stdio' | 'http' | 'sse';
+  type: "stdio" | "http" | "sse";
   command?: string;
   args?: string[];
   url?: string;
@@ -495,7 +495,7 @@ export interface McpServerExport {
 
 export interface HookExport {
   event: string;
-  type: 'command' | 'prompt' | 'agent';
+  type: "command" | "prompt" | "agent";
   command?: string;
   prompt?: string;
   matcher?: string;
@@ -515,7 +515,7 @@ export interface AgentExport {
 export interface RuleExport {
   name: string;
   content: string;
-  ext: 'md' | 'mdc';
+  ext: "md" | "mdc";
 }
 
 export interface CommandExport {
@@ -524,19 +524,19 @@ export interface CommandExport {
 }
 
 export interface PermissionExport {
-  type: 'allow' | 'deny' | 'ask';
+  type: "allow" | "deny" | "ask";
   rule: string;
-}
-
-export interface ClaudeMdExport {
-  slot: 'root' | '.claude/CLAUDE.md';
-  content: string;
 }
 
 export interface PluginExport {
   name: string;
   marketplace: string;
   enabled: boolean;
+}
+
+export interface SettingsKeyExport {
+  key: string;
+  value: unknown;
 }
 
 export interface ExportSections {
@@ -547,8 +547,8 @@ export interface ExportSections {
   rules?: RuleExport[];
   commands?: CommandExport[];
   permissions?: PermissionExport[];
-  claudeMd?: ClaudeMdExport[];
   plugins?: PluginExport[];
+  settings?: SettingsKeyExport[];
 }
 
 export interface ExportData {
