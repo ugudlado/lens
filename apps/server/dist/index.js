@@ -13742,7 +13742,7 @@ app2.get("/", async (c) => {
       }));
     }
     if (requestedSections.includes("plugins")) {
-      sections.plugins = config.plugins.plugins.filter((p) => p.scope === PluginScope.Project).map((p) => ({ name: p.name, marketplace: p.marketplace }));
+      sections.plugins = config.plugins.plugins.filter((p) => p.scope === PluginScope.Project).map((p) => ({ name: p.name, marketplace: p.marketplace, enabled: p.enabled }));
     }
     const exportData = {
       version: 1,
