@@ -8,9 +8,36 @@
     "build": "pnpm --filter @lens/schema build && pnpm --filter @lens/server build && pnpm --filter @lens/ui build",
     "type-check": "pnpm -r type-check",
     "start": "node apps/server/dist/index.js",
-    "test": "pnpm --filter @lens/server test"
+    "test": "pnpm --filter @lens/server test",
+    "lint": "pnpm --filter @lens/ui lint && pnpm --filter @lens/server lint",
+    "format": "prettier --write 'apps/ui/src/**/*.{ts,tsx}' 'apps/server/src/**/*.ts'",
+    "format:check": "prettier --check 'apps/ui/src/**/*.{ts,tsx}' 'apps/server/src/**/*.ts'",
+    "knip": "knip",
+    "knip:fix": "knip --fix",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "apps/ui/src/**/*.{ts,tsx}": [
+      "pnpm -C apps/ui exec eslint --no-warn-ignored",
+      "prettier --write"
+    ],
+    "apps/server/src/**/*.ts": [
+      "pnpm -C apps/server exec eslint --no-warn-ignored",
+      "prettier --write"
+    ],
+    "apps/**/*.{json,css,html}": [
+      "prettier --write"
+    ],
+    "*.md": [
+      "prettier --write"
+    ]
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "concurrently": "^9.1.2",
+    "husky": "^9.1.7",
+    "knip": "^5.86.0",
+    "lint-staged": "^16.3.3",
+    "prettier": "^3.8.1",
+    "prettier-plugin-tailwindcss": "^0.7.2"
   }
 }

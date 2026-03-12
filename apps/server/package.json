@@ -6,6 +6,7 @@
     "build": "esbuild src/index.ts --bundle --platform=node --format=esm --outfile=dist/index.js --external:fsevents --external:*.node --inject:cjs-shim.js",
     "start": "node dist/index.js",
     "type-check": "tsc --noEmit",
+    "lint": "eslint .",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest"
   },
@@ -18,10 +19,14 @@
     "hono": "^4.7.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
     "@types/node": "^22.12.0",
     "esbuild": "^0.25.0",
+    "eslint": "^9.39.4",
+    "globals": "^17.4.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",
+    "typescript-eslint": "^8.57.0",
     "vitest": "^4.0.18"
   }
 }
