@@ -435,6 +435,7 @@ export interface ClaudeMdExport {
 export interface PluginExport {
     name: string;
     marketplace: string;
+    enabled: boolean;
 }
 export interface ExportSections {
     mcpServers?: McpServerExport[];

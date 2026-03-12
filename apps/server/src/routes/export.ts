@@ -122,7 +122,7 @@ app.get('/', async (c) => {
     if (requestedSections.includes('plugins')) {
       sections.plugins = config.plugins.plugins
         .filter(p => p.scope === PluginScope.Project)
-        .map(p => ({ name: p.name, marketplace: p.marketplace }));
+        .map(p => ({ name: p.name, marketplace: p.marketplace, enabled: p.enabled }));
     }
 
     const exportData: ExportData = {

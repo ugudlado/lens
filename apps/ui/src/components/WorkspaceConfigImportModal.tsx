@@ -134,7 +134,7 @@ export function WorkspaceConfigImportModal({
     rules: new Set(currentConfig.rules.rules.map(ruleKey)),
     commands: new Set(currentConfig.commands.commands.filter(c => !c.pluginName).map(commandKey)),
     permissions: new Set(currentConfig.permissions.rules.map(permKey)),
-    plugins: new Set(currentConfig.plugins.plugins.map(pluginKey)),
+    plugins: new Set(currentConfig.plugins.plugins.filter(p => p.scope === PluginScope.Project).map(pluginKey)),
   };
 
   useEffect(() => {
@@ -307,7 +307,7 @@ export function WorkspaceConfigImportModal({
             version: '',
             installPath: '',
             installedAt: '',
-            enabled: true,
+            enabled: typeof p.enabled === 'boolean' ? p.enabled : true,
             scope: PluginScope.Project,
           } as PluginEntry)),
         };
@@ -515,6 +515,18 @@ export function WorkspaceConfigImportModal({
         if (!res.ok) {
           const body = await res.json().catch(() => ({})) as { error?: string };
           throw new Error(body.error ?? `Plugin install failed: ${pluginKey(p)}`);
+        }
+        // Apply enabled state if it differs from default (true)
+        if (p.enabled === false) {
+          const disableRes = await fetch('/api/plugins', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: PluginAction.Disable, plugin: pluginKey(p), scope: PluginScope.Project }),
+          });
+          if (!disableRes.ok) {
+            const body = await disableRes.json().catch(() => ({})) as { error?: string };
+            throw new Error(body.error ?? `Plugin disable failed: ${pluginKey(p)}`);
+          }
         }
       }
 
