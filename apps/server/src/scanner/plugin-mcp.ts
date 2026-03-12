@@ -1,8 +1,8 @@
-import { join } from 'node:path';
-import { readdir, stat } from 'node:fs/promises';
-import { readJsonOrNull, GLOBAL_DIR, isEditable } from './utils.js';
-import { ConfigScope, McpServerType } from '@lens/schema';
-import type { McpServer } from '@lens/schema';
+import { join } from "node:path";
+import { readdir, stat } from "node:fs/promises";
+import { readJsonOrNull, GLOBAL_DIR, isEditable } from "./utils.js";
+import { ConfigScope, McpServerType } from "@lens/schema";
+import type { McpServer } from "@lens/schema";
 
 interface PluginRef {
   name: string;
@@ -22,7 +22,7 @@ function parseMcpJson(
   const mcpServers = (mcpJson.mcpServers as Record<string, unknown>) || mcpJson;
 
   for (const [name, config] of Object.entries(mcpServers)) {
-    if (typeof config !== 'object' || config === null) continue;
+    if (typeof config !== "object" || config === null) continue;
     const cfg = config as Record<string, unknown>;
     const serverDisabled = cfg.disabled === true;
     entries.push({
@@ -44,17 +44,19 @@ function parseMcpJson(
 }
 
 /** Scan .mcp.json files from installed plugin directories. */
-export async function scanPluginMcpServers(plugins: PluginRef[]): Promise<McpServer[]> {
+export async function scanPluginMcpServers(
+  plugins: PluginRef[],
+): Promise<McpServer[]> {
   const servers: McpServer[] = [];
 
   const results = await Promise.all(
     plugins.map(async (plugin) => {
       if (!plugin.installPath) return [];
-      const filePath = join(plugin.installPath, '.mcp.json');
+      const filePath = join(plugin.installPath, ".mcp.json");
       const mcpJson = await readJsonOrNull(filePath);
-      if (!mcpJson || typeof mcpJson !== 'object') return [];
-      return parseMcpJson(mcpJson as Record<string, unknown>, plugin.name, filePath, plugin.enabled, true);
-    })
+      if (!mcpJson || typeof mcpJson !== "object") return [];
+      return parseMcpJson(mcpJson, plugin.name, filePath, plugin.enabled, true);
+    }),
   );
 
   for (const entries of results) {
@@ -62,7 +64,7 @@ export async function scanPluginMcpServers(plugins: PluginRef[]): Promise<McpSer
   }
 
   // Also scan cached but not-installed plugins for available MCP servers
-  const installedNames = new Set(plugins.map(p => p.name));
+  const installedNames = new Set(plugins.map((p) => p.name));
   const available = await scanAvailablePluginMcps(installedNames);
   servers.push(...available);
 
@@ -70,9 +72,11 @@ export async function scanPluginMcpServers(plugins: PluginRef[]): Promise<McpSer
 }
 
 /** Scan cache directories for plugins that have .mcp.json but aren't installed. */
-async function scanAvailablePluginMcps(installedNames: Set<string>): Promise<McpServer[]> {
+async function scanAvailablePluginMcps(
+  installedNames: Set<string>,
+): Promise<McpServer[]> {
   const servers: McpServer[] = [];
-  const cacheDir = join(GLOBAL_DIR, 'plugins', 'cache');
+  const cacheDir = join(GLOBAL_DIR, "plugins", "cache");
 
   try {
     const marketplaces = await readdir(cacheDir);
@@ -95,18 +99,29 @@ async function scanAvailablePluginMcps(installedNames: Set<string>): Promise<Mcp
 
         // Pick the most recently modified version directory
         const versionStats = await Promise.all(
-          versions.map(async v => ({ v, mtime: (await stat(join(pluginDir, v)).catch(() => null))?.mtimeMs ?? 0 }))
+          versions.map(async (v) => ({
+            v,
+            mtime:
+              (await stat(join(pluginDir, v)).catch(() => null))?.mtimeMs ?? 0,
+          })),
         );
-        const latestVersion = versionStats.sort((a, b) => b.mtime - a.mtime)[0].v;
+        const latestVersion = versionStats.sort((a, b) => b.mtime - a.mtime)[0]
+          .v;
         const versionDir = join(pluginDir, latestVersion);
         const vStat = await stat(versionDir).catch(() => null);
         if (!vStat?.isDirectory()) continue;
 
-        const filePath = join(versionDir, '.mcp.json');
+        const filePath = join(versionDir, ".mcp.json");
         const mcpJson = await readJsonOrNull(filePath);
-        if (!mcpJson || typeof mcpJson !== 'object') continue;
+        if (!mcpJson || typeof mcpJson !== "object") continue;
 
-        const entries = parseMcpJson(mcpJson as Record<string, unknown>, pluginName, filePath, false, false);
+        const entries = parseMcpJson(
+          mcpJson,
+          pluginName,
+          filePath,
+          false,
+          false,
+        );
         servers.push(...entries);
       }
     }

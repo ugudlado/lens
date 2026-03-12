@@ -1,39 +1,41 @@
-import { serve } from '@hono/node-server';
-import { serveStatic } from '@hono/node-server/serve-static';
-import { Hono } from 'hono';
-import { cors } from 'hono/cors';
-import { streamSSE } from 'hono/streaming';
-import { realpathSync } from 'node:fs';
-import { readFile, rm } from 'node:fs/promises';
-import { homedir } from 'node:os';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import configRoutes from './routes/config.js';
-import exportRoutes from './routes/export.js';
-import globalWritesRoutes from './routes/global-writes.js';
-import pluginRoutes from './routes/plugins.js';
-import suggestionsRoutes from './routes/suggestions.js';
-import updateRoutes from './routes/update.js';
-import workspaceRoutes from './routes/workspaces.js';
-import { onConfigChange, startWatcher } from './watcher.js';
+import { serve } from "@hono/node-server";
+import { serveStatic } from "@hono/node-server/serve-static";
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { streamSSE } from "hono/streaming";
+import { realpathSync } from "node:fs";
+import { readFile, rm } from "node:fs/promises";
+import { homedir } from "node:os";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import configRoutes from "./routes/config.js";
+import exportRoutes from "./routes/export.js";
+import globalWritesRoutes from "./routes/global-writes.js";
+import pluginRoutes from "./routes/plugins.js";
+import suggestionsRoutes from "./routes/suggestions.js";
+import updateRoutes from "./routes/update.js";
+import workspaceRoutes from "./routes/workspaces.js";
+import { onConfigChange, startWatcher } from "./watcher.js";
 
 const app = new Hono();
-app.use('*', cors());
+app.use("*", cors());
 
-app.route('/api/config', configRoutes);
-app.route('/api/update', updateRoutes);
-app.route('/api/export', exportRoutes);
-app.route('/api/plugins', pluginRoutes);
-app.route('/api/workspaces', workspaceRoutes);
-app.route('/api/global-writes', globalWritesRoutes);
-app.route('/api/suggestions', suggestionsRoutes);
+app.route("/api/config", configRoutes);
+app.route("/api/update", updateRoutes);
+app.route("/api/export", exportRoutes);
+app.route("/api/plugins", pluginRoutes);
+app.route("/api/workspaces", workspaceRoutes);
+app.route("/api/global-writes", globalWritesRoutes);
+app.route("/api/suggestions", suggestionsRoutes);
 
-app.get('/api/events', (c) => {
+app.get("/api/events", (c) => {
   return streamSSE(c, async (stream) => {
     const unsubscribe = onConfigChange((event) => {
-      stream.writeSSE({ event: 'config-changed', data: JSON.stringify(event) }).catch(() => {
-        // connection closed
-      });
+      stream
+        .writeSSE({ event: "config-changed", data: JSON.stringify(event) })
+        .catch(() => {
+          // connection closed
+        });
     });
     // Keep the stream alive until the client disconnects
     await new Promise<void>((resolve) => {
@@ -45,53 +47,67 @@ app.get('/api/events', (c) => {
   });
 });
 
-app.get('/api/file', async (c) => {
-  const filePath = c.req.query('path');
-  if (!filePath) return c.json({ error: 'Missing path' }, 400);
+app.get("/api/file", async (c) => {
+  const filePath = c.req.query("path");
+  if (!filePath) return c.json({ error: "Missing path" }, 400);
   let realHome: string;
-  try { realHome = realpathSync(homedir()); } catch { realHome = homedir(); }
+  try {
+    realHome = realpathSync(homedir());
+  } catch {
+    realHome = homedir();
+  }
   const abs = resolve(filePath);
   let realAbs: string;
-  try { realAbs = realpathSync(abs); } catch { realAbs = abs; }
-  const isAllowed = realAbs.startsWith(realHome + '/') || realAbs === realHome;
-  if (!isAllowed) return c.json({ error: 'Path not allowed' }, 403);
   try {
-    const content = await readFile(realAbs, 'utf-8');
+    realAbs = realpathSync(abs);
+  } catch {
+    realAbs = abs;
+  }
+  const isAllowed = realAbs.startsWith(realHome + "/") || realAbs === realHome;
+  if (!isAllowed) return c.json({ error: "Path not allowed" }, 403);
+  try {
+    const content = await readFile(realAbs, "utf-8");
     return c.json({ content });
   } catch {
-    return c.json({ error: 'File not found' }, 404);
+    return c.json({ error: "File not found" }, 404);
   }
 });
 
-app.delete('/api/file', async (c) => {
-  const filePath = c.req.query('path');
-  if (!filePath) return c.json({ error: 'Missing path' }, 400);
+app.delete("/api/file", async (c) => {
+  const filePath = c.req.query("path");
+  if (!filePath) return c.json({ error: "Missing path" }, 400);
   const abs = resolve(filePath);
   const home = homedir();
-  if (!abs.startsWith(home + '/') && !abs.startsWith(home + '\\')) {
-    return c.json({ error: 'Path not allowed — must be within home directory' }, 403);
+  if (!abs.startsWith(home + "/") && !abs.startsWith(home + "\\")) {
+    return c.json(
+      { error: "Path not allowed — must be within home directory" },
+      403,
+    );
   }
   try {
     await rm(abs, { force: true });
     return c.json({ success: true });
   } catch (err) {
-    return c.json({ error: err instanceof Error ? err.message : 'Unknown error' }, 500);
+    return c.json(
+      { error: err instanceof Error ? err.message : "Unknown error" },
+      500,
+    );
   }
 });
 
-app.get('/api/health', (c) => c.json({ status: 'ok' }));
+app.get("/api/health", (c) => c.json({ status: "ok" }));
 
 // Serve built UI static files (production/plugin mode)
 // Use absolute path derived from __dirname so it works regardless of CWD
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const uiDistPath = resolve(__dirname, '..', '..', 'ui', 'dist');
-app.use('/*', serveStatic({ root: uiDistPath }));
+const uiDistPath = resolve(__dirname, "..", "..", "ui", "dist");
+app.use("/*", serveStatic({ root: uiDistPath }));
 // SPA fallback: serve index.html for client-side routing
-app.get('/*', async (c) => {
-  const indexPath = resolve(uiDistPath, 'index.html');
+app.get("/*", async (c) => {
+  const indexPath = resolve(uiDistPath, "index.html");
   try {
-    const html = await readFile(indexPath, 'utf-8');
+    const html = await readFile(indexPath, "utf-8");
     return c.html(html);
   } catch {
     return c.notFound();

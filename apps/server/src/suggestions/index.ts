@@ -1,8 +1,8 @@
-import type { ConfigSnapshot, Suggestion } from '@lens/schema';
-import { SuggestionCategory } from '@lens/schema';
-import { healthRules } from './health-rules.js';
-import { bestPracticeRules } from './best-practice-rules.js';
-import { contextualRules } from './contextual-rules.js';
+import type { ConfigSnapshot, Suggestion } from "@lens/schema";
+import { SuggestionCategory } from "@lens/schema";
+import { healthRules } from "./health-rules.js";
+import { bestPracticeRules } from "./best-practice-rules.js";
+import { contextualRules } from "./contextual-rules.js";
 
 export function getSuggestions(config: ConfigSnapshot): Suggestion[] {
   const suggestions: Suggestion[] = [];
@@ -12,7 +12,7 @@ export function getSuggestions(config: ConfigSnapshot): Suggestion[] {
     try {
       suggestions.push(...rule(config));
     } catch (err) {
-      console.error('[suggestions] health rule failed:', err);
+      console.error("[suggestions] health rule failed:", err);
     }
   }
 
@@ -21,15 +21,15 @@ export function getSuggestions(config: ConfigSnapshot): Suggestion[] {
     try {
       suggestions.push(...rule(config));
     } catch (err) {
-      console.error('[suggestions] best-practice rule failed:', err);
+      console.error("[suggestions] best-practice rule failed:", err);
     }
   }
 
   // Collect health navSections to suppress overlapping contextual suggestions
   const healthNavSections = new Set(
     suggestions
-      .filter(s => s.category === SuggestionCategory.Health)
-      .map(s => s.navSection)
+      .filter((s) => s.category === SuggestionCategory.Health)
+      .map((s) => s.navSection),
   );
 
   // Run contextual rules, suppressing those that duplicate health navSections
@@ -42,7 +42,7 @@ export function getSuggestions(config: ConfigSnapshot): Suggestion[] {
         }
       }
     } catch (err) {
-      console.error('[suggestions] contextual rule failed:', err);
+      console.error("[suggestions] contextual rule failed:", err);
     }
   }
 

@@ -1,45 +1,60 @@
-import type { ConfigSnapshot, McpServer } from '@lens/schema';
-import { GLOBAL_DIR, getAllowGlobalWrites } from './utils.js';
-import { scanClaudeMd } from './claude-md.js';
-import { scanSettings } from './settings.js';
-import { scanPermissions } from './permissions.js';
-import { scanMcp } from './mcp.js';
-import { scanHooks } from './hooks.js';
-import { scanPlugins } from './plugins.js';
-import { scanSkills } from './skills.js';
-import { scanAgents } from './agents.js';
-import { scanRules } from './rules.js';
-import { scanCommands } from './commands.js';
-import { scanModels } from './models.js';
-import { scanMemory } from './memory.js';
-import { extractSandbox } from './sandbox.js';
-import { scanPluginMcpServers } from './plugin-mcp.js';
-import { scanKeybindings } from './keybindings.js';
+import type { ConfigSnapshot } from "@lens/schema";
+import { GLOBAL_DIR, getAllowGlobalWrites } from "./utils.js";
+import { scanClaudeMd } from "./claude-md.js";
+import { scanSettings } from "./settings.js";
+import { scanPermissions } from "./permissions.js";
+import { scanMcp } from "./mcp.js";
+import { scanHooks } from "./hooks.js";
+import { scanPlugins } from "./plugins.js";
+import { scanSkills } from "./skills.js";
+import { scanAgents } from "./agents.js";
+import { scanRules } from "./rules.js";
+import { scanCommands } from "./commands.js";
+import { scanModels } from "./models.js";
+import { scanMemory } from "./memory.js";
+import { extractSandbox } from "./sandbox.js";
+import { scanPluginMcpServers } from "./plugin-mcp.js";
+import { scanKeybindings } from "./keybindings.js";
 
 export async function scanConfig(projectPath: string): Promise<ConfigSnapshot> {
   // Scan plugins first to extract install paths for other scanners
-  const [plugins, claudeMd, settings, permissions, mcp, rules, memory, keybindings] =
-    await Promise.all([
-      scanPlugins(projectPath),
-      scanClaudeMd(projectPath),
-      scanSettings(projectPath),
-      scanPermissions(projectPath),
-      scanMcp(projectPath),
-      scanRules(projectPath),
-      scanMemory(projectPath),
-      scanKeybindings(),
-    ]);
+  const [
+    plugins,
+    claudeMd,
+    settings,
+    permissions,
+    mcp,
+    rules,
+    memory,
+    keybindings,
+  ] = await Promise.all([
+    scanPlugins(projectPath),
+    scanClaudeMd(projectPath),
+    scanSettings(projectPath),
+    scanPermissions(projectPath),
+    scanMcp(projectPath),
+    scanRules(projectPath),
+    scanMemory(projectPath),
+    scanKeybindings(),
+  ]);
 
   // Deduplicate plugin paths by name — same plugin may appear with multiple version entries
-  const pluginPathsMap = new Map<string, { name: string; installPath: string; enabled: boolean }>();
+  const pluginPathsMap = new Map<
+    string,
+    { name: string; installPath: string; enabled: boolean }
+  >();
   for (const p of plugins.plugins) {
-    pluginPathsMap.set(p.name, { name: p.name, installPath: p.installPath, enabled: p.enabled });
+    pluginPathsMap.set(p.name, {
+      name: p.name,
+      installPath: p.installPath,
+      enabled: p.enabled,
+    });
   }
   const pluginPaths = [...pluginPathsMap.values()];
 
   // Scan plugin-provided MCP servers and merge into MCP surface
   const pluginMcpServers = await scanPluginMcpServers(pluginPaths);
-  const existingNames = new Set(mcp.servers.map(s => s.name));
+  const existingNames = new Set(mcp.servers.map((s) => s.name));
   for (const server of pluginMcpServers) {
     if (!existingNames.has(server.name)) {
       existingNames.add(server.name);
@@ -63,6 +78,19 @@ export async function scanConfig(projectPath: string): Promise<ConfigSnapshot> {
     projectPath,
     globalPath: GLOBAL_DIR,
     allowGlobalWrites: getAllowGlobalWrites(),
-    claudeMd, settings, permissions, mcp, hooks, skills, agents, rules, commands, plugins, models, memory, sandbox, keybindings,
+    claudeMd,
+    settings,
+    permissions,
+    mcp,
+    hooks,
+    skills,
+    agents,
+    rules,
+    commands,
+    plugins,
+    models,
+    memory,
+    sandbox,
+    keybindings,
   };
 }

@@ -1,9 +1,14 @@
-import { join } from 'node:path';
-import { readdir } from 'node:fs/promises';
-import { readJsonOrNull, readFileOrNull, GLOBAL_DIR, settingsLocations } from './utils.js';
-import type { PluginPath } from './utils.js';
-import { ConfigScope, HookEvent, HookType, HookSource } from '@lens/schema';
-import type { HooksSurface, HookEntry } from '@lens/schema';
+import { join } from "node:path";
+import { readdir } from "node:fs/promises";
+import {
+  readJsonOrNull,
+  readFileOrNull,
+  GLOBAL_DIR,
+  settingsLocations,
+} from "./utils.js";
+import type { PluginPath } from "./utils.js";
+import { ConfigScope, HookEvent, HookType, HookSource } from "@lens/schema";
+import type { HooksSurface, HookEntry } from "@lens/schema";
 
 export async function scanHooks(
   projectPath: string,
@@ -45,36 +50,38 @@ export async function scanHooks(
   try {
     const globalFiles = await readdir(GLOBAL_DIR);
     for (const file of globalFiles) {
-      if (file.startsWith('hookify.') && file.endsWith('.local.md')) {
+      if (file.startsWith("hookify.") && file.endsWith(".local.md")) {
         const content = await readFileOrNull(join(GLOBAL_DIR, file));
         if (!content) continue;
         const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
         if (!frontmatterMatch) continue;
         const fm: Record<string, string> = {};
-        for (const line of frontmatterMatch[1].split('\n')) {
-          const [key, ...rest] = line.split(':');
-          if (key && rest.length) fm[key.trim()] = rest.join(':').trim();
+        for (const line of frontmatterMatch[1].split("\n")) {
+          const [key, ...rest] = line.split(":");
+          if (key && rest.length) fm[key.trim()] = rest.join(":").trim();
         }
-        if (fm.enabled === 'false') continue;
+        if (fm.enabled === "false") continue;
         hooks.push({
           event: (fm.event as HookEvent) || HookEvent.PreToolUse,
           matcher: fm.pattern,
           type: HookType.Command,
-          command: `hookify: ${fm.action || 'block'}`,
+          command: `hookify: ${fm.action || "block"}`,
           scope: ConfigScope.Global,
           filePath: join(GLOBAL_DIR, file),
           source: HookSource.Hookify,
         });
       }
     }
-  } catch { /* no hookify files */ }
+  } catch {
+    /* no hookify files */
+  }
 
   // Scan plugin hooks
   for (const plugin of pluginPaths) {
-    const hooksJsonPath = join(plugin.installPath, 'hooks', 'hooks.json');
+    const hooksJsonPath = join(plugin.installPath, "hooks", "hooks.json");
     const raw = await readJsonOrNull(hooksJsonPath);
     if (!raw) continue;
-    const hooksConfig = (raw as Record<string, unknown>).hooks as Record<string, unknown[]> | undefined;
+    const hooksConfig = raw.hooks as Record<string, unknown[]> | undefined;
     if (!hooksConfig) continue;
     for (const [event, matchers] of Object.entries(hooksConfig)) {
       if (!Array.isArray(matchers)) continue;
