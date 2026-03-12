@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-03-12
+
+### Added
+
++ Configuration suggestions engine with 10 built-in rules across 3 categories (best-practice, health, contextual)
++ SuggestionsBox UI component showing actionable configuration recommendations
++ Plugin update progress feedback with real-time CLI output logging
++ Updates banner displaying all plugins needing updates
++ OpenSpec integration for spec-first development workflow
+
+### Changed
+
+* Improved plugin deduplication to show only latest version
+* Enhanced plugin update UX with per-plugin output tracking and spinner feedback
+* Improved OpenSpec template formatting
+
+### Fixed
+
+! Fixed duplicate plugins appearing in UI from multiple cached versions
+! Fixed update button activation for plugins that don't need updates (false positives)
+! Fixed MCPs being created in wrong global location (~/.mcp.json instead of ~/.claude.json)
+! Fixed semantic versioning comparison for proper version detection
+
+### Removed
+
+- Marketplace HEAD SHA fallback in version detection
+
 ## [1.1.1] - 2026-03-06
 
 ### Fixed

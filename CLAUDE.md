@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Build & Development Commands
 
 ```bash
-pnpm dev                    # Run server + UI concurrently
+PORT=3000 pnpm dev          # Run server + UI concurrently
 pnpm dev:server             # Server only (tsx watch, port 37001)
 pnpm dev:ui                 # UI only (Vite, port 3000)
 pnpm build                  # Build all (schema → server → UI, order matters)
