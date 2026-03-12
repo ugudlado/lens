@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { realpathSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { homedir } from 'node:os';
-import { ConfigScope } from '@lens/schema';
+import { ConfigScope, PluginScope } from '@lens/schema';
 import type { ExportData, ExportSections } from '@lens/schema';
 import { scanConfig } from '../scanner/index.js';
 
@@ -30,7 +30,7 @@ app.get('/', async (c) => {
 
     const config = await scanConfig(projectPath);
 
-    const VALID_SECTIONS = new Set(['mcp', 'hooks', 'skills', 'agents', 'rules', 'commands', 'permissions', 'claudeMd']);
+    const VALID_SECTIONS = new Set(['mcp', 'hooks', 'skills', 'agents', 'rules', 'commands', 'permissions', 'claudeMd', 'plugins']);
     const requestedSections = sectionsParam
       ? sectionsParam.split(',').map(s => s.trim()).filter(s => VALID_SECTIONS.has(s))
       : [...VALID_SECTIONS];
@@ -117,6 +117,12 @@ app.get('/', async (c) => {
           slot: (f.filePath.includes('/.claude/CLAUDE.md') ? '.claude/CLAUDE.md' : 'root') as 'root' | '.claude/CLAUDE.md',
           content: f.content,
         }));
+    }
+
+    if (requestedSections.includes('plugins')) {
+      sections.plugins = config.plugins.plugins
+        .filter(p => p.scope === PluginScope.Project)
+        .map(p => ({ name: p.name, marketplace: p.marketplace }));
     }
 
     const exportData: ExportData = {

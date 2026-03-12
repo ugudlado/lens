@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { ConfigSnapshot, ExportData } from '@lens/schema';
-import { ConfigScope } from '@lens/schema';
+import { ConfigScope, PluginScope } from '@lens/schema';
 
 interface ExportConfigModalProps {
   config: ConfigSnapshot;
@@ -9,7 +9,7 @@ interface ExportConfigModalProps {
 
 type ModalState = 'checklist' | 'exporting' | 'error';
 
-type ExportSectionId = 'mcp' | 'hooks' | 'skills' | 'agents' | 'rules' | 'commands' | 'permissions' | 'claudeMd';
+type ExportSectionId = 'mcp' | 'hooks' | 'skills' | 'agents' | 'rules' | 'commands' | 'permissions' | 'claudeMd' | 'plugins';
 
 const SECTION_LABELS: Record<ExportSectionId, string> = {
   mcp: 'MCP Servers',
@@ -20,6 +20,7 @@ const SECTION_LABELS: Record<ExportSectionId, string> = {
   commands: 'Commands',
   permissions: 'Permissions',
   claudeMd: 'CLAUDE.md',
+  plugins: 'Plugins',
 };
 
 interface SectionItem {
@@ -61,6 +62,10 @@ export function ExportConfigModal({ config, onClose }: ExportConfigModalProps) {
     .filter(f => f.scope === ConfigScope.Project)
     .map(f => ({ key: f.filePath, label: f.filePath }));
 
+  const pluginItems: SectionItem[] = config.plugins.plugins
+    .filter(p => p.scope === PluginScope.Project)
+    .map(p => ({ key: `${p.name}@${p.marketplace}`, label: p.name }));
+
   const sectionItemsMap: Record<ExportSectionId, SectionItem[]> = {
     mcp: mcpItems,
     hooks: hookItems,
@@ -70,6 +75,7 @@ export function ExportConfigModal({ config, onClose }: ExportConfigModalProps) {
     commands: commandItems,
     permissions: permissionItems,
     claudeMd: claudeMdItems,
+    plugins: pluginItems,
   };
 
   // Initialize state with all items checked
@@ -82,6 +88,7 @@ export function ExportConfigModal({ config, onClose }: ExportConfigModalProps) {
     commands: new Set(commandItems.map(i => i.key)),
     permissions: new Set(permissionItems.map(i => i.key)),
     claudeMd: new Set(claudeMdItems.map(i => i.key)),
+    plugins: new Set(pluginItems.map(i => i.key)),
   }));
 
   const [activeSection, setActiveSection] = useState<ExportSectionId>('mcp');
@@ -127,6 +134,7 @@ export function ExportConfigModal({ config, onClose }: ExportConfigModalProps) {
     if (checked.commands.size > 0) requestedSections.push('commands');
     if (checked.permissions.size > 0) requestedSections.push('permissions');
     if (checked.claudeMd.size > 0) requestedSections.push('claudeMd');
+    if (checked.plugins.size > 0) requestedSections.push('plugins');
 
     if (requestedSections.length === 0) {
       setError('Please select at least one item to export.');
@@ -180,6 +188,11 @@ export function ExportConfigModal({ config, onClose }: ExportConfigModalProps) {
           });
           return originalFile && checked.claudeMd.has(originalFile.filePath);
         });
+      }
+      if (data.sections.plugins) {
+        data.sections.plugins = data.sections.plugins.filter(p =>
+          checked.plugins.has(`${p.name}@${p.marketplace}`)
+        );
       }
 
       // Trigger download

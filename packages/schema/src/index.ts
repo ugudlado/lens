@@ -533,6 +533,11 @@ export interface ClaudeMdExport {
   content: string;
 }
 
+export interface PluginExport {
+  name: string;
+  marketplace: string;
+}
+
 export interface ExportSections {
   mcpServers?: McpServerExport[];
   hooks?: HookExport[];
@@ -542,6 +547,7 @@ export interface ExportSections {
   commands?: CommandExport[];
   permissions?: PermissionExport[];
   claudeMd?: ClaudeMdExport[];
+  plugins?: PluginExport[];
 }
 
 export interface ExportData {

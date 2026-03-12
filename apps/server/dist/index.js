@@ -13674,7 +13674,7 @@ app2.get("/", async (c) => {
       projectPath = process.cwd();
     }
     const config = await scanConfig(projectPath);
-    const VALID_SECTIONS = /* @__PURE__ */ new Set(["mcp", "hooks", "skills", "agents", "rules", "commands", "permissions", "claudeMd"]);
+    const VALID_SECTIONS = /* @__PURE__ */ new Set(["mcp", "hooks", "skills", "agents", "rules", "commands", "permissions", "claudeMd", "plugins"]);
     const requestedSections = sectionsParam ? sectionsParam.split(",").map((s) => s.trim()).filter((s) => VALID_SECTIONS.has(s)) : [...VALID_SECTIONS];
     const sections = {};
     if (requestedSections.includes("mcp")) {
@@ -13740,6 +13740,9 @@ app2.get("/", async (c) => {
         slot: f.filePath.includes("/.claude/CLAUDE.md") ? ".claude/CLAUDE.md" : "root",
         content: f.content
       }));
+    }
+    if (requestedSections.includes("plugins")) {
+      sections.plugins = config.plugins.plugins.filter((p) => p.scope === PluginScope.Project).map((p) => ({ name: p.name, marketplace: p.marketplace }));
     }
     const exportData = {
       version: 1,

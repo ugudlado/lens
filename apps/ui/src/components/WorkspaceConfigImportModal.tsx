@@ -107,6 +107,7 @@ export function WorkspaceConfigImportModal({
   const otherWorkspaces = workspaces.filter(w => w.path !== activeProject);
 
   const [importSource, setImportSource] = useState<'workspace' | 'file'>('workspace');
+  const [importFileName, setImportFileName] = useState<string>('');
   const [state, setState] = useState<ModalState>('pick-workspace');
   const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -193,6 +194,7 @@ export function WorkspaceConfigImportModal({
   }
 
   function loadFromFile(file: File) {
+    setImportFileName(file.name);
     setLoading(true);
     setLoadError(null);
 
@@ -281,7 +283,15 @@ export function WorkspaceConfigImportModal({
             scope: ConfigScope.Project,
             filePath: '',
           } as PermissionRule)),
-          plugins: [],
+          plugins: (data.sections.plugins ?? []).map(p => ({
+            name: safeName(p.name),
+            marketplace: safeName(p.marketplace),
+            version: '',
+            installPath: '',
+            installedAt: '',
+            enabled: true,
+            scope: PluginScope.Project,
+          } as PluginEntry)),
         };
 
         setSourceItems(items);
@@ -298,6 +308,7 @@ export function WorkspaceConfigImportModal({
         for (const r of items.rules) { if (!existingKeys.rules.has(ruleKey(r))) newChecked.rules.add(ruleKey(r)); }
         for (const c of items.commands) { if (!existingKeys.commands.has(commandKey(c))) newChecked.commands.add(commandKey(c)); }
         for (const p of items.permissions) { if (!existingKeys.permissions.has(permKey(p))) newChecked.permissions.add(permKey(p)); }
+        for (const p of items.plugins) { if (!existingKeys.plugins.has(pluginKey(p))) newChecked.plugins.add(pluginKey(p)); }
 
         setChecked(newChecked);
         setState('checklist');
@@ -478,11 +489,15 @@ export function WorkspaceConfigImportModal({
       // ── Plugins → POST /api/plugins (project-scoped install) ────────────
       for (const p of sourceItems.plugins) {
         if (!checked.plugins.has(pluginKey(p))) continue;
-        await fetch('/api/plugins', {
+        const res = await fetch('/api/plugins', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: PluginAction.Install, plugin: pluginKey(p), scope: PluginScope.Project }),
         });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({})) as { error?: string };
+          throw new Error(body.error ?? `Plugin install failed: ${pluginKey(p)}`);
+        }
       }
 
       onRescan();
@@ -684,7 +699,7 @@ export function WorkspaceConfigImportModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
           <h3 className="text-base font-semibold text-gray-200">
-            Import from Workspace
+            Import Configuration
           </h3>
           <button
             onClick={onClose}
@@ -804,7 +819,7 @@ export function WorkspaceConfigImportModal({
               {/* Section sidebar */}
               <div className="w-44 flex-shrink-0 border-r border-border py-3 overflow-y-auto">
                 <div className="text-[10px] uppercase tracking-wider text-gray-600 px-4 mb-2">
-                  From: {selectedWorkspace?.name}
+                  From: {importSource === 'file' ? importFileName : selectedWorkspace?.name}
                 </div>
                 {sections.map(s => (
                   <button
@@ -837,17 +852,7 @@ export function WorkspaceConfigImportModal({
                     {' — '}
                     <span className="text-green-400">
                       {sourceItems[activeSection].length - Array.from(existingKeys[activeSection]).filter(k =>
-                        sourceItems[activeSection].some(item => {
-                          switch (activeSection) {
-                            case 'mcp': return mcpKey(item as McpServer) === k;
-                            case 'hooks': return hookKey(item as HookEntry) === k;
-                            case 'skills': return skillKey(item as SkillEntry) === k;
-                            case 'agents': return agentKey(item as AgentEntry) === k;
-                            case 'rules': return ruleKey(item as RuleEntry) === k;
-                            case 'commands': return commandKey(item as CommandEntry) === k;
-                            case 'permissions': return permKey(item as PermissionRule) === k;
-                          }
-                        })
+                        sourceItems[activeSection].some(item => getKey(activeSection, item) === k)
                       ).length} new
                     </span>
                   </span>
