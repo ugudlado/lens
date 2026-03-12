@@ -22,6 +22,7 @@ export const bestPracticeRules: SuggestionRule[] = [
         title: "No project settings file",
         description:
           "A project-level settings.json ensures consistent Claude behavior for all contributors. Add one to share settings across your team.",
+        fix: { label: "Create settings.json" },
       },
     ];
   },
@@ -39,6 +40,7 @@ export const bestPracticeRules: SuggestionRule[] = [
         title: "Sandbox not configured",
         description:
           "The sandbox restricts file and network access during Claude's tool use. Enable it for safer execution, especially when using MCP servers.",
+        fix: { label: "Enable sandbox" },
       },
     ];
   },
@@ -55,6 +57,7 @@ export const bestPracticeRules: SuggestionRule[] = [
         title: "No memory files found",
         description:
           "Memory files let Claude persist context across sessions. Create a memory directory to help Claude remember project-specific information.",
+        fix: { label: "Create memory file" },
       },
     ];
   },

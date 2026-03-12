@@ -3982,7 +3982,7 @@ var responseViaResponseObject = async (res, outgoing, options2 = {}) => {
         });
         if (!chunk) {
           if (i === 1) {
-            await new Promise((resolve7) => setTimeout(resolve7));
+            await new Promise((resolve8) => setTimeout(resolve8));
             maxReadCount = 3;
             continue;
           }
@@ -6660,10 +6660,10 @@ var streamSSE = (c, cb, onError) => {
 init_cjs_shim();
 
 // src/index.ts
-import { realpathSync as realpathSync4 } from "node:fs";
-import { readFile as readFile7, rm } from "node:fs/promises";
-import { homedir as homedir8 } from "node:os";
-import { dirname as dirname5, resolve as resolve6 } from "node:path";
+import { realpathSync as realpathSync5 } from "node:fs";
+import { readFile as readFile8, rm } from "node:fs/promises";
+import { homedir as homedir9 } from "node:os";
+import { dirname as dirname5, resolve as resolve7 } from "node:path";
 import { fileURLToPath as fileURLToPath3 } from "node:url";
 
 // src/routes/config.ts
@@ -10485,10 +10485,10 @@ var Minipass = class extends EventEmitter {
    * Return a void Promise that resolves once the stream ends.
    */
   async promise() {
-    return new Promise((resolve7, reject) => {
+    return new Promise((resolve8, reject) => {
       this.on(DESTROYED, () => reject(new Error("stream destroyed")));
       this.on("error", (er) => reject(er));
-      this.on("end", () => resolve7());
+      this.on("end", () => resolve8());
     });
   }
   /**
@@ -10512,7 +10512,7 @@ var Minipass = class extends EventEmitter {
         return Promise.resolve({ done: false, value: res });
       if (this[EOF])
         return stop();
-      let resolve7;
+      let resolve8;
       let reject;
       const onerr = (er) => {
         this.off("data", ondata);
@@ -10526,19 +10526,19 @@ var Minipass = class extends EventEmitter {
         this.off("end", onend);
         this.off(DESTROYED, ondestroy);
         this.pause();
-        resolve7({ value, done: !!this[EOF] });
+        resolve8({ value, done: !!this[EOF] });
       };
       const onend = () => {
         this.off("error", onerr);
         this.off("data", ondata);
         this.off(DESTROYED, ondestroy);
         stop();
-        resolve7({ done: true, value: void 0 });
+        resolve8({ done: true, value: void 0 });
       };
       const ondestroy = () => onerr(new Error("stream destroyed"));
       return new Promise((res2, rej) => {
         reject = rej;
-        resolve7 = res2;
+        resolve8 = res2;
         this.once(DESTROYED, ondestroy);
         this.once("error", onerr);
         this.once("end", onend);
@@ -11510,9 +11510,9 @@ var PathBase = class {
     if (this.#asyncReaddirInFlight) {
       await this.#asyncReaddirInFlight;
     } else {
-      let resolve7 = () => {
+      let resolve8 = () => {
       };
-      this.#asyncReaddirInFlight = new Promise((res) => resolve7 = res);
+      this.#asyncReaddirInFlight = new Promise((res) => resolve8 = res);
       try {
         for (const e of await this.#fs.promises.readdir(fullpath, {
           withFileTypes: true
@@ -11525,7 +11525,7 @@ var PathBase = class {
         children.provisional = 0;
       }
       this.#asyncReaddirInFlight = void 0;
-      resolve7();
+      resolve8();
     }
     return children.slice(0, children.provisional);
   }
@@ -14007,7 +14007,7 @@ import { readFile as readFile4, writeFile, mkdir } from "node:fs/promises";
 import { join as join14, dirname } from "node:path";
 import { homedir as homedir4 } from "node:os";
 function spawnClaude(args, cwd) {
-  return new Promise((resolve7, reject) => {
+  return new Promise((resolve8, reject) => {
     const child = spawn("claude", args, {
       env: { ...process.env, CLAUDECODE: "" },
       cwd,
@@ -14027,7 +14027,7 @@ function spawnClaude(args, cwd) {
     }, 3e4);
     child.on("close", (code) => {
       clearTimeout(timer);
-      if (code === 0) resolve7({ stdout, stderr });
+      if (code === 0) resolve8({ stdout, stderr });
       else
         reject(
           Object.assign(new Error(`claude exited with code ${code}`), {
@@ -14160,6 +14160,9 @@ var plugins_default = app4;
 
 // src/routes/suggestions.ts
 init_cjs_shim();
+import { realpathSync as realpathSync3 } from "node:fs";
+import { resolve as resolve3 } from "node:path";
+import { homedir as homedir5 } from "node:os";
 
 // src/suggestions/index.ts
 init_cjs_shim();
@@ -14180,7 +14183,8 @@ var healthRules = [
         severity: SuggestionSeverity.Warning,
         navSection: NavSection.ClaudeMd,
         title: "No project CLAUDE.md found",
-        description: "Add a CLAUDE.md to your project to give Claude context about your codebase, conventions, and workflow."
+        description: "Add a CLAUDE.md to your project to give Claude context about your codebase, conventions, and workflow.",
+        fix: { label: "Create CLAUDE.md" }
       }
     ];
   },
@@ -14247,7 +14251,8 @@ var bestPracticeRules = [
         severity: SuggestionSeverity.Info,
         navSection: NavSection.Settings,
         title: "No project settings file",
-        description: "A project-level settings.json ensures consistent Claude behavior for all contributors. Add one to share settings across your team."
+        description: "A project-level settings.json ensures consistent Claude behavior for all contributors. Add one to share settings across your team.",
+        fix: { label: "Create settings.json" }
       }
     ];
   },
@@ -14262,7 +14267,8 @@ var bestPracticeRules = [
         severity: SuggestionSeverity.Info,
         navSection: NavSection.Sandbox,
         title: "Sandbox not configured",
-        description: "The sandbox restricts file and network access during Claude's tool use. Enable it for safer execution, especially when using MCP servers."
+        description: "The sandbox restricts file and network access during Claude's tool use. Enable it for safer execution, especially when using MCP servers.",
+        fix: { label: "Enable sandbox" }
       }
     ];
   },
@@ -14276,7 +14282,8 @@ var bestPracticeRules = [
         severity: SuggestionSeverity.Info,
         navSection: NavSection.Memory,
         title: "No memory files found",
-        description: "Memory files let Claude persist context across sessions. Create a memory directory to help Claude remember project-specific information."
+        description: "Memory files let Claude persist context across sessions. Create a memory directory to help Claude remember project-specific information.",
+        fix: { label: "Create memory file" }
       }
     ];
   }
@@ -14334,7 +14341,8 @@ var contextualRules = [
         severity: SuggestionSeverity.Info,
         navSection: NavSection.Settings,
         title: "Plugins installed but no project settings",
-        description: "You have plugins but no project-level settings file. Add one to configure plugin behavior consistently for your project."
+        description: "You have plugins but no project-level settings file. Add one to configure plugin behavior consistently for your project.",
+        fix: { label: "Create settings.json" }
       }
     ];
   }
@@ -14375,6 +14383,81 @@ function getSuggestions(config) {
   return suggestions;
 }
 
+// src/suggestions/fix-handlers.ts
+init_cjs_shim();
+import { access, mkdir as mkdir2, readFile as readFile5, writeFile as writeFile2 } from "node:fs/promises";
+import { join as join15 } from "node:path";
+var CLAUDE_MD_TEMPLATE = `# Project
+
+> **Getting started:** Consider installing these plugins to improve this file:
+>
+> - \`claude-md-management\` \u2014 audit and improve CLAUDE.md files
+> - \`claude-code-setup\` \u2014 get automation recommendations for your project
+
+## Build & Development Commands
+
+<!-- Add commands here, e.g. npm run dev, pnpm build -->
+
+## Architecture
+
+<!-- Brief description of the codebase structure -->
+
+## Conventions
+
+<!-- Coding standards, naming conventions, etc. -->
+`;
+async function fileExists(filePath) {
+  try {
+    await access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+async function fixCreateClaudeMd(projectPath) {
+  const target = join15(projectPath, "CLAUDE.md");
+  if (await fileExists(target)) return;
+  await writeFile2(target, CLAUDE_MD_TEMPLATE);
+}
+async function fixCreateProjectSettings(projectPath) {
+  const target = join15(projectPath, ".claude", "settings.json");
+  if (await fileExists(target)) return;
+  await mkdir2(join15(projectPath, ".claude"), { recursive: true });
+  await writeFile2(target, "{}\n");
+}
+async function fixEnableSandbox(projectPath) {
+  const target = join15(projectPath, ".claude", "settings.json");
+  await mkdir2(join15(projectPath, ".claude"), { recursive: true });
+  let existing = {};
+  try {
+    const content = await readFile5(target, "utf-8");
+    existing = JSON.parse(content);
+  } catch {
+  }
+  existing["sandbox"] = true;
+  await writeFile2(target, JSON.stringify(existing, null, 2) + "\n");
+}
+async function fixCreateMemory(projectPath) {
+  const memoryDir = join15(projectPath, ".claude", "memory");
+  const target = join15(memoryDir, "AGENTS.md");
+  if (await fileExists(target)) return;
+  await mkdir2(memoryDir, { recursive: true });
+  await writeFile2(
+    target,
+    `# Agent Memory
+
+<!-- Add persistent context for Claude here -->
+`
+  );
+}
+var fixHandlers = /* @__PURE__ */ new Map([
+  ["health-no-claude-md", fixCreateClaudeMd],
+  ["bp-no-project-settings", fixCreateProjectSettings],
+  ["bp-sandbox-disabled", fixEnableSandbox],
+  ["bp-no-memory", fixCreateMemory],
+  ["ctx-plugins-no-settings", fixCreateProjectSettings]
+]);
+
 // src/routes/suggestions.ts
 var app5 = new Hono2();
 app5.get("/", async (c) => {
@@ -14388,14 +14471,50 @@ app5.get("/", async (c) => {
     return c.json({ error: "scan failed" }, 500);
   }
 });
+app5.post("/:id/fix", async (c) => {
+  const id = c.req.param("id");
+  const handler = fixHandlers.get(id);
+  if (!handler) {
+    return c.json(
+      { success: false, error: "Unknown suggestion ID" },
+      400
+    );
+  }
+  const projectPath = c.req.query("project") ?? detectProjectRoot();
+  const abs = resolve3(projectPath);
+  let realHome;
+  try {
+    realHome = realpathSync3(homedir5());
+  } catch {
+    realHome = homedir5();
+  }
+  if (!abs.startsWith(realHome + "/") && abs !== realHome) {
+    return c.json(
+      { success: false, error: "Path not allowed" },
+      403
+    );
+  }
+  try {
+    await handler(abs);
+    return c.json({ success: true });
+  } catch (err) {
+    return c.json(
+      {
+        success: false,
+        error: err instanceof Error ? err.message : "Unknown error"
+      },
+      500
+    );
+  }
+});
 var suggestions_default = app5;
 
 // src/routes/update.ts
 init_cjs_shim();
-import { readFile as readFile5, writeFile as writeFile2, mkdir as mkdir2 } from "node:fs/promises";
-import { realpathSync as realpathSync3 } from "node:fs";
-import { dirname as dirname2, resolve as resolve3 } from "node:path";
-import { homedir as homedir5 } from "node:os";
+import { readFile as readFile6, writeFile as writeFile3, mkdir as mkdir3 } from "node:fs/promises";
+import { realpathSync as realpathSync4 } from "node:fs";
+import { dirname as dirname2, resolve as resolve4 } from "node:path";
+import { homedir as homedir6 } from "node:os";
 var app6 = new Hono2();
 app6.patch("/", async (c) => {
   const body = await c.req.json();
@@ -14413,12 +14532,12 @@ app6.patch("/", async (c) => {
       400
     );
   }
-  const abs = resolve3(filePath);
+  const abs = resolve4(filePath);
   let realHome;
   try {
-    realHome = realpathSync3(homedir5());
+    realHome = realpathSync4(homedir6());
   } catch {
-    realHome = homedir5();
+    realHome = homedir6();
   }
   const isAllowed = abs.startsWith(realHome + "/") || abs === realHome;
   if (!isAllowed) {
@@ -14427,8 +14546,8 @@ app6.patch("/", async (c) => {
       403
     );
   }
-  const globalDir = resolve3(GLOBAL_DIR);
-  const globalDotClaudeJson = resolve3(homedir5(), ".claude.json");
+  const globalDir = resolve4(GLOBAL_DIR);
+  const globalDotClaudeJson = resolve4(homedir6(), ".claude.json");
   const isGlobal = abs.startsWith(globalDir + "/") || abs === globalDir || abs === globalDotClaudeJson;
   if (isGlobal && !getAllowGlobalWrites()) {
     return c.json(
@@ -14441,10 +14560,10 @@ app6.patch("/", async (c) => {
   }
   try {
     if (abs.endsWith(".json")) {
-      await mkdir2(dirname2(abs), { recursive: true });
+      await mkdir3(dirname2(abs), { recursive: true });
       let content;
       try {
-        content = await readFile5(abs, "utf-8");
+        content = await readFile6(abs, "utf-8");
       } catch {
         content = "{}";
       }
@@ -14462,15 +14581,15 @@ app6.patch("/", async (c) => {
           target[keys[keys.length - 1]] = value;
         }
       } else if (body.replace) {
-        await writeFile2(abs, JSON.stringify(value, null, 2) + "\n");
+        await writeFile3(abs, JSON.stringify(value, null, 2) + "\n");
         return c.json({ success: true });
       } else {
         Object.assign(json, value);
       }
-      await writeFile2(abs, JSON.stringify(json, null, 2) + "\n");
+      await writeFile3(abs, JSON.stringify(json, null, 2) + "\n");
     } else if (abs.endsWith(".md") || abs.endsWith(".mdc")) {
-      await mkdir2(dirname2(abs), { recursive: true });
-      await writeFile2(abs, String(value));
+      await mkdir3(dirname2(abs), { recursive: true });
+      await writeFile3(abs, String(value));
     } else {
       return c.json(
         { success: false, error: "Unsupported file type" },
@@ -14492,10 +14611,10 @@ var update_default = app6;
 
 // src/routes/workspaces.ts
 init_cjs_shim();
-import { readFile as readFile6, writeFile as writeFile3, mkdir as mkdir3 } from "node:fs/promises";
+import { readFile as readFile7, writeFile as writeFile4, mkdir as mkdir4 } from "node:fs/promises";
 import { existsSync as existsSync2 } from "node:fs";
-import { join as join18, basename as basename3 } from "node:path";
-import { homedir as homedir7 } from "node:os";
+import { join as join19, basename as basename3 } from "node:path";
+import { homedir as homedir8 } from "node:os";
 
 // src/watcher.ts
 init_cjs_shim();
@@ -15357,7 +15476,7 @@ var NodeFsHandler = class {
         this._addToNodeFs(path2, initialAdd, wh, depth + 1);
       }
     }).on(EV.ERROR, this._boundHandleError);
-    return new Promise((resolve7, reject) => {
+    return new Promise((resolve8, reject) => {
       if (!stream3)
         return reject();
       stream3.once(STR_END, () => {
@@ -15366,7 +15485,7 @@ var NodeFsHandler = class {
           return;
         }
         const wasThrottled = throttler ? throttler.clear() : false;
-        resolve7(void 0);
+        resolve8(void 0);
         previous.getChildren().filter((item) => {
           return item !== directory && !current.has(item);
         }).forEach((item) => {
@@ -16194,8 +16313,8 @@ function watch(paths, options2 = {}) {
 }
 
 // src/watcher.ts
-import { join as join17 } from "node:path";
-import { homedir as homedir6 } from "node:os";
+import { join as join18 } from "node:path";
+import { homedir as homedir7 } from "node:os";
 var listeners = /* @__PURE__ */ new Set();
 function onConfigChange(listener) {
   listeners.add(listener);
@@ -16231,15 +16350,15 @@ var GLOBAL_WATCH_SUBDIRS = [
   "mcp"
 ];
 function buildWatchPaths(projectRoots) {
-  const home = homedir6();
-  const claudeDir = join17(home, ".claude");
-  const paths = GLOBAL_WATCH_SUBDIRS.map((sub) => join17(claudeDir, sub));
+  const home = homedir7();
+  const claudeDir = join18(home, ".claude");
+  const paths = GLOBAL_WATCH_SUBDIRS.map((sub) => join18(claudeDir, sub));
   for (const root of projectRoots) {
     paths.push(
-      join17(root, ".claude"),
-      join17(root, ".mcp.json"),
-      join17(root, "CLAUDE.md"),
-      join17(root, "CLAUDE.local.md")
+      join18(root, ".claude"),
+      join18(root, ".mcp.json"),
+      join18(root, "CLAUDE.md"),
+      join18(root, "CLAUDE.local.md")
     );
   }
   return paths;
@@ -16272,19 +16391,19 @@ function restartWatcher(projectRoots) {
 }
 
 // src/routes/workspaces.ts
-var REGISTRY_DIR = join18(homedir7(), ".claude-config");
-var REGISTRY_FILE = join18(REGISTRY_DIR, "workspaces.json");
+var REGISTRY_DIR = join19(homedir8(), ".claude-config");
+var REGISTRY_FILE = join19(REGISTRY_DIR, "workspaces.json");
 async function readRegistry() {
   try {
-    const raw2 = await readFile6(REGISTRY_FILE, "utf-8");
+    const raw2 = await readFile7(REGISTRY_FILE, "utf-8");
     return JSON.parse(raw2);
   } catch {
     return [];
   }
 }
 async function writeRegistry(workspaces) {
-  await mkdir3(REGISTRY_DIR, { recursive: true });
-  await writeFile3(REGISTRY_FILE, JSON.stringify(workspaces, null, 2), "utf-8");
+  await mkdir4(REGISTRY_DIR, { recursive: true });
+  await writeFile4(REGISTRY_FILE, JSON.stringify(workspaces, null, 2), "utf-8");
 }
 async function ensureSeeded() {
   let workspaces = await readRegistry();
@@ -16359,10 +16478,10 @@ app8.get("/api/events", (c) => {
       stream3.writeSSE({ event: "config-changed", data: JSON.stringify(event) }).catch(() => {
       });
     });
-    await new Promise((resolve7) => {
+    await new Promise((resolve8) => {
       stream3.onAbort(() => {
         unsubscribe();
-        resolve7();
+        resolve8();
       });
     });
   });
@@ -16372,21 +16491,21 @@ app8.get("/api/file", async (c) => {
   if (!filePath) return c.json({ error: "Missing path" }, 400);
   let realHome;
   try {
-    realHome = realpathSync4(homedir8());
+    realHome = realpathSync5(homedir9());
   } catch {
-    realHome = homedir8();
+    realHome = homedir9();
   }
-  const abs = resolve6(filePath);
+  const abs = resolve7(filePath);
   let realAbs;
   try {
-    realAbs = realpathSync4(abs);
+    realAbs = realpathSync5(abs);
   } catch {
     realAbs = abs;
   }
   const isAllowed = realAbs.startsWith(realHome + "/") || realAbs === realHome;
   if (!isAllowed) return c.json({ error: "Path not allowed" }, 403);
   try {
-    const content = await readFile7(realAbs, "utf-8");
+    const content = await readFile8(realAbs, "utf-8");
     return c.json({ content });
   } catch {
     return c.json({ error: "File not found" }, 404);
@@ -16395,8 +16514,8 @@ app8.get("/api/file", async (c) => {
 app8.delete("/api/file", async (c) => {
   const filePath = c.req.query("path");
   if (!filePath) return c.json({ error: "Missing path" }, 400);
-  const abs = resolve6(filePath);
-  const home = homedir8();
+  const abs = resolve7(filePath);
+  const home = homedir9();
   if (!abs.startsWith(home + "/") && !abs.startsWith(home + "\\")) {
     return c.json(
       { error: "Path not allowed \u2014 must be within home directory" },
@@ -16416,12 +16535,12 @@ app8.delete("/api/file", async (c) => {
 app8.get("/api/health", (c) => c.json({ status: "ok" }));
 var __filename = fileURLToPath3(import.meta.url);
 var __dirname = dirname5(__filename);
-var uiDistPath = resolve6(__dirname, "..", "..", "ui", "dist");
+var uiDistPath = resolve7(__dirname, "..", "..", "ui", "dist");
 app8.use("/*", serveStatic({ root: uiDistPath }));
 app8.get("/*", async (c) => {
-  const indexPath = resolve6(uiDistPath, "index.html");
+  const indexPath = resolve7(uiDistPath, "index.html");
   try {
-    const html = await readFile7(indexPath, "utf-8");
+    const html = await readFile8(indexPath, "utf-8");
     return c.html(html);
   } catch {
     return c.notFound();

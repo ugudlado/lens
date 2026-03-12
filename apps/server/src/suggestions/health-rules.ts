@@ -22,6 +22,7 @@ export const healthRules: SuggestionRule[] = [
         title: "No project CLAUDE.md found",
         description:
           "Add a CLAUDE.md to your project to give Claude context about your codebase, conventions, and workflow.",
+        fix: { label: "Create CLAUDE.md" },
       },
     ];
   },
