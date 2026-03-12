@@ -30,9 +30,10 @@ app.get('/', async (c) => {
 
     const config = await scanConfig(projectPath);
 
+    const VALID_SECTIONS = new Set(['mcp', 'hooks', 'skills', 'agents', 'rules', 'commands', 'permissions', 'claudeMd']);
     const requestedSections = sectionsParam
-      ? sectionsParam.split(',').map(s => s.trim()).filter(Boolean)
-      : ['mcp', 'hooks', 'skills', 'agents', 'rules', 'commands', 'permissions', 'claudeMd'];
+      ? sectionsParam.split(',').map(s => s.trim()).filter(s => VALID_SECTIONS.has(s))
+      : [...VALID_SECTIONS];
 
     const sections: ExportSections = {};
 

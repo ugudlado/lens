@@ -3982,7 +3982,7 @@ var responseViaResponseObject = async (res, outgoing, options2 = {}) => {
         });
         if (!chunk) {
           if (i === 1) {
-            await new Promise((resolve6) => setTimeout(resolve6));
+            await new Promise((resolve7) => setTimeout(resolve7));
             maxReadCount = 3;
             continue;
           }
@@ -5514,14 +5514,14 @@ var Hono = class _Hono {
    * app.route("/api", app2) // GET /api/user
    * ```
    */
-  route(path2, app8) {
+  route(path2, app9) {
     const subApp = this.basePath(path2);
-    app8.routes.map((r) => {
+    app9.routes.map((r) => {
       let handler;
-      if (app8.errorHandler === errorHandler) {
+      if (app9.errorHandler === errorHandler) {
         handler = r.handler;
       } else {
-        handler = async (c, next) => (await compose([], app8.errorHandler)(c, () => r.handler(c, next))).res;
+        handler = async (c, next) => (await compose([], app9.errorHandler)(c, () => r.handler(c, next))).res;
         handler[COMPOSED_HANDLER] = r.handler;
       }
       subApp.#addRoute(r.method, r.path, handler);
@@ -6660,10 +6660,10 @@ var streamSSE = (c, cb, onError) => {
 init_cjs_shim();
 
 // src/index.ts
-import { realpathSync as realpathSync3 } from "node:fs";
-import { readFile as readFile6, rm } from "node:fs/promises";
-import { homedir as homedir7 } from "node:os";
-import { dirname as dirname5, resolve as resolve5 } from "node:path";
+import { realpathSync as realpathSync4 } from "node:fs";
+import { readFile as readFile7, rm } from "node:fs/promises";
+import { homedir as homedir8 } from "node:os";
+import { dirname as dirname5, resolve as resolve6 } from "node:path";
 import { fileURLToPath as fileURLToPath3 } from "node:url";
 
 // src/routes/config.ts
@@ -7390,6 +7390,11 @@ async function scanPlugins(projectPath) {
         const mixedScheme = isSemver(installedRef) && isSha(latest) || isSha(installedRef) && isSemver(latest);
         if (mixedScheme) {
           plugin.updateAvailable = false;
+        } else if (isSemver(installedRef) && isSemver(latest)) {
+          const parse2 = (v) => v.split(".").map((n) => parseInt(n, 10) || 0);
+          const [ia, ib, ic] = parse2(installedRef);
+          const [la, lb, lc] = parse2(latest);
+          plugin.updateAvailable = la > ia || la === ia && lb > ib || la === ia && lb === ib && lc > ic;
         } else {
           plugin.updateAvailable = !latest.startsWith(installedRef) && !installedRef.startsWith(latest);
         }
@@ -10357,10 +10362,10 @@ var Minipass = class extends EventEmitter {
    * Return a void Promise that resolves once the stream ends.
    */
   async promise() {
-    return new Promise((resolve6, reject) => {
+    return new Promise((resolve7, reject) => {
       this.on(DESTROYED, () => reject(new Error("stream destroyed")));
       this.on("error", (er) => reject(er));
-      this.on("end", () => resolve6());
+      this.on("end", () => resolve7());
     });
   }
   /**
@@ -10384,7 +10389,7 @@ var Minipass = class extends EventEmitter {
         return Promise.resolve({ done: false, value: res });
       if (this[EOF])
         return stop();
-      let resolve6;
+      let resolve7;
       let reject;
       const onerr = (er) => {
         this.off("data", ondata);
@@ -10398,19 +10403,19 @@ var Minipass = class extends EventEmitter {
         this.off("end", onend);
         this.off(DESTROYED, ondestroy);
         this.pause();
-        resolve6({ value, done: !!this[EOF] });
+        resolve7({ value, done: !!this[EOF] });
       };
       const onend = () => {
         this.off("error", onerr);
         this.off("data", ondata);
         this.off(DESTROYED, ondestroy);
         stop();
-        resolve6({ done: true, value: void 0 });
+        resolve7({ done: true, value: void 0 });
       };
       const ondestroy = () => onerr(new Error("stream destroyed"));
       return new Promise((res2, rej) => {
         reject = rej;
-        resolve6 = res2;
+        resolve7 = res2;
         this.once(DESTROYED, ondestroy);
         this.once("error", onerr);
         this.once("end", onend);
@@ -11382,9 +11387,9 @@ var PathBase = class {
     if (this.#asyncReaddirInFlight) {
       await this.#asyncReaddirInFlight;
     } else {
-      let resolve6 = () => {
+      let resolve7 = () => {
       };
-      this.#asyncReaddirInFlight = new Promise((res) => resolve6 = res);
+      this.#asyncReaddirInFlight = new Promise((res) => resolve7 = res);
       try {
         for (const e of await this.#fs.promises.readdir(fullpath, {
           withFileTypes: true
@@ -11397,7 +11402,7 @@ var PathBase = class {
         children.provisional = 0;
       }
       this.#asyncReaddirInFlight = void 0;
-      resolve6();
+      resolve7();
     }
     return children.slice(0, children.provisional);
   }
@@ -13640,11 +13645,123 @@ app.get("/", handleScan);
 app.get("/rescan", handleScan);
 var config_default = app;
 
+// src/routes/export.ts
+init_cjs_shim();
+import { readFile as readFile3 } from "node:fs/promises";
+import { realpathSync as realpathSync2 } from "node:fs";
+import { resolve as resolve2 } from "node:path";
+import { homedir as homedir3 } from "node:os";
+var app2 = new Hono2();
+app2.get("/", async (c) => {
+  const sectionsParam = c.req.query("sections") || "";
+  const projectOverride = c.req.query("project");
+  try {
+    let projectPath;
+    if (projectOverride) {
+      const abs = resolve2(projectOverride);
+      let realHome;
+      try {
+        realHome = realpathSync2(homedir3());
+      } catch {
+        realHome = homedir3();
+      }
+      const isAllowed = abs.startsWith(realHome + "/") || abs === realHome;
+      if (!isAllowed) {
+        return c.json({ error: "Path not allowed" }, 403);
+      }
+      projectPath = abs;
+    } else {
+      projectPath = process.cwd();
+    }
+    const config = await scanConfig(projectPath);
+    const VALID_SECTIONS = /* @__PURE__ */ new Set(["mcp", "hooks", "skills", "agents", "rules", "commands", "permissions", "claudeMd"]);
+    const requestedSections = sectionsParam ? sectionsParam.split(",").map((s) => s.trim()).filter((s) => VALID_SECTIONS.has(s)) : [...VALID_SECTIONS];
+    const sections = {};
+    if (requestedSections.includes("mcp")) {
+      sections.mcpServers = config.mcp.servers.filter((s) => s.scope === ConfigScope.Project).map((s) => ({
+        name: s.name,
+        type: s.type,
+        ...s.command !== void 0 ? { command: s.command } : {},
+        ...s.args !== void 0 ? { args: s.args } : {},
+        ...s.url !== void 0 ? { url: s.url } : {},
+        ...s.env !== void 0 ? { env: s.env } : {}
+      }));
+    }
+    if (requestedSections.includes("hooks")) {
+      sections.hooks = config.hooks.hooks.filter((h) => h.scope === ConfigScope.Project).map((h) => ({
+        event: h.event,
+        type: h.type,
+        ...h.command !== void 0 ? { command: h.command } : {},
+        ...h.prompt !== void 0 ? { prompt: h.prompt } : {},
+        ...h.matcher !== void 0 ? { matcher: h.matcher } : {},
+        ...h.timeout !== void 0 ? { timeout: h.timeout } : {}
+      }));
+    }
+    if (requestedSections.includes("skills")) {
+      sections.skills = await Promise.all(
+        config.skills.skills.filter((s) => s.scope === ConfigScope.Project).map(async (s) => {
+          let content = "";
+          try {
+            content = await readFile3(s.filePath, "utf-8");
+          } catch {
+          }
+          return { name: s.name, content };
+        })
+      );
+    }
+    if (requestedSections.includes("agents")) {
+      sections.agents = await Promise.all(
+        config.agents.agents.filter((a3) => a3.scope === ConfigScope.Project).map(async (a3) => {
+          let content = "";
+          try {
+            content = await readFile3(a3.filePath, "utf-8");
+          } catch {
+          }
+          return { name: a3.name, content };
+        })
+      );
+    }
+    if (requestedSections.includes("rules")) {
+      sections.rules = await Promise.all(
+        config.rules.rules.filter((r) => r.scope === ConfigScope.Project).map(async (r) => {
+          const ext2 = r.filePath.endsWith(".mdc") ? "mdc" : "md";
+          return { name: r.name, content: r.content, ext: ext2 };
+        })
+      );
+    }
+    if (requestedSections.includes("commands")) {
+      sections.commands = config.commands.commands.filter((c2) => c2.scope === ConfigScope.Project).map((c2) => ({ name: c2.name, content: c2.content }));
+    }
+    if (requestedSections.includes("permissions")) {
+      sections.permissions = config.permissions.rules.filter((p) => p.scope === ConfigScope.Project).map((p) => ({ type: p.type, rule: p.rule }));
+    }
+    if (requestedSections.includes("claudeMd")) {
+      sections.claudeMd = config.claudeMd.files.filter((f) => f.scope === ConfigScope.Project).map((f) => ({
+        slot: f.filePath.includes("/.claude/CLAUDE.md") ? ".claude/CLAUDE.md" : "root",
+        content: f.content
+      }));
+    }
+    const exportData = {
+      version: 1,
+      exportedAt: (/* @__PURE__ */ new Date()).toISOString(),
+      projectPath: config.projectPath,
+      sections
+    };
+    return c.json(exportData);
+  } catch (err) {
+    return c.json(
+      { error: err instanceof Error ? err.message : "Export failed" },
+      500
+    );
+  }
+});
+var export_default = app2;
+
 // src/routes/global-writes.ts
 init_cjs_shim();
-var app2 = new Hono2();
-app2.get("/", (c) => c.json({ allowGlobalWrites: getAllowGlobalWrites() }));
-app2.patch("/", async (c) => {
+var app3 = new Hono2();
+app3.get("/", (c) => c.json({ allowGlobalWrites: getAllowGlobalWrites() }));
+app3.patch("/", async (c) => {
   const body = await c.req.json();
   if (typeof body.enabled !== "boolean") {
     return c.json({ error: "Invalid body: expected { enabled: boolean }" }, 400);
@@ -13652,16 +13769,16 @@ app2.patch("/", async (c) => {
   setAllowGlobalWrites(body.enabled);
   return c.json({ allowGlobalWrites: getAllowGlobalWrites() });
 });
-var global_writes_default = app2;
+var global_writes_default = app3;
 
 // src/routes/plugins.ts
 init_cjs_shim();
 import { spawn } from "node:child_process";
-import { readFile as readFile3, writeFile, mkdir } from "node:fs/promises";
+import { readFile as readFile4, writeFile, mkdir } from "node:fs/promises";
 import { join as join14, dirname } from "node:path";
-import { homedir as homedir3 } from "node:os";
+import { homedir as homedir4 } from "node:os";
 function spawnClaude(args, cwd) {
-  return new Promise((resolve6, reject) => {
+  return new Promise((resolve7, reject) => {
     const child = spawn("claude", args, {
       env: { ...process.env, CLAUDECODE: "" },
       cwd,
@@ -13681,7 +13798,7 @@ function spawnClaude(args, cwd) {
     }, 3e4);
     child.on("close", (code) => {
       clearTimeout(timer);
-      if (code === 0) resolve6({ stdout, stderr });
+      if (code === 0) resolve7({ stdout, stderr });
       else reject(Object.assign(new Error(`claude exited with code ${code}`), { stdout, stderr }));
     });
     child.on("error", (err) => {
@@ -13694,7 +13811,7 @@ async function setPluginEnabled(settingsPath, pluginKey, enabled) {
   await mkdir(dirname(settingsPath), { recursive: true });
   let content;
   try {
-    content = await readFile3(settingsPath, "utf-8");
+    content = await readFile4(settingsPath, "utf-8");
   } catch {
     content = "{}";
   }
@@ -13704,11 +13821,11 @@ async function setPluginEnabled(settingsPath, pluginKey, enabled) {
   await writeFile(settingsPath, JSON.stringify(json, null, 2) + "\n");
 }
 async function togglePlugin(pluginKey, enabled, projectPath) {
-  const globalPath = join14(homedir3(), ".claude", "settings.json");
+  const globalPath = join14(homedir4(), ".claude", "settings.json");
   const projectSettingsPath = join14(projectPath, ".claude", "settings.json");
   await setPluginEnabled(globalPath, pluginKey, enabled);
   try {
-    const projContent = await readFile3(projectSettingsPath, "utf-8");
+    const projContent = await readFile4(projectSettingsPath, "utf-8");
     const projJson = JSON.parse(projContent);
     if (projJson.enabledPlugins && pluginKey in projJson.enabledPlugins) {
       projJson.enabledPlugins[pluginKey] = enabled;
@@ -13717,8 +13834,8 @@ async function togglePlugin(pluginKey, enabled, projectPath) {
   } catch {
   }
 }
-var app3 = new Hono2();
-app3.post("/", async (c) => {
+var app4 = new Hono2();
+app4.post("/", async (c) => {
   const body = await c.req.json();
   const { action, plugin, scope } = body;
   if (!action || !plugin) {
@@ -13772,7 +13889,7 @@ app3.post("/", async (c) => {
     }, 500);
   }
 });
-var plugins_default = app3;
+var plugins_default = app4;
 
 // src/routes/suggestions.ts
 init_cjs_shim();
@@ -13966,8 +14083,8 @@ function getSuggestions(config) {
 }
 
 // src/routes/suggestions.ts
-var app4 = new Hono2();
-app4.get("/", async (c) => {
+var app5 = new Hono2();
+app5.get("/", async (c) => {
   const projectPath = c.req.query("project") || detectProjectRoot();
   try {
     const config = await scanConfig(projectPath);
@@ -13978,16 +14095,16 @@ app4.get("/", async (c) => {
     return c.json({ error: "scan failed" }, 500);
   }
 });
-var suggestions_default = app4;
+var suggestions_default = app5;
 
 // src/routes/update.ts
 init_cjs_shim();
-import { readFile as readFile4, writeFile as writeFile2, mkdir as mkdir2 } from "node:fs/promises";
-import { realpathSync as realpathSync2 } from "node:fs";
-import { dirname as dirname2, resolve as resolve2 } from "node:path";
-import { homedir as homedir4 } from "node:os";
-var app5 = new Hono2();
-app5.patch("/", async (c) => {
+import { readFile as readFile5, writeFile as writeFile2, mkdir as mkdir2 } from "node:fs/promises";
+import { realpathSync as realpathSync3 } from "node:fs";
+import { dirname as dirname2, resolve as resolve3 } from "node:path";
+import { homedir as homedir5 } from "node:os";
+var app6 = new Hono2();
+app6.patch("/", async (c) => {
   const body = await c.req.json();
   const { filePath, key, value, scope } = body;
   const deleteKey = body.delete === true;
@@ -13997,19 +14114,19 @@ app5.patch("/", async (c) => {
   if (typeof filePath !== "string" || filePath.trim() === "") {
     return c.json({ success: false, error: "Invalid filePath" }, 400);
   }
-  const abs = resolve2(filePath);
+  const abs = resolve3(filePath);
   let realHome;
   try {
-    realHome = realpathSync2(homedir4());
+    realHome = realpathSync3(homedir5());
   } catch {
-    realHome = homedir4();
+    realHome = homedir5();
   }
   const isAllowed = abs.startsWith(realHome + "/") || abs === realHome;
   if (!isAllowed) {
     return c.json({ success: false, error: "Path not allowed" }, 403);
   }
-  const globalDir = resolve2(GLOBAL_DIR);
-  const globalDotClaudeJson = resolve2(homedir4(), ".claude.json");
+  const globalDir = resolve3(GLOBAL_DIR);
+  const globalDotClaudeJson = resolve3(homedir5(), ".claude.json");
   const isGlobal = abs.startsWith(globalDir + "/") || abs === globalDir || abs === globalDotClaudeJson;
   if (isGlobal && !getAllowGlobalWrites()) {
     return c.json({ success: false, error: "Global config is read-only. Enable global writes via the toggle in the top-right corner." }, 403);
@@ -14019,7 +14136,7 @@ app5.patch("/", async (c) => {
       await mkdir2(dirname2(abs), { recursive: true });
       let content;
       try {
-        content = await readFile4(abs, "utf-8");
+        content = await readFile5(abs, "utf-8");
       } catch {
         content = "{}";
       }
@@ -14057,14 +14174,14 @@ app5.patch("/", async (c) => {
     }, 500);
   }
 });
-var update_default = app5;
+var update_default = app6;
 
 // src/routes/workspaces.ts
 init_cjs_shim();
-import { readFile as readFile5, writeFile as writeFile3, mkdir as mkdir3 } from "node:fs/promises";
+import { readFile as readFile6, writeFile as writeFile3, mkdir as mkdir3 } from "node:fs/promises";
 import { existsSync as existsSync2 } from "node:fs";
 import { join as join18, basename as basename3 } from "node:path";
-import { homedir as homedir6 } from "node:os";
+import { homedir as homedir7 } from "node:os";
 
 // src/watcher.ts
 init_cjs_shim();
@@ -14926,7 +15043,7 @@ var NodeFsHandler = class {
         this._addToNodeFs(path2, initialAdd, wh, depth + 1);
       }
     }).on(EV.ERROR, this._boundHandleError);
-    return new Promise((resolve6, reject) => {
+    return new Promise((resolve7, reject) => {
       if (!stream3)
         return reject();
       stream3.once(STR_END, () => {
@@ -14935,7 +15052,7 @@ var NodeFsHandler = class {
           return;
         }
         const wasThrottled = throttler ? throttler.clear() : false;
-        resolve6(void 0);
+        resolve7(void 0);
         previous.getChildren().filter((item) => {
           return item !== directory && !current.has(item);
         }).forEach((item) => {
@@ -15764,7 +15881,7 @@ function watch(paths, options2 = {}) {
 
 // src/watcher.ts
 import { join as join17 } from "node:path";
-import { homedir as homedir5 } from "node:os";
+import { homedir as homedir6 } from "node:os";
 var listeners = /* @__PURE__ */ new Set();
 function onConfigChange(listener) {
   listeners.add(listener);
@@ -15797,7 +15914,7 @@ var GLOBAL_WATCH_SUBDIRS = [
   "mcp"
 ];
 function buildWatchPaths(projectRoots) {
-  const home = homedir5();
+  const home = homedir6();
   const claudeDir = join17(home, ".claude");
   const paths = GLOBAL_WATCH_SUBDIRS.map((sub) => join17(claudeDir, sub));
   for (const root of projectRoots) {
@@ -15838,11 +15955,11 @@ function restartWatcher(projectRoots) {
 }
 
 // src/routes/workspaces.ts
-var REGISTRY_DIR = join18(homedir6(), ".claude-config");
+var REGISTRY_DIR = join18(homedir7(), ".claude-config");
 var REGISTRY_FILE = join18(REGISTRY_DIR, "workspaces.json");
 async function readRegistry() {
   try {
-    const raw2 = await readFile5(REGISTRY_FILE, "utf-8");
+    const raw2 = await readFile6(REGISTRY_FILE, "utf-8");
     return JSON.parse(raw2);
   } catch {
     return [];
@@ -15865,12 +15982,12 @@ async function ensureSeeded() {
   }
   return workspaces;
 }
-var app6 = new Hono2();
-app6.get("/", async (c) => {
+var app7 = new Hono2();
+app7.get("/", async (c) => {
   const workspaces = await ensureSeeded();
   return c.json(workspaces);
 });
-app6.post("/", async (c) => {
+app7.post("/", async (c) => {
   const body = await c.req.json();
   const { path: inputPath } = body;
   if (!inputPath || typeof inputPath !== "string") {
@@ -15894,7 +16011,7 @@ app6.post("/", async (c) => {
   restartWatcher(workspaces.map((w) => w.path));
   return c.json(workspace, 201);
 });
-app6.delete("/:name", async (c) => {
+app7.delete("/:name", async (c) => {
   const name = c.req.param("name");
   const workspaces = await readRegistry();
   const filtered = workspaces.filter((w) => w.name !== name);
@@ -15905,61 +16022,62 @@ app6.delete("/:name", async (c) => {
   restartWatcher(filtered.map((w) => w.path));
   return c.json({ success: true });
 });
-var workspaces_default = app6;
+var workspaces_default = app7;
 
 // src/index.ts
-var app7 = new Hono2();
-app7.use("*", cors());
-app7.route("/api/config", config_default);
-app7.route("/api/update", update_default);
-app7.route("/api/plugins", plugins_default);
-app7.route("/api/workspaces", workspaces_default);
-app7.route("/api/global-writes", global_writes_default);
-app7.route("/api/suggestions", suggestions_default);
-app7.get("/api/events", (c) => {
+var app8 = new Hono2();
+app8.use("*", cors());
+app8.route("/api/config", config_default);
+app8.route("/api/update", update_default);
+app8.route("/api/export", export_default);
+app8.route("/api/plugins", plugins_default);
+app8.route("/api/workspaces", workspaces_default);
+app8.route("/api/global-writes", global_writes_default);
+app8.route("/api/suggestions", suggestions_default);
+app8.get("/api/events", (c) => {
   return streamSSE(c, async (stream3) => {
     const unsubscribe = onConfigChange((event) => {
       stream3.writeSSE({ event: "config-changed", data: JSON.stringify(event) }).catch(() => {
       });
     });
-    await new Promise((resolve6) => {
+    await new Promise((resolve7) => {
       stream3.onAbort(() => {
         unsubscribe();
-        resolve6();
+        resolve7();
       });
     });
   });
 });
-app7.get("/api/file", async (c) => {
+app8.get("/api/file", async (c) => {
   const filePath = c.req.query("path");
   if (!filePath) return c.json({ error: "Missing path" }, 400);
   let realHome;
   try {
-    realHome = realpathSync3(homedir7());
+    realHome = realpathSync4(homedir8());
   } catch {
-    realHome = homedir7();
+    realHome = homedir8();
   }
-  const abs = resolve5(filePath);
+  const abs = resolve6(filePath);
   let realAbs;
   try {
-    realAbs = realpathSync3(abs);
+    realAbs = realpathSync4(abs);
   } catch {
     realAbs = abs;
   }
   const isAllowed = realAbs.startsWith(realHome + "/") || realAbs === realHome;
   if (!isAllowed) return c.json({ error: "Path not allowed" }, 403);
   try {
-    const content = await readFile6(realAbs, "utf-8");
+    const content = await readFile7(realAbs, "utf-8");
     return c.json({ content });
   } catch {
     return c.json({ error: "File not found" }, 404);
   }
 });
-app7.delete("/api/file", async (c) => {
+app8.delete("/api/file", async (c) => {
   const filePath = c.req.query("path");
   if (!filePath) return c.json({ error: "Missing path" }, 400);
-  const abs = resolve5(filePath);
-  const home = homedir7();
+  const abs = resolve6(filePath);
+  const home = homedir8();
   if (!abs.startsWith(home + "/") && !abs.startsWith(home + "\\")) {
     return c.json({ error: "Path not allowed \u2014 must be within home directory" }, 403);
   }
@@ -15970,15 +16088,15 @@ app7.delete("/api/file", async (c) => {
     return c.json({ error: err instanceof Error ? err.message : "Unknown error" }, 500);
   }
 });
-app7.get("/api/health", (c) => c.json({ status: "ok" }));
+app8.get("/api/health", (c) => c.json({ status: "ok" }));
 var __filename = fileURLToPath3(import.meta.url);
 var __dirname = dirname5(__filename);
-var uiDistPath = resolve5(__dirname, "..", "..", "ui", "dist");
-app7.use("/*", serveStatic({ root: uiDistPath }));
-app7.get("/*", async (c) => {
-  const indexPath = resolve5(uiDistPath, "index.html");
+var uiDistPath = resolve6(__dirname, "..", "..", "ui", "dist");
+app8.use("/*", serveStatic({ root: uiDistPath }));
+app8.get("/*", async (c) => {
+  const indexPath = resolve6(uiDistPath, "index.html");
   try {
-    const html = await readFile6(indexPath, "utf-8");
+    const html = await readFile7(indexPath, "utf-8");
     return c.html(html);
   } catch {
     return c.notFound();
@@ -15986,7 +16104,7 @@ app7.get("/*", async (c) => {
 });
 var port = Number(process.env.PORT) || 37001;
 console.log(`Lens server on http://localhost:${port}`);
-serve({ fetch: app7.fetch, port });
+serve({ fetch: app8.fetch, port });
 startWatcher();
 /*! Bundled license information:
 
