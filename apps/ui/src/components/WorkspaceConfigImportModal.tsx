@@ -202,11 +202,29 @@ export function WorkspaceConfigImportModal({
     reader.onload = (e) => {
       try {
         const text = e.target?.result as string;
-        const data = JSON.parse(text) as ExportData;
+        const raw = JSON.parse(text);
 
-        if (data.version !== 1) {
-          throw new Error('Unsupported export format version');
+        // Validate export file structure
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+          throw new Error('Invalid file: expected a JSON object');
         }
+        if (typeof raw.version !== 'number') {
+          throw new Error('Invalid file: missing "version" field. This does not appear to be a Claude export file.');
+        }
+        if (raw.version !== 1) {
+          throw new Error(`Unsupported export format version: ${raw.version}`);
+        }
+        if (!raw.sections || typeof raw.sections !== 'object' || Array.isArray(raw.sections)) {
+          throw new Error('Invalid file: missing "sections" field. This does not appear to be a Claude export file.');
+        }
+        // Validate that section values are arrays (if present)
+        const knownSections = ['mcpServers', 'hooks', 'skills', 'agents', 'rules', 'commands', 'permissions', 'claudeMd', 'plugins'];
+        for (const key of Object.keys(raw.sections)) {
+          if (knownSections.includes(key) && !Array.isArray(raw.sections[key])) {
+            throw new Error(`Invalid file: section "${key}" must be an array`);
+          }
+        }
+        const data = raw as ExportData;
 
         // Sanitize names from untrusted JSON to prevent path traversal
         const safeName = (name: unknown): string => {
