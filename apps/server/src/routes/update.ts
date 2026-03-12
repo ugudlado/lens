@@ -31,8 +31,10 @@ app.patch('/', async (c) => {
   }
 
   // Block global-scope writes unless global writes are enabled via the UI toggle
+  // Global config includes ~/.claude/ directory AND ~/.claude.json
   const globalDir = resolve(GLOBAL_DIR);
-  const isGlobal = abs.startsWith(globalDir + '/') || abs === globalDir;
+  const globalDotClaudeJson = resolve(homedir(), '.claude.json');
+  const isGlobal = abs.startsWith(globalDir + '/') || abs === globalDir || abs === globalDotClaudeJson;
   if (isGlobal && !getAllowGlobalWrites()) {
     return c.json<ConfigUpdateResponse>({ success: false, error: 'Global config is read-only. Enable global writes via the toggle in the top-right corner.' }, 403);
   }

@@ -73,9 +73,11 @@ function AddServerForm({ config, onRescan }: { config: ConfigSnapshot; onRescan:
     onRescan();
   });
 
+  // Global MCPs live in ~/.claude.json (not ~/.claude/.mcp.json)
+  const homeDir = config.globalPath.replace(/[\\/]\.claude$/, '');
   const mcpPaths: Record<McpScope, string> = {
     [ConfigScope.Project]: `${config.projectPath}/.mcp.json`,
-    [ConfigScope.Global]: `${config.globalPath}/.mcp.json`,
+    [ConfigScope.Global]: `${homeDir}/.claude.json`,
   };
 
   const derivedName = deriveNameFromCommand(commandInput);
@@ -350,7 +352,9 @@ export function McpPanel({ config, onRescan, workspaces = [], activeProject = ''
   }
 
   function getScopeOptions(server: McpServer): { label: string; scope?: ConfigScope; onCopy: () => Promise<void>; onMove?: () => Promise<void> }[] {
-    const globalFilePath = `${config.globalPath}/.mcp.json`;
+    // Global MCPs live in ~/.claude.json (not ~/.claude/.mcp.json)
+    const homeDir = config.globalPath.replace(/[\\/]\.claude$/, '');
+    const globalFilePath = `${homeDir}/.claude.json`;
     const projectFilePath = `${config.projectPath}/.mcp.json`;
 
     async function copyTo(targetScope: ConfigScope, targetFilePath: string) {
