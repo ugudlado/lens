@@ -869,9 +869,7 @@ export function WorkspaceConfigImportModal({
                     {SECTION_LABELS[activeSection]}
                     {' — '}
                     <span className="text-green-400">
-                      {sourceItems[activeSection].length - Array.from(existingKeys[activeSection]).filter(k =>
-                        sourceItems[activeSection].some(item => getKey(activeSection, item) === k)
-                      ).length} new
+                      {sourceItems[activeSection].filter(item => !existingKeys[activeSection].has(getKey(activeSection, item))).length} new
                     </span>
                   </span>
                   {sourceItems[activeSection].some(item => !existingKeys[activeSection].has(getKey(activeSection, item))) && (

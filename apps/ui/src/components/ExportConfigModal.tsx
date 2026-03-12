@@ -125,16 +125,8 @@ export function ExportConfigModal({ config, onClose }: ExportConfigModalProps) {
     setError('');
 
     // Build sections list — only sections with at least one checked item
-    const requestedSections: ExportSectionId[] = [];
-    if (checked.mcp.size > 0) requestedSections.push('mcp');
-    if (checked.hooks.size > 0) requestedSections.push('hooks');
-    if (checked.skills.size > 0) requestedSections.push('skills');
-    if (checked.agents.size > 0) requestedSections.push('agents');
-    if (checked.rules.size > 0) requestedSections.push('rules');
-    if (checked.commands.size > 0) requestedSections.push('commands');
-    if (checked.permissions.size > 0) requestedSections.push('permissions');
-    if (checked.claudeMd.size > 0) requestedSections.push('claudeMd');
-    if (checked.plugins.size > 0) requestedSections.push('plugins');
+    const requestedSections = (Object.keys(checked) as ExportSectionId[])
+      .filter(s => checked[s].size > 0);
 
     if (requestedSections.length === 0) {
       setError('Please select at least one item to export.');
