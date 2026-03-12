@@ -14,23 +14,25 @@ No database, no external dependencies, no changes to existing config scanning lo
 
 **Signature**
 ```
-GET /api/export?sections=mcp,hooks,skills,agents,rules,commands,permissions,settings,claudeMd
+GET /api/export?sections=mcp,hooks,skills,agents,rules,commands,permissions,claudeMd
 Response: application/json
 Content-Type: application/json
 ```
 
 **Parameters**
-- `sections` (optional, comma-separated): Which sections to include. Default: all.
-- `project` (optional): Project path override. Default: current active project from ConfigSnapshot.
+- `sections` (optional, comma-separated): Which sections to include. Default: all. Note: section-level filtering only; item-level filtering happens client-side.
+- `project` (optional): Project path override. **MUST be validated against home directory before use (see security below)**.
 
 **Implementation** (`apps/server/src/routes/export.ts`)
 
 ```typescript
 import { Hono } from 'hono';
 import { readFile } from 'node:fs/promises';
+import { resolve, realpathSync } from 'node:path';
+import { homedir } from 'node:os';
 import { ConfigScope } from '@lens/schema';
 import type { ExportData, ExportSections } from '@lens/schema';
-import { scan } from '../scanner/index.js';
+import { scanConfig } from '../scanner/index.js';
 
 const app = new Hono();
 
@@ -39,15 +41,31 @@ app.get('/', async (c) => {
   const projectOverride = c.req.query('project');
 
   try {
+    // Path validation (critical security check — matches update.ts pattern)
+    let projectPath: string;
+    if (projectOverride) {
+      const abs = resolve(projectOverride);
+      let realHome: string;
+      try { realHome = realpathSync(homedir()); } catch { realHome = homedir(); }
+      const isAllowed = abs.startsWith(realHome + '/') || abs === realHome;
+      if (!isAllowed) {
+        return c.json({ error: 'Path not allowed' }, 403);
+      }
+      projectPath = abs;
+    } else {
+      // Use active project from context (requires middleware to set this)
+      projectPath = c.env.activeProjectPath || homedir();
+    }
+
     // Get current project config
-    const config = await scan({ projectPath: projectOverride });
+    const config = await scanConfig(projectPath);
 
     // Parse requested sections
     const requestedSections = sectionsParam
       ? sectionsParam.split(',').map(s => s.trim())
-      : ['mcp', 'hooks', 'skills', 'agents', 'rules', 'commands', 'permissions', 'settings', 'claudeMd'];
+      : ['mcp', 'hooks', 'skills', 'agents', 'rules', 'commands', 'permissions', 'claudeMd'];
 
-    // Build export data
+    // Build export data (all fields optional for conditional assignment)
     const sections: ExportSections = {};
 
     // MCP Servers
@@ -64,13 +82,13 @@ app.get('/', async (c) => {
         }));
     }
 
-    // Hooks
+    // Hooks (include all types: command, prompt, agent)
     if (requestedSections.includes('hooks')) {
       sections.hooks = config.hooks.hooks
         .filter(h => h.scope === ConfigScope.Project)
         .map(h => ({
           event: h.event,
-          type: h.type,
+          type: h.type,  // includes 'agent' type
           command: h.command,
           prompt: h.prompt,
           matcher: h.matcher,
@@ -78,26 +96,36 @@ app.get('/', async (c) => {
         }));
     }
 
-    // Skills
+    // Skills (directory-based: {name}/ contains SKILL.md)
     if (requestedSections.includes('skills')) {
-      sections.skills = config.skills.skills
-        .filter(s => s.scope === ConfigScope.Project)
-        .map(async s => ({
-          name: s.name,
-          filePath: s.filePath,
-          content: await readFile(s.filePath, 'utf-8'),
-        }));
-      sections.skills = await Promise.all(sections.skills);
+      sections.skills = await Promise.all(
+        config.skills.skills
+          .filter(s => s.scope === ConfigScope.Project)
+          .map(async s => ({
+            name: s.name,
+            content: await readFile(s.filePath, 'utf-8'),
+          }))
+      );
     }
 
-    // ... similar for agents, rules, commands, CLAUDE.md
+    // ... similar for agents, rules, commands
 
-    // Settings (entire settings.json for project scope)
-    if (requestedSections.includes('settings')) {
-      const settingsPath = `${config.projectPath}/.claude/settings.json`;
-      sections.settings = {
-        content: await readFile(settingsPath, 'utf-8').catch(() => '{}'),
-      };
+    // Permissions (include all types: allow, deny, ask)
+    if (requestedSections.includes('permissions')) {
+      sections.permissions = config.permissions.rules.map(p => ({
+        type: p.type,  // includes 'ask' type
+        rule: p.rule,
+      }));
+    }
+
+    // CLAUDE.md (by logical slot, not absolute path)
+    if (requestedSections.includes('claudeMd')) {
+      sections.claudeMd = config.claudeMd.files
+        .filter(f => f.scope === ConfigScope.Project)
+        .map(f => ({
+          slot: f.filePath.endsWith('.claude/CLAUDE.md') ? '.claude/CLAUDE.md' : 'root',
+          content: f.content,
+        }));
     }
 
     // Build root ExportData
@@ -119,6 +147,14 @@ app.get('/', async (c) => {
 
 export default app;
 ```
+
+**Critical notes**:
+- Use `scanConfig(projectPath)` — NOT fictional `scan()` function
+- **Path validation REQUIRED** before calling `scanConfig` (matches `update.ts:25-30` pattern)
+- `ExportSections` fields are all optional — only assign if section is requested
+- Skills export only `content` (path is `{name}/SKILL.md`, computed on import)
+- Hooks/permissions include all types from schema (`agent`, `ask`)
+- CLAUDE.md uses logical `slot` not absolute `filePath`
 
 **Route mounting** in `apps/server/src/index.ts`
 ```typescript

@@ -6,11 +6,11 @@
 
 **FR1: Export Modal**
 - Modal displays all project-scoped config sections in a checklist
-- Sections: MCP Servers, Hooks, Skills, Agents, Rules, Commands, Settings, CLAUDE.md
+- Sections: MCP Servers, Hooks, Skills, Agents, Rules, Commands, Permissions, CLAUDE.md
 - All items pre-checked by default (export all by default)
 - Shows count of items per section
 - User can deselect sections or individual items
-- Deselected sections are not included in export
+- Deselected items/sections are filtered client-side before download (server returns all, UI prunes)
 
 **FR2: Export File Format**
 ```json
@@ -20,36 +20,38 @@
   "projectPath": "/path/to/project",
   "sections": {
     "mcpServers": [
-      { "name": "...", "type": "...", "command": "..." }
+      { "name": "...", "type": "stdio|http|sse", "command": "...", "args": ["..."], "url": "...", "env": {...} }
     ],
     "hooks": [
-      { "event": "...", "type": "...", "command": "...", "filePath": "..." }
+      { "event": "...", "type": "command|prompt|agent", "command": "...", "prompt": "...", "matcher": "...", "timeout": 5000 }
     ],
     "skills": [
-      { "name": "...", "filePath": "...", "content": "..." }
+      { "name": "...", "content": "..." }
     ],
     "agents": [
-      { "name": "...", "filePath": "...", "content": "..." }
+      { "name": "...", "content": "..." }
     ],
     "rules": [
-      { "name": "...", "filePath": "...", "content": "..." }
+      { "name": "...", "content": "...", "ext": "md|mdc" }
     ],
     "commands": [
-      { "name": "...", "filePath": "...", "content": "..." }
+      { "name": "...", "content": "..." }
     ],
     "permissions": [
-      { "type": "...", "rule": "..." }
+      { "type": "allow|deny|ask", "rule": "..." }
     ],
-    "settings": {
-      "content": "{ ... }"
-    },
     "claudeMd": [
-      { "filePath": "/path/to/CLAUDE.md", "content": "..." },
-      { "filePath": "/path/to/.claude/CLAUDE.md", "content": "..." }
+      { "slot": "root|.claude/CLAUDE.md", "content": "..." }
     ]
   }
 }
 ```
+
+**Key changes from schema**:
+- Removed `settings` blob (see Data Model section)
+- Skills/agents/rules/commands export `content` only (no filePath — that's implementation detail)
+- CLAUDE.md uses `slot` (logical location) not absolute `filePath`
+- Hooks and permissions include all valid types from schema (`agent`, `ask`)
 
 **FR3: Export Button**
 - Button placed in Dashboard header next to existing "Import from Workspace" button
@@ -105,15 +107,14 @@ interface ExportData {
 }
 
 interface ExportSections {
-  mcpServers: McpServerExport[];
-  hooks: HookExport[];
-  skills: SkillExport[];
-  agents: AgentExport[];
-  rules: RuleExport[];
-  commands: CommandExport[];
-  permissions: PermissionExport[];
-  settings: SettingsExport;
-  claudeMd: ClaudeMdExport[];
+  mcpServers?: McpServerExport[];
+  hooks?: HookExport[];
+  skills?: SkillExport[];
+  agents?: AgentExport[];
+  rules?: RuleExport[];
+  commands?: CommandExport[];
+  permissions?: PermissionExport[];
+  claudeMd?: ClaudeMdExport[];
 }
 
 interface McpServerExport {
@@ -127,7 +128,7 @@ interface McpServerExport {
 
 interface HookExport {
   event: string;
-  type: 'command' | 'prompt';
+  type: 'command' | 'prompt' | 'agent';
   command?: string;
   prompt?: string;
   matcher?: string;
@@ -136,41 +137,33 @@ interface HookExport {
 
 interface SkillExport {
   name: string;
-  filePath: string;
-  content: string;
+  content: string;  // SKILL.md file content
 }
 
 interface AgentExport {
   name: string;
-  filePath: string;
-  content: string;
+  content: string;  // .md file content
 }
 
 interface RuleExport {
   name: string;
-  filePath: string;
-  content: string;
+  content: string;  // .md or .mdc file content
   ext: 'md' | 'mdc';
 }
 
 interface CommandExport {
   name: string;
-  filePath: string;
-  content: string;
+  content: string;  // .md file content
 }
 
 interface PermissionExport {
-  type: 'allow' | 'deny';
+  type: 'allow' | 'deny' | 'ask';
   rule: string;
 }
 
-interface SettingsExport {
-  content: string;  // JSON stringified
-}
-
 interface ClaudeMdExport {
-  filePath: string;
-  content: string;
+  slot: 'root' | '.claude/CLAUDE.md';
+  content: string;  // File content (path is derived from slot on import)
 }
 ```
 
