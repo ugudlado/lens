@@ -1,9 +1,9 @@
+import type { ConfigSnapshot, Suggestion, Workspace } from "@lens/schema";
+import { ConfigScope, NavSection } from "@lens/schema";
 import { useState } from "react";
-import { NavSection, ConfigScope } from "@lens/schema";
-import type { ConfigSnapshot, Workspace, Suggestion } from "@lens/schema";
-import { WorkspaceConfigImportModal } from "./WorkspaceConfigImportModal.js";
 import { ExportConfigModal } from "./ExportConfigModal.js";
 import { SuggestionsBox } from "./SuggestionsBox.js";
+import { WorkspaceConfigImportModal } from "./WorkspaceConfigImportModal.js";
 
 interface DashboardProps {
   config: ConfigSnapshot;
@@ -308,11 +308,10 @@ function ConfigCard({
   return (
     <button
       onClick={() => onNavigate(card.section)}
-      className={`group flex w-full flex-col gap-2 rounded border border-l-2 bg-white/[0.02] px-4 py-3 text-left transition-all ${
-        isConfigured
+      className={`group flex w-full flex-col gap-2 rounded border border-l-2 bg-white/[0.02] px-4 py-3 text-left transition-all ${isConfigured
           ? `border-white/5 ${accentBorder} ${hoverBorder} hover:bg-white/[0.04]`
           : "border-dashed border-white/10 hover:border-white/20 hover:bg-white/[0.03]"
-      }`}
+        }`}
     >
       {/* Top row: label + count */}
       <div className="flex items-center justify-between">
@@ -510,7 +509,11 @@ export function Dashboard({
         })}
       </div>
 
-      {/* Empty suggestions placeholder - removed to avoid dead weight */}
+      <SuggestionsBox
+        suggestions={suggestions ?? null}
+        onNavigate={onNavigate}
+        activeProject={activeProject}
+      />
     </div>
   );
 }

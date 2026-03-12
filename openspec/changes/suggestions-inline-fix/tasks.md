@@ -13,11 +13,11 @@
 
 ## Phase 2: UI
 
-- [ ] T-9 Update `SuggestionsBox.tsx`: add per-card `fixState: 'idle' | 'loading' | 'error'` state; render "Fix Now" button when `suggestion.fix` is present; implement spinner → dismiss → inline error flow; dismissed cards must remain dismissed even if parent re-renders from SSE before the suggestion is gone from the list (depends: T-1)
-- [ ] T-10 Update `Dashboard.tsx` urgent banner: same "Fix Now" button treatment for warning-severity cards with `suggestion.fix` (depends: T-1)
-- [ ] T-11 Run `pnpm type-check && pnpm lint` — verify no errors
-- [ ] T-12 Smoke test in browser: trigger each fixable suggestion, click "Fix Now", verify card dismisses and file is created; verify error state by temporarily breaking a handler
-- [ ] T-13 Review checkpoint (phase gate)
+- [x] T-9 Update `SuggestionsBox.tsx`: add per-card `fixState: 'idle' | 'loading' | 'error'` state; render "Fix Now" button when `suggestion.fix` is present; implement spinner → dismiss → inline error flow; dismissed cards must remain dismissed even if parent re-renders from SSE before the suggestion is gone from the list (depends: T-1)
+- [x] T-10 Update `Dashboard.tsx` urgent banner: same "Fix Now" button treatment for warning-severity cards with `suggestion.fix` (depends: T-1)
+- [x] T-11 Run `pnpm type-check && pnpm lint` — verify no errors
+- [~] T-12 Smoke test in browser: trigger each fixable suggestion, click "Fix Now", verify card dismisses and file is created; verify error state by temporarily breaking a handler
+- [x] T-13 Review checkpoint (phase gate)
 
 <!-- Status markers: [ ] pending, [→] in-progress, [x] done -->
 <!-- [P] = parallelizable, (depends: T-xxx) = dependency -->
