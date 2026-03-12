@@ -31,7 +31,18 @@ export async function scanSkills(
     );
   }
 
-  return { skills };
+  // Deduplicate by name: project > global > plugin
+  const sourceRank = (source: EntrySource) =>
+    source === EntrySource.Project ? 0 : source === EntrySource.Global ? 1 : 2;
+  const seen = new Map<string, SkillEntry>();
+  for (const skill of skills) {
+    const existing = seen.get(skill.name);
+    if (!existing || sourceRank(skill.source) < sourceRank(existing.source)) {
+      seen.set(skill.name, skill);
+    }
+  }
+
+  return { skills: [...seen.values()] };
 
   async function discoverSkills(
     dir: string,

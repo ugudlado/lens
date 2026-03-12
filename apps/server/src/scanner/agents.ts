@@ -31,7 +31,18 @@ export async function scanAgents(
     );
   }
 
-  return { agents };
+  // Deduplicate by name: project > global > plugin
+  const sourceRank = (source: EntrySource) =>
+    source === EntrySource.Project ? 0 : source === EntrySource.Global ? 1 : 2;
+  const seen = new Map<string, AgentEntry>();
+  for (const agent of agents) {
+    const existing = seen.get(agent.name);
+    if (!existing || sourceRank(agent.source) < sourceRank(existing.source)) {
+      seen.set(agent.name, agent);
+    }
+  }
+
+  return { agents: [...seen.values()] };
 
   async function discoverAgents(
     dir: string,
