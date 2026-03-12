@@ -7255,7 +7255,8 @@ async function scanPlugins(projectPath) {
     }
     for (const [key, val] of Object.entries(pluginsObj)) {
       if (key === "version") continue;
-      const entries = Array.isArray(val) ? val : [val];
+      const allEntries = Array.isArray(val) ? val : [val];
+      const entries = allEntries.length > 0 ? [allEntries[allEntries.length - 1]] : allEntries;
       for (const entry of entries) {
         const v = entry;
         const [pluginName, marketplace] = key.split("@");
@@ -7303,7 +7304,6 @@ async function scanPlugins(projectPath) {
       const v = val;
       const installLocation = v.installLocation;
       if (!installLocation) continue;
-      const marketplaceHeadSha = await readGitSha(installLocation);
       try {
         const pluginsDir = join6(installLocation, "plugins");
         const entries = await readdir2(pluginsDir);
@@ -7315,8 +7315,7 @@ async function scanPlugins(projectPath) {
           const isInstalled = installedNames.has(`${entry}@${mpName}`);
           const installedPlugin = plugins.find((p) => p.name === entry && p.marketplace === mpName);
           const pluginJsonVersion = await readPluginJsonVersion(pluginPath);
-          const latestVersion = pluginJsonVersion || marketplaceHeadSha;
-          if (latestVersion) latestVersionMap.set(`${entry}@${mpName}`, latestVersion);
+          if (pluginJsonVersion) latestVersionMap.set(`${entry}@${mpName}`, pluginJsonVersion);
           const desc = await extractReadmeDescription(pluginPath);
           available.push({
             name: entry,
@@ -7364,8 +7363,7 @@ async function scanPlugins(projectPath) {
           const installedPlugin = plugins.find((p) => p.name === pluginName && p.marketplace === mpName);
           const desc = pj.description || await extractReadmeDescription(installLocation);
           const pluginJsonVersion = pj.version;
-          const latestVersion = pluginJsonVersion || marketplaceHeadSha;
-          if (latestVersion) latestVersionMap.set(`${pluginName}@${mpName}`, latestVersion);
+          if (pluginJsonVersion) latestVersionMap.set(`${pluginName}@${mpName}`, pluginJsonVersion);
           available.push({
             name: pluginName,
             marketplace: mpName,
@@ -7384,13 +7382,17 @@ async function scanPlugins(projectPath) {
     if (latest) {
       plugin.latestVersion = latest;
       const installedRef = plugin.gitSha || plugin.version;
-      const isSemver = (v) => /^\d+\.\d+/.test(v);
-      const isSha = (v) => /^[0-9a-f]{7,40}$/.test(v);
-      const mixedScheme = isSemver(installedRef) && isSha(latest) || isSha(installedRef) && isSemver(latest);
-      if (mixedScheme) {
+      if (!installedRef || installedRef === "unknown") {
         plugin.updateAvailable = false;
       } else {
-        plugin.updateAvailable = !latest.startsWith(installedRef) && !installedRef.startsWith(latest);
+        const isSemver = (v) => /^\d+\.\d+/.test(v);
+        const isSha = (v) => /^[0-9a-f]{7,40}$/.test(v);
+        const mixedScheme = isSemver(installedRef) && isSha(latest) || isSha(installedRef) && isSemver(latest);
+        if (mixedScheme) {
+          plugin.updateAvailable = false;
+        } else {
+          plugin.updateAvailable = !latest.startsWith(installedRef) && !installedRef.startsWith(latest);
+        }
       }
     }
   }
@@ -13538,7 +13540,11 @@ async function scanAvailablePluginMcps(installedNames) {
         if (!pStat?.isDirectory()) continue;
         const versions2 = await readdir8(pluginDir);
         if (versions2.length === 0) continue;
-        const versionDir = join12(pluginDir, versions2[0]);
+        const versionStats = await Promise.all(
+          versions2.map(async (v) => ({ v, mtime: (await stat2(join12(pluginDir, v)).catch(() => null))?.mtimeMs ?? 0 }))
+        );
+        const latestVersion = versionStats.sort((a3, b) => b.mtime - a3.mtime)[0].v;
+        const versionDir = join12(pluginDir, latestVersion);
         const vStat = await stat2(versionDir).catch(() => null);
         if (!vStat?.isDirectory()) continue;
         const filePath = join12(versionDir, ".mcp.json");
@@ -13580,11 +13586,16 @@ async function scanConfig(projectPath) {
     scanMemory(projectPath),
     scanKeybindings()
   ]);
-  const pluginPaths = plugins.plugins.map((p) => ({ name: p.name, installPath: p.installPath, enabled: p.enabled }));
+  const pluginPathsMap = /* @__PURE__ */ new Map();
+  for (const p of plugins.plugins) {
+    pluginPathsMap.set(p.name, { name: p.name, installPath: p.installPath, enabled: p.enabled });
+  }
+  const pluginPaths = [...pluginPathsMap.values()];
   const pluginMcpServers = await scanPluginMcpServers(pluginPaths);
   const existingNames = new Set(mcp.servers.map((s) => s.name));
   for (const server of pluginMcpServers) {
     if (!existingNames.has(server.name)) {
+      existingNames.add(server.name);
       mcp.servers.push(server);
     }
   }
@@ -13998,7 +14009,8 @@ app5.patch("/", async (c) => {
     return c.json({ success: false, error: "Path not allowed" }, 403);
   }
   const globalDir = resolve2(GLOBAL_DIR);
-  const isGlobal = abs.startsWith(globalDir + "/") || abs === globalDir;
+  const globalDotClaudeJson = resolve2(homedir4(), ".claude.json");
+  const isGlobal = abs.startsWith(globalDir + "/") || abs === globalDir || abs === globalDotClaudeJson;
   if (isGlobal && !getAllowGlobalWrites()) {
     return c.json({ success: false, error: "Global config is read-only. Enable global writes via the toggle in the top-right corner." }, 403);
   }
