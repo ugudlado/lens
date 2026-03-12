@@ -1,7 +1,7 @@
 import { NavSection } from "@lens/schema";
 import type { ConfigSnapshot, Workspace } from "@lens/schema";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
-import { APP_NAME } from "../constants.js";
+import { APP_NAME, APP_VERSION } from "../constants.js";
 
 interface NavItem {
   key: NavSection;
@@ -82,9 +82,12 @@ export function Sidebar({
   return (
     <aside className="flex min-h-screen w-56 flex-col border-r border-border bg-sidebar">
       <div className="border-b border-border px-4 py-5">
-        <h1 className="text-sm font-bold uppercase tracking-wide text-accent">
-          {APP_NAME}
-        </h1>
+        <div className="flex items-baseline gap-2">
+          <h1 className="text-xs font-bold uppercase tracking-widest text-accent">
+            {APP_NAME}
+          </h1>
+          <span className="text-[10px] text-gray-600">v{APP_VERSION}</span>
+        </div>
       </div>
       <WorkspaceSwitcher
         workspaces={workspaces}

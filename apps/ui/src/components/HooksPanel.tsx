@@ -462,14 +462,19 @@ export function HooksPanel({ config, onRescan }: Props) {
       title="Hooks"
       subtitle={`${hooks.length} hook${hooks.length !== 1 ? "s" : ""} across ${grouped.size} event${grouped.size !== 1 ? "s" : ""}`}
       actions={
-        allGroupKeys.length > 0 ? (
-          <button
-            onClick={toggleExpandAll}
-            className="text-xs text-gray-400 transition-colors hover:text-gray-200"
-          >
-            {allExpanded ? "Collapse All" : "Expand All"}
-          </button>
-        ) : undefined
+        <div className="flex items-center gap-3">
+          {allGroupKeys.length > 0 && (
+            <button
+              onClick={toggleExpandAll}
+              className="text-xs text-gray-400 transition-colors hover:text-gray-200"
+            >
+              {allExpanded ? "Collapse All" : "Expand All"}
+            </button>
+          )}
+          <AddButton onClick={() => setShowAddForm(!showAddForm)}>
+            + Add Hook
+          </AddButton>
+        </div>
       }
       view={viewTab}
       onViewChange={(v) => {

@@ -15,6 +15,7 @@ import {
   PanelRow,
   PanelEmpty,
   DeleteButton,
+  AddButton,
 } from "./panel/index.js";
 
 interface Props {
@@ -62,11 +63,14 @@ type McpScope = ConfigScope.Project | ConfigScope.Global;
 function AddServerForm({
   config,
   onRescan,
+  open,
+  onClose,
 }: {
   config: ConfigSnapshot;
   onRescan: () => void;
+  open: boolean;
+  onClose: () => void;
 }) {
-  const [open, setOpen] = useState(false);
   const [commandInput, setCommandInput] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [nameOverride, setNameOverride] = useState("");
@@ -82,7 +86,7 @@ function AddServerForm({
     setServerName("");
     setUrl("");
     setShowAdvanced(false);
-    setOpen(false);
+    onClose();
     onRescan();
   });
 
@@ -133,14 +137,7 @@ function AddServerForm({
   }
 
   if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className="mb-4 rounded-lg bg-accent/10 px-4 py-2 text-sm font-medium text-accent transition-colors hover:bg-accent/20"
-      >
-        + Add Server
-      </button>
-    );
+    return null;
   }
 
   return (
@@ -291,7 +288,7 @@ function AddServerForm({
           {saving ? "Adding..." : "Add Server"}
         </button>
         <button
-          onClick={() => setOpen(false)}
+          onClick={onClose}
           className="rounded bg-gray-500/20 px-3 py-1.5 text-xs font-medium text-gray-400 transition-colors hover:bg-gray-500/30"
         >
           Cancel
@@ -319,6 +316,7 @@ export function McpPanel({
   } = usePluginAction(onRescan);
   const [search, setSearch] = useState("");
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   function toggleRow(i: number) {
     setExpanded((prev) => {
@@ -479,15 +477,20 @@ export function McpPanel({
       title="MCP Servers"
       subtitle={`${servers.length} server${servers.length !== 1 ? "s" : ""} configured${mcpFiles.length > 0 ? ` across ${mcpFiles.length} file${mcpFiles.length !== 1 ? "s" : ""}` : ""}`}
       actions={
-        otherWorkspaces.length > 0 ? (
-          <button
-            onClick={() => setShowImportModal(true)}
-            className="whitespace-nowrap rounded-lg bg-cyan-500/10 px-3 py-1.5 text-xs font-medium text-cyan-400 transition-colors hover:bg-cyan-500/20"
-            title="Import MCP servers from another workspace"
-          >
-            &#8595; Import
-          </button>
-        ) : undefined
+        <div className="flex items-center gap-2">
+          {otherWorkspaces.length > 0 && (
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="whitespace-nowrap rounded-lg bg-cyan-500/10 px-3 py-1.5 text-xs font-medium text-cyan-400 transition-colors hover:bg-cyan-500/20"
+              title="Import MCP servers from another workspace"
+            >
+              &#8595; Import
+            </button>
+          )}
+          <AddButton onClick={() => setShowAddForm(!showAddForm)}>
+            + Add Server
+          </AddButton>
+        </div>
       }
       view={view}
       onViewChange={(v) => {
@@ -534,7 +537,12 @@ export function McpPanel({
         />
       ) : (
         <>
-          <AddServerForm config={config} onRescan={onRescan} />
+          <AddServerForm
+            config={config}
+            onRescan={onRescan}
+            open={showAddForm}
+            onClose={() => setShowAddForm(false)}
+          />
 
           <SearchBar
             value={search}
