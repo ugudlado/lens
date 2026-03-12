@@ -32,7 +32,8 @@ export type ImportSection =
   | "rules"
   | "commands"
   | "permissions"
-  | "plugins";
+  | "plugins"
+  | "settings";
 
 const SECTION_LABELS: Record<ImportSection, string> = {
   mcp: "MCP Servers",
@@ -43,6 +44,7 @@ const SECTION_LABELS: Record<ImportSection, string> = {
   commands: "Commands",
   permissions: "Permissions",
   plugins: "Plugins",
+  settings: "Settings",
 };
 
 // ─── Item key helpers ───────────────────────────────────────────────────────
@@ -90,6 +92,11 @@ function buildMcpValue(s: McpServer) {
 
 type ModalState = "pick-workspace" | "checklist" | "importing";
 
+interface SettingsItem {
+  key: string;
+  value: unknown;
+}
+
 interface SectionItems {
   mcp: McpServer[];
   hooks: HookEntry[];
@@ -99,6 +106,7 @@ interface SectionItems {
   commands: CommandEntry[];
   permissions: PermissionRule[];
   plugins: PluginEntry[];
+  settings: SettingsItem[];
 }
 
 interface Props {
@@ -122,6 +130,7 @@ const ALL_SECTIONS: ImportSection[] = [
   "rules",
   "commands",
   "permissions",
+  "settings",
 ];
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -161,6 +170,7 @@ export function WorkspaceConfigImportModal({
     commands: [],
     permissions: [],
     plugins: [],
+    settings: [],
   });
   const [checked, setChecked] = useState<Record<ImportSection, Set<string>>>({
     mcp: new Set(),
@@ -171,6 +181,7 @@ export function WorkspaceConfigImportModal({
     commands: new Set(),
     permissions: new Set(),
     plugins: new Set(),
+    settings: new Set(),
   });
 
   // Pre-compute existing item keys for each section
@@ -199,6 +210,7 @@ export function WorkspaceConfigImportModal({
         .filter((p) => p.scope === PluginScope.Project)
         .map(pluginKey),
     ),
+    settings: new Set(),
   };
 
   useEffect(() => {
@@ -223,6 +235,15 @@ export function WorkspaceConfigImportModal({
       }
       const data = (await res.json()) as ConfigSnapshot;
 
+      const sourceSettingsFile = (data.settings?.files ?? []).find(
+        (f) => f.scope === ConfigScope.Project,
+      );
+      const settingsFromWorkspace: SettingsItem[] = sourceSettingsFile
+        ? Object.entries(sourceSettingsFile.raw).map(([k, v]) => ({
+            key: k,
+            value: v,
+          }))
+        : [];
       const items: SectionItems = {
         mcp: (data.mcp?.servers ?? []).filter((s) => !s.pluginName),
         hooks: (data.hooks?.hooks ?? []).filter((h) => !h.pluginName),
@@ -234,6 +255,7 @@ export function WorkspaceConfigImportModal({
         plugins: (data.plugins?.plugins ?? []).filter(
           (p) => p.scope === PluginScope.Project,
         ),
+        settings: settingsFromWorkspace,
       };
 
       setSourceItems(items);
@@ -248,6 +270,7 @@ export function WorkspaceConfigImportModal({
         commands: new Set(),
         permissions: new Set(),
         plugins: new Set(),
+        settings: new Set(),
       };
       for (const s of items.mcp) {
         if (!existingKeys.mcp.has(mcpKey(s))) newChecked.mcp.add(mcpKey(s));
@@ -279,6 +302,9 @@ export function WorkspaceConfigImportModal({
       for (const p of items.plugins) {
         if (!existingKeys.plugins.has(pluginKey(p)))
           newChecked.plugins.add(pluginKey(p));
+      }
+      for (const s of items.settings) {
+        newChecked.settings.add(s.key);
       }
 
       setChecked(newChecked);
@@ -331,7 +357,6 @@ export function WorkspaceConfigImportModal({
           "rules",
           "commands",
           "permissions",
-          "claudeMd",
           "plugins",
         ];
         for (const key of Object.keys(raw.sections)) {
@@ -454,6 +479,11 @@ export function WorkspaceConfigImportModal({
                 scope: PluginScope.Project,
               }) as PluginEntry,
           ),
+          settings: (data.sections.settings ?? [])
+            .filter(
+              (s) => typeof s.key === "string" && !/[/\\]|\.\./.test(s.key),
+            )
+            .map((s) => ({ key: s.key, value: s.value })),
         };
 
         setSourceItems(items);
@@ -468,6 +498,7 @@ export function WorkspaceConfigImportModal({
           commands: new Set(),
           permissions: new Set(),
           plugins: new Set(),
+          settings: new Set(),
         };
         for (const s of items.mcp) {
           if (!existingKeys.mcp.has(mcpKey(s))) newChecked.mcp.add(mcpKey(s));
@@ -499,6 +530,9 @@ export function WorkspaceConfigImportModal({
         for (const p of items.plugins) {
           if (!existingKeys.plugins.has(pluginKey(p)))
             newChecked.plugins.add(pluginKey(p));
+        }
+        for (const s of items.settings) {
+          newChecked.settings.add(s.key);
         }
 
         setChecked(newChecked);
@@ -725,6 +759,12 @@ export function WorkspaceConfigImportModal({
         if (!checked.commands.has(commandKey(c))) continue;
         const filePath = `${currentConfig.projectPath}/.claude/commands/${c.name}.md`;
         await patchFile(filePath, c.content, ConfigScope.Project);
+      }
+
+      // ── Settings → patch individual keys into project settings.json ─────
+      for (const s of sourceItems.settings) {
+        if (!checked.settings.has(s.key)) continue;
+        await patchJson(projectSettings, s.key, s.value, ConfigScope.Project);
       }
 
       // ── Plugins → POST /api/plugins (project-scoped install) ────────────
@@ -954,6 +994,32 @@ export function WorkspaceConfigImportModal({
     );
   }
 
+  const currentSettingsRaw =
+    currentConfig.settings.files.find((f) => f.scope === ConfigScope.Project)
+      ?.raw ?? {};
+
+  function renderSettingsItem(s: SettingsItem) {
+    const currentVal = currentSettingsRaw[s.key];
+    const hasConflict = s.key in currentSettingsRaw;
+    const subtitle = hasConflict
+      ? `${JSON.stringify(currentVal)} → ${JSON.stringify(s.value)}`
+      : JSON.stringify(s.value);
+    return (
+      <ImportRow
+        key={s.key}
+        itemKey={s.key}
+        checked={checked.settings.has(s.key)}
+        existing={false}
+        onToggle={() => toggleItem("settings", s.key)}
+        title={s.key}
+        subtitle={subtitle}
+        badge={
+          hasConflict ? { label: "overwrite", color: "yellow" } : undefined
+        }
+      />
+    );
+  }
+
   const SECTION_RENDERERS: Record<
     ImportSection,
     (items: SectionItems) => ReactNode
@@ -1005,6 +1071,12 @@ export function WorkspaceConfigImportModal({
         <EmptySection label="No permissions" />
       ) : (
         items.permissions.map(renderPermItem)
+      ),
+    settings: (items) =>
+      items.settings.length === 0 ? (
+        <EmptySection label="No project settings" />
+      ) : (
+        items.settings.map(renderSettingsItem)
       ),
   };
 
@@ -1422,5 +1494,7 @@ function getKey(section: ImportSection, item: unknown): string {
       return permKey(item as PermissionRule);
     case "plugins":
       return pluginKey(item as PluginEntry);
+    case "settings":
+      return (item as SettingsItem).key;
   }
 }

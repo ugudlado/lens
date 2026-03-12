@@ -42,8 +42,8 @@ app.get("/", async (c) => {
       "rules",
       "commands",
       "permissions",
-      "claudeMd",
       "plugins",
+      "settings",
     ]);
     const requestedSections = sectionsParam
       ? sectionsParam
@@ -133,15 +133,15 @@ app.get("/", async (c) => {
         .map((p) => ({ type: p.type, rule: p.rule }));
     }
 
-    if (requestedSections.includes("claudeMd")) {
-      sections.claudeMd = config.claudeMd.files
-        .filter((f) => f.scope === ConfigScope.Project)
-        .map((f) => ({
-          slot: f.filePath.includes("/.claude/CLAUDE.md")
-            ? ".claude/CLAUDE.md"
-            : "root",
-          content: f.content,
-        }));
+    if (requestedSections.includes("settings")) {
+      const projectSettingsFile = config.settings.files.find(
+        (f) => f.scope === ConfigScope.Project,
+      );
+      if (projectSettingsFile) {
+        sections.settings = Object.entries(projectSettingsFile.raw).map(
+          ([key, value]) => ({ key, value }),
+        );
+      }
     }
 
     if (requestedSections.includes("plugins")) {

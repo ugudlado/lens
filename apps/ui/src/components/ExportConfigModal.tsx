@@ -17,8 +17,8 @@ type ExportSectionId =
   | "rules"
   | "commands"
   | "permissions"
-  | "claudeMd"
-  | "plugins";
+  | "plugins"
+  | "settings";
 
 const SECTION_LABELS: Record<ExportSectionId, string> = {
   mcp: "MCP Servers",
@@ -28,13 +28,14 @@ const SECTION_LABELS: Record<ExportSectionId, string> = {
   rules: "Rules",
   commands: "Commands",
   permissions: "Permissions",
-  claudeMd: "CLAUDE.md",
   plugins: "Plugins",
+  settings: "Settings",
 };
 
 interface SectionItem {
   key: string;
   label: string;
+  value?: unknown;
 }
 
 export function ExportConfigModal({ config, onClose }: ExportConfigModalProps) {
@@ -73,16 +74,23 @@ export function ExportConfigModal({ config, onClose }: ExportConfigModalProps) {
       label: `${p.type}: ${p.rule}`,
     }));
 
-  const claudeMdItems: SectionItem[] = config.claudeMd.files
-    .filter((f) => f.scope === ConfigScope.Project)
-    .map((f) => ({ key: f.filePath, label: f.filePath }));
-
   const pluginItems: SectionItem[] = config.plugins.plugins
     .filter((p) => p.scope === PluginScope.Project)
     .map((p) => ({
       key: `${p.name}@${p.marketplace}`,
       label: `${p.name} (${p.marketplace})`,
     }));
+
+  const projectSettingsFile = config.settings.files.find(
+    (f) => f.scope === ConfigScope.Project,
+  );
+  const settingsItems: SectionItem[] = projectSettingsFile
+    ? Object.entries(projectSettingsFile.raw).map(([k, v]) => ({
+        key: k,
+        label: k,
+        value: v,
+      }))
+    : [];
 
   const sectionItemsMap: Record<ExportSectionId, SectionItem[]> = {
     mcp: mcpItems,
@@ -92,8 +100,8 @@ export function ExportConfigModal({ config, onClose }: ExportConfigModalProps) {
     rules: ruleItems,
     commands: commandItems,
     permissions: permissionItems,
-    claudeMd: claudeMdItems,
     plugins: pluginItems,
+    settings: settingsItems,
   };
 
   // Initialize state with all items checked
@@ -106,8 +114,8 @@ export function ExportConfigModal({ config, onClose }: ExportConfigModalProps) {
       rules: new Set(ruleItems.map((i) => i.key)),
       commands: new Set(commandItems.map((i) => i.key)),
       permissions: new Set(permissionItems.map((i) => i.key)),
-      claudeMd: new Set(claudeMdItems.map((i) => i.key)),
       plugins: new Set(pluginItems.map((i) => i.key)),
+      settings: new Set(settingsItems.map((i) => i.key)),
     }),
   );
 
@@ -208,25 +216,14 @@ export function ExportConfigModal({ config, onClose }: ExportConfigModalProps) {
           checked.permissions.has(`${p.type}::${p.rule}`),
         );
       }
-      if (data.sections.claudeMd) {
-        // For claudeMd, match by slot since that's what ExportData uses
-        const projectClaudeMdFiles = config.claudeMd.files.filter(
-          (f) => f.scope === ConfigScope.Project,
-        );
-        data.sections.claudeMd = data.sections.claudeMd.filter((exported) => {
-          // Find the original file that matches this export
-          const originalFile = projectClaudeMdFiles.find((f) => {
-            const slot = f.filePath.includes("/.claude/CLAUDE.md")
-              ? ".claude/CLAUDE.md"
-              : "root";
-            return slot === exported.slot;
-          });
-          return originalFile && checked.claudeMd.has(originalFile.filePath);
-        });
-      }
       if (data.sections.plugins) {
         data.sections.plugins = data.sections.plugins.filter((p) =>
           checked.plugins.has(`${p.name}@${p.marketplace}`),
+        );
+      }
+      if (data.sections.settings) {
+        data.sections.settings = data.sections.settings.filter((s) =>
+          checked.settings.has(s.key),
         );
       }
 
@@ -371,6 +368,11 @@ export function ExportConfigModal({ config, onClose }: ExportConfigModalProps) {
                           <div className="truncate text-xs font-medium text-gray-200">
                             {item.label}
                           </div>
+                          {item.value !== undefined && (
+                            <div className="mt-0.5 truncate font-mono text-[11px] text-gray-500">
+                              {JSON.stringify(item.value)}
+                            </div>
+                          )}
                         </div>
                       </label>
                     ))
