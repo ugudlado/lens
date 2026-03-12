@@ -195,12 +195,14 @@ export function ExportConfigModal({ config, onClose }: ExportConfigModalProps) {
         );
       }
 
-      // Trigger download
+      // Trigger download — include project name + timestamp to avoid collisions
+      const projectName = config.projectPath.split('/').pop() || 'project';
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = '.claude-export.json';
+      a.download = `${projectName}.claude-export.${stamp}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

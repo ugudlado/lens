@@ -802,7 +802,7 @@ export function WorkspaceConfigImportModal({
                           file:cursor-pointer cursor-pointer"
                       />
                       <p className="text-xs text-gray-500 mt-3">
-                        Accepts .claude-export.json files
+                        Accepts .json export files
                       </p>
                     </div>
                   </>
