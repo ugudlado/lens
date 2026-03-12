@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { NavSection, ConfigScope } from '@lens/schema';
 import type { ConfigSnapshot, Workspace, Suggestion } from '@lens/schema';
 import { WorkspaceConfigImportModal } from './WorkspaceConfigImportModal.js';
+import { ExportConfigModal } from './ExportConfigModal.js';
 import { SuggestionsBox } from './SuggestionsBox.js';
 
 interface DashboardProps {
@@ -123,6 +124,7 @@ const SCOPE_TEXT_COLORS: Record<string, string> = {
 
 export function Dashboard({ config, onNavigate, workspaces = [], activeProject = '', onRescan, suggestions }: DashboardProps) {
   const [showImport, setShowImport] = useState(false);
+  const [showExport, setShowExport] = useState(false);
   const otherWorkspaces = workspaces.filter(w => w.path !== activeProject);
 
   return (
@@ -134,6 +136,12 @@ export function Dashboard({ config, onNavigate, workspaces = [], activeProject =
           currentConfig={config}
           onRescan={onRescan}
           onClose={() => setShowImport(false)}
+        />
+      )}
+      {showExport && (
+        <ExportConfigModal
+          config={config}
+          onClose={() => setShowExport(false)}
         />
       )}
 
@@ -153,15 +161,23 @@ export function Dashboard({ config, onNavigate, workspaces = [], activeProject =
               </span>
             </div>
           </div>
-          {otherWorkspaces.length > 0 && onRescan && (
+          <div className="flex items-center gap-2">
+            {otherWorkspaces.length > 0 && onRescan && (
+              <button
+                onClick={() => setShowImport(true)}
+                className="px-3 py-1.5 text-xs font-medium rounded bg-accent/20 text-accent hover:bg-accent/30 transition-colors flex items-center gap-1.5 flex-shrink-0"
+              >
+                <span>↓</span>
+                Import from Workspace
+              </button>
+            )}
             <button
-              onClick={() => setShowImport(true)}
-              className="px-3 py-1.5 text-xs font-medium rounded bg-accent/20 text-accent hover:bg-accent/30 transition-colors flex items-center gap-1.5 flex-shrink-0"
+              onClick={() => setShowExport(true)}
+              className="px-3 py-1.5 text-xs font-medium rounded bg-[#6c5ce7]/20 text-[#6c5ce7] hover:bg-[#6c5ce7]/30 transition-colors flex-shrink-0"
             >
-              <span>↓</span>
-              Import from Workspace
+              ↑ Export Config
             </button>
-          )}
+          </div>
         </div>
       </div>
 

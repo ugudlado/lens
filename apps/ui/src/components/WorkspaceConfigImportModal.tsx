@@ -1,5 +1,5 @@
 import { useState, useEffect, type ReactNode } from 'react';
-import { ConfigScope, PluginScope, PluginAction } from '@lens/schema';
+import { ConfigScope, PluginScope, PluginAction, HookSource, EntrySource } from '@lens/schema';
 import type {
   ConfigSnapshot,
   Workspace,
@@ -11,6 +11,7 @@ import type {
   CommandEntry,
   PermissionRule,
   PluginEntry,
+  ExportData,
 } from '@lens/schema';
 
 // ─── Section definitions ────────────────────────────────────────────────────
@@ -105,6 +106,7 @@ export function WorkspaceConfigImportModal({
 }: Props) {
   const otherWorkspaces = workspaces.filter(w => w.path !== activeProject);
 
+  const [importSource, setImportSource] = useState<'workspace' | 'file'>('workspace');
   const [state, setState] = useState<ModalState>('pick-workspace');
   const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -188,6 +190,128 @@ export function WorkspaceConfigImportModal({
     } finally {
       setLoading(false);
     }
+  }
+
+  function loadFromFile(file: File) {
+    setLoading(true);
+    setLoadError(null);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result as string;
+        const data = JSON.parse(text) as ExportData;
+
+        if (data.version !== 1) {
+          throw new Error('Unsupported export format version');
+        }
+
+        // Sanitize names from untrusted JSON to prevent path traversal
+        const safeName = (name: unknown): string => {
+          if (typeof name !== 'string') throw new Error('Invalid item name in export file');
+          if (/[/\\]|\.\./.test(name)) throw new Error(`Invalid item name (path traversal): ${name}`);
+          return name;
+        };
+
+        // Map ExportData to SectionItems
+        // For skills and agents, we store content as a non-standard property that handleImport will use
+        const items: SectionItems = {
+          mcp: (data.sections.mcpServers ?? []).map(s => ({
+            name: safeName(s.name),
+            type: s.type,
+            command: s.command,
+            args: s.args,
+            url: s.url,
+            env: s.env,
+            scope: ConfigScope.Project,
+            filePath: '',
+            editable: true,
+            enabled: true,
+          } as McpServer)),
+          hooks: (data.sections.hooks ?? []).map(h => ({
+            event: h.event,
+            type: h.type,
+            command: h.command,
+            prompt: h.prompt,
+            matcher: h.matcher,
+            timeout: h.timeout,
+            scope: ConfigScope.Project,
+            filePath: '',
+            source: HookSource.Settings,
+          } as HookEntry)),
+          skills: (data.sections.skills ?? []).map(s => ({
+            name: safeName(s.name),
+            scope: ConfigScope.Project,
+            filePath: '',
+            source: EntrySource.Project,
+            description: '',
+            userInvocable: true,
+            hasHooks: false,
+            // Store content as extra property for file imports
+            content: s.content,
+          } as SkillEntry & { content?: string })),
+          agents: (data.sections.agents ?? []).map(a => ({
+            name: safeName(a.name),
+            scope: ConfigScope.Project,
+            filePath: '',
+            source: EntrySource.Project,
+            description: '',
+            // Store content as extra property for file imports
+            content: a.content,
+          } as AgentEntry & { content?: string })),
+          rules: (data.sections.rules ?? []).map(r => ({
+            name: safeName(r.name),
+            content: r.content,
+            scope: ConfigScope.Project,
+            filePath: '',
+            lineCount: 0,
+            ext: r.ext,
+          } as RuleEntry & { ext?: 'md' | 'mdc' })),
+          commands: (data.sections.commands ?? []).map(c => ({
+            name: safeName(c.name),
+            content: c.content,
+            scope: ConfigScope.Project,
+            filePath: '',
+            source: EntrySource.Project,
+            supersededBySkill: false,
+          } as CommandEntry)),
+          permissions: (data.sections.permissions ?? []).map(p => ({
+            type: p.type,
+            rule: p.rule,
+            scope: ConfigScope.Project,
+            filePath: '',
+          } as PermissionRule)),
+          plugins: [],
+        };
+
+        setSourceItems(items);
+
+        // Pre-check all items that don't already exist
+        const newChecked: Record<ImportSection, Set<string>> = {
+          mcp: new Set(), hooks: new Set(), skills: new Set(), agents: new Set(),
+          rules: new Set(), commands: new Set(), permissions: new Set(), plugins: new Set(),
+        };
+        for (const s of items.mcp) { if (!existingKeys.mcp.has(mcpKey(s))) newChecked.mcp.add(mcpKey(s)); }
+        for (const h of items.hooks) { if (!existingKeys.hooks.has(hookKey(h))) newChecked.hooks.add(hookKey(h)); }
+        for (const s of items.skills) { if (!existingKeys.skills.has(skillKey(s))) newChecked.skills.add(skillKey(s)); }
+        for (const a of items.agents) { if (!existingKeys.agents.has(agentKey(a))) newChecked.agents.add(agentKey(a)); }
+        for (const r of items.rules) { if (!existingKeys.rules.has(ruleKey(r))) newChecked.rules.add(ruleKey(r)); }
+        for (const c of items.commands) { if (!existingKeys.commands.has(commandKey(c))) newChecked.commands.add(commandKey(c)); }
+        for (const p of items.permissions) { if (!existingKeys.permissions.has(permKey(p))) newChecked.permissions.add(permKey(p)); }
+
+        setChecked(newChecked);
+        setState('checklist');
+        setLoading(false);
+      } catch (err) {
+        setLoadError(err instanceof Error ? err.message : 'Invalid export file');
+        setLoading(false);
+      }
+    };
+    reader.onerror = () => {
+      setLoadError('Failed to read file');
+      setLoading(false);
+    };
+    reader.readAsText(file);
   }
 
   function toggleItem(section: ImportSection, key: string) {
@@ -321,7 +445,8 @@ export function WorkspaceConfigImportModal({
       for (const s of sourceItems.skills) {
         if (!checked.skills.has(skillKey(s))) continue;
         const filePath = `${currentConfig.projectPath}/.claude/skills/${s.name}.md`;
-        const content = await fetchFileContent(s.filePath);
+        // Use content directly if available (file import), otherwise fetch from filePath (workspace import)
+        const content = (s as SkillEntry & { content?: string }).content || await fetchFileContent(s.filePath);
         await patchFile(filePath, content, ConfigScope.Project);
       }
 
@@ -329,14 +454,16 @@ export function WorkspaceConfigImportModal({
       for (const a of sourceItems.agents) {
         if (!checked.agents.has(agentKey(a))) continue;
         const filePath = `${currentConfig.projectPath}/.claude/agents/${a.name}.md`;
-        const content = await fetchFileContent(a.filePath);
+        // Use content directly if available (file import), otherwise fetch from filePath (workspace import)
+        const content = (a as AgentEntry & { content?: string }).content || await fetchFileContent(a.filePath);
         await patchFile(filePath, content, ConfigScope.Project);
       }
 
       // ── Rules → file copy (.claude/rules/<name>.mdc or .md) ─────────────
       for (const r of sourceItems.rules) {
         if (!checked.rules.has(ruleKey(r))) continue;
-        const ext = r.filePath.endsWith('.mdc') ? '.mdc' : '.md';
+        // For file imports, ext is already set; for workspace imports, check filePath
+        const ext = (r as RuleEntry & { ext?: 'md' | 'mdc' }).ext || (r.filePath.endsWith('.mdc') ? '.mdc' : '.md');
         const filePath = `${currentConfig.projectPath}/.claude/rules/${r.name}${ext}`;
         await patchFile(filePath, r.content, ConfigScope.Project);
       }
@@ -345,8 +472,7 @@ export function WorkspaceConfigImportModal({
       for (const c of sourceItems.commands) {
         if (!checked.commands.has(commandKey(c))) continue;
         const filePath = `${currentConfig.projectPath}/.claude/commands/${c.name}.md`;
-        const content = await fetchFileContent(c.filePath);
-        await patchFile(filePath, content, ConfigScope.Project);
+        await patchFile(filePath, c.content, ConfigScope.Project);
       }
 
       // ── Plugins → POST /api/plugins (project-scoped install) ────────────
@@ -574,33 +700,101 @@ export function WorkspaceConfigImportModal({
 
           {/* State: pick-workspace */}
           {state === 'pick-workspace' && (
-            <div className="flex-1 overflow-y-auto px-6 py-5">
-              <p className="text-sm text-gray-400 mb-4">
-                Select a workspace to import configuration from.
-              </p>
-              {otherWorkspaces.length === 0 ? (
-                <div className="text-sm text-gray-500 text-center py-8">
-                  No other workspaces available.
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  {otherWorkspaces.map(ws => (
-                    <button
-                      key={ws.path}
-                      onClick={() => setSelectedWorkspace(ws)}
-                      className={`w-full text-left px-4 py-3 rounded-lg border transition-colors ${
-                        selectedWorkspace?.path === ws.path
-                          ? 'border-accent/60 bg-accent/10 text-gray-200'
-                          : 'border-border bg-bg text-gray-300 hover:border-accent/30 hover:bg-accent/5'
-                      }`}
-                    >
-                      <div className="font-medium text-sm">{ws.name}</div>
-                      <div className="text-[11px] font-mono text-gray-500 mt-0.5 truncate">{ws.path}</div>
-                    </button>
-                  ))}
-                </div>
-              )}
-              {loadError && <div className="mt-3 text-xs text-red-400">{loadError}</div>}
+            <div className="flex-1 overflow-y-auto flex flex-col">
+              {/* Tabs */}
+              <div className="flex border-b border-border px-6">
+                <button
+                  onClick={() => setImportSource('workspace')}
+                  className={`px-4 py-3 text-xs font-medium transition-colors relative ${
+                    importSource === 'workspace'
+                      ? 'text-accent'
+                      : 'text-gray-400 hover:text-gray-200'
+                  }`}
+                >
+                  From Workspace
+                  {importSource === 'workspace' && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
+                  )}
+                </button>
+                <button
+                  onClick={() => setImportSource('file')}
+                  className={`px-4 py-3 text-xs font-medium transition-colors relative ${
+                    importSource === 'file'
+                      ? 'text-accent'
+                      : 'text-gray-400 hover:text-gray-200'
+                  }`}
+                >
+                  From File
+                  {importSource === 'file' && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
+                  )}
+                </button>
+              </div>
+
+              {/* Tab content */}
+              <div className="flex-1 overflow-y-auto px-6 py-5">
+                {importSource === 'workspace' && (
+                  <>
+                    <p className="text-sm text-gray-400 mb-4">
+                      Select a workspace to import configuration from.
+                    </p>
+                    {otherWorkspaces.length === 0 ? (
+                      <div className="text-sm text-gray-500 text-center py-8">
+                        No other workspaces available.
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                        {otherWorkspaces.map(ws => (
+                          <button
+                            key={ws.path}
+                            onClick={() => setSelectedWorkspace(ws)}
+                            className={`w-full text-left px-4 py-3 rounded-lg border transition-colors ${
+                              selectedWorkspace?.path === ws.path
+                                ? 'border-accent/60 bg-accent/10 text-gray-200'
+                                : 'border-border bg-bg text-gray-300 hover:border-accent/30 hover:bg-accent/5'
+                            }`}
+                          >
+                            <div className="font-medium text-sm">{ws.name}</div>
+                            <div className="text-[11px] font-mono text-gray-500 mt-0.5 truncate">{ws.path}</div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {importSource === 'file' && (
+                  <>
+                    <p className="text-sm text-gray-400 mb-4">
+                      Select a .claude-export.json file to import.
+                    </p>
+                    <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-border rounded-lg">
+                      <input
+                        type="file"
+                        accept=".json"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            loadFromFile(file);
+                          }
+                        }}
+                        className="block w-full max-w-xs text-sm text-gray-400
+                          file:mr-4 file:py-2 file:px-4
+                          file:rounded file:border-0
+                          file:text-xs file:font-medium
+                          file:bg-accent/20 file:text-accent
+                          hover:file:bg-accent/30 file:transition-colors
+                          file:cursor-pointer cursor-pointer"
+                      />
+                      <p className="text-xs text-gray-500 mt-3">
+                        Accepts .claude-export.json files
+                      </p>
+                    </div>
+                  </>
+                )}
+
+                {loadError && <div className="mt-3 text-xs text-red-400">{loadError}</div>}
+              </div>
             </div>
           )}
 
@@ -706,16 +900,24 @@ export function WorkspaceConfigImportModal({
               >
                 Cancel
               </button>
-              <button
-                onClick={loadWorkspace}
-                disabled={!selectedWorkspace || loading}
-                className="px-4 py-1.5 text-xs font-medium rounded bg-accent/20 text-accent hover:bg-accent/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                {loading && (
+              {importSource === 'workspace' && (
+                <button
+                  onClick={loadWorkspace}
+                  disabled={!selectedWorkspace || loading}
+                  className="px-4 py-1.5 text-xs font-medium rounded bg-accent/20 text-accent hover:bg-accent/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {loading && (
+                    <span className="w-3.5 h-3.5 border-2 border-accent/30 border-t-accent rounded-full animate-spin inline-block" />
+                  )}
+                  {loading ? 'Loading...' : 'Load Workspace'}
+                </button>
+              )}
+              {importSource === 'file' && loading && (
+                <div className="flex items-center gap-2 text-xs text-gray-400">
                   <span className="w-3.5 h-3.5 border-2 border-accent/30 border-t-accent rounded-full animate-spin inline-block" />
-                )}
-                {loading ? 'Loading...' : 'Load Workspace'}
-              </button>
+                  Loading file...
+                </div>
+              )}
             </>
           )}
 
