@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { ConfigScope } from '@lens/schema';
-import { useConfigUpdate } from '../hooks/useConfigUpdate';
-import { CodeEditor } from './CodeEditor';
+import { useState } from "react";
+import { ConfigScope } from "@lens/schema";
+import { useConfigUpdate } from "../hooks/useConfigUpdate";
+import { CodeEditor } from "./CodeEditor";
 
 interface Props {
   content: string;
@@ -9,11 +9,19 @@ interface Props {
   scope: ConfigScope;
   surface: string;
   onRescan: () => void;
-  language?: 'json' | 'markdown';
+  language?: "json" | "markdown";
   readOnly?: boolean;
 }
 
-export function EditableContent({ content, filePath, scope, surface, onRescan, language, readOnly }: Props) {
+export function EditableContent({
+  content,
+  filePath,
+  scope,
+  surface,
+  onRescan,
+  language,
+  readOnly,
+}: Props) {
   const [open, setOpen] = useState(false);
   const [editValue, setEditValue] = useState(content);
   const { update, saving, error } = useConfigUpdate(() => {
@@ -24,7 +32,7 @@ export function EditableContent({ content, filePath, scope, surface, onRescan, l
   if (scope === ConfigScope.Managed) return null;
 
   // Auto-detect language from file extension
-  const lang = language ?? (filePath.endsWith('.json') ? 'json' : 'markdown');
+  const lang = language ?? (filePath.endsWith(".json") ? "json" : "markdown");
 
   function startEdit() {
     setEditValue(content);
@@ -32,7 +40,7 @@ export function EditableContent({ content, filePath, scope, surface, onRescan, l
   }
 
   function save() {
-    update({
+    void update({
       surface,
       scope,
       filePath,
@@ -44,9 +52,9 @@ export function EditableContent({ content, filePath, scope, surface, onRescan, l
     return (
       <button
         onClick={startEdit}
-        className="mt-2 px-3 py-1 text-xs font-medium rounded bg-accent/10 text-accent hover:bg-accent/20 transition-colors"
+        className="mt-2 rounded bg-accent/10 px-3 py-1 text-xs font-medium text-accent transition-colors hover:bg-accent/20"
       >
-        {readOnly ? 'View' : 'Edit'}
+        {readOnly ? "View" : "Edit"}
       </button>
     );
   }
@@ -63,22 +71,22 @@ export function EditableContent({ content, filePath, scope, surface, onRescan, l
       {!readOnly && error && (
         <div className="mt-1 text-xs text-red-400">{error}</div>
       )}
-      <div className="flex gap-2 mt-2">
+      <div className="mt-2 flex gap-2">
         {!readOnly && (
           <button
             onClick={save}
             disabled={saving}
-            className="px-3 py-1 text-xs font-medium rounded bg-accent/20 text-accent hover:bg-accent/30 transition-colors disabled:opacity-50"
+            className="rounded bg-accent/20 px-3 py-1 text-xs font-medium text-accent transition-colors hover:bg-accent/30 disabled:opacity-50"
           >
-            {saving ? 'Saving...' : 'Save'}
+            {saving ? "Saving..." : "Save"}
           </button>
         )}
         <button
           onClick={() => setOpen(false)}
           disabled={saving}
-          className="px-3 py-1 text-xs font-medium rounded bg-gray-500/20 text-gray-400 hover:bg-gray-500/30 transition-colors disabled:opacity-50"
+          className="rounded bg-gray-500/20 px-3 py-1 text-xs font-medium text-gray-400 transition-colors hover:bg-gray-500/30 disabled:opacity-50"
         >
-          {readOnly ? 'Close' : 'Cancel'}
+          {readOnly ? "Close" : "Cancel"}
         </button>
       </div>
     </div>

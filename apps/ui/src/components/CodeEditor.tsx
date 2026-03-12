@@ -1,28 +1,40 @@
-import { useRef, useEffect } from 'react';
-import { EditorView, keymap, lineNumbers, highlightActiveLine, drawSelection } from '@codemirror/view';
-import { EditorState } from '@codemirror/state';
-import { json } from '@codemirror/lang-json';
-import { markdown } from '@codemirror/lang-markdown';
-import { oneDark } from '@codemirror/theme-one-dark';
-import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
-import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
+import { useRef, useEffect } from "react";
+import {
+  EditorView,
+  keymap,
+  lineNumbers,
+  highlightActiveLine,
+  drawSelection,
+} from "@codemirror/view";
+import { EditorState } from "@codemirror/state";
+import { json } from "@codemirror/lang-json";
+import { markdown } from "@codemirror/lang-markdown";
+import { oneDark } from "@codemirror/theme-one-dark";
+import { searchKeymap, highlightSelectionMatches } from "@codemirror/search";
+import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 
 interface Props {
   value: string;
   onChange: (value: string) => void;
-  language?: 'json' | 'markdown';
+  language?: "json" | "markdown";
   readOnly?: boolean;
   height?: string;
 }
 
-export function CodeEditor({ value, onChange, language = 'markdown', readOnly = false, height = '300px' }: Props) {
+export function CodeEditor({
+  value,
+  onChange,
+  language = "markdown",
+  readOnly = false,
+  height = "300px",
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const langExt = language === 'json' ? json() : markdown();
+    const langExt = language === "json" ? json() : markdown();
 
     const extensions = [
       lineNumbers(),
@@ -34,10 +46,13 @@ export function CodeEditor({ value, onChange, language = 'markdown', readOnly = 
       langExt,
       oneDark,
       EditorView.theme({
-        '&': { height, maxHeight: '70vh', fontSize: '13px' },
-        '.cm-scroller': { overflow: 'auto' },
-        '.cm-content': { fontFamily: 'ui-monospace, monospace' },
-        '.cm-gutters': { backgroundColor: 'transparent', borderRight: '1px solid rgba(255,255,255,0.1)' },
+        "&": { height, maxHeight: "70vh", fontSize: "13px" },
+        ".cm-scroller": { overflow: "auto" },
+        ".cm-content": { fontFamily: "ui-monospace, monospace" },
+        ".cm-gutters": {
+          backgroundColor: "transparent",
+          borderRight: "1px solid rgba(255,255,255,0.1)",
+        },
       }),
       EditorView.updateListener.of((update) => {
         if (update.docChanged) {
@@ -77,7 +92,7 @@ export function CodeEditor({ value, onChange, language = 'markdown', readOnly = 
   return (
     <div
       ref={containerRef}
-      className="border border-border rounded-lg overflow-hidden"
+      className="overflow-hidden rounded-lg border border-border"
     />
   );
 }

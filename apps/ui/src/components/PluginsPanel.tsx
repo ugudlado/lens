@@ -1,50 +1,70 @@
-import { useState, useCallback } from 'react';
-import { ConfigScope, PluginScope, PluginAction } from '@lens/schema';
-import type { ConfigSnapshot, PluginEntry, PluginContentItem, MarketplacePlugin, McpServer, PluginActionRequest } from '@lens/schema';
-import { SearchBar } from './SearchBar';
-import { ScopeIndicator } from './ScopeIndicator.js';
-import { ScopeMoveButton } from './ScopeMoveButton.js';
-import { usePluginAction } from '../hooks/usePluginAction';
-import { TYPE_BADGE_STYLES, PLUGIN_CONTENT_BADGE_STYLES } from '../constants/badgeStyles.js';
-import { PanelShell, PanelEmpty } from './panel/index.js';
-import { slug } from '../constants.js';
+import { useState, useCallback } from "react";
+import { ConfigScope, PluginScope, PluginAction } from "@lens/schema";
+import type {
+  ConfigSnapshot,
+  PluginEntry,
+  MarketplacePlugin,
+  McpServer,
+  PluginActionRequest,
+} from "@lens/schema";
+import { SearchBar } from "./SearchBar";
+import { ScopeIndicator } from "./ScopeIndicator.js";
+import { ScopeMoveButton } from "./ScopeMoveButton.js";
+import { usePluginAction } from "../hooks/usePluginAction";
+import {
+  TYPE_BADGE_STYLES,
+  PLUGIN_CONTENT_BADGE_STYLES,
+} from "../constants/badgeStyles.js";
+import { PanelShell, PanelEmpty } from "./panel/index.js";
+import { slug } from "../constants.js";
 
 interface Props {
   config: ConfigSnapshot;
   onRescan: () => void;
 }
 
-const CONTENT_LABELS: { key: keyof NonNullable<PluginEntry['contents']>; label: string; singular: string }[] = [
-  { key: 'skills',   label: 'Skills',   singular: 'Skill'   },
-  { key: 'hooks',    label: 'Hooks',    singular: 'Hook'    },
-  { key: 'agents',   label: 'Agents',   singular: 'Agent'   },
-  { key: 'commands', label: 'Commands', singular: 'Command' },
+const CONTENT_LABELS: {
+  key: keyof NonNullable<PluginEntry["contents"]>;
+  label: string;
+  singular: string;
+}[] = [
+  { key: "skills", label: "Skills", singular: "Skill" },
+  { key: "hooks", label: "Hooks", singular: "Hook" },
+  { key: "agents", label: "Agents", singular: "Agent" },
+  { key: "commands", label: "Commands", singular: "Command" },
 ];
 
 /** Unified item: either an installed plugin or an available (not installed) one. */
-type UnifiedPlugin = {
-  name: string;
-  marketplace: string;
-  installed: true;
-  plugin: PluginEntry;
-} | {
-  name: string;
-  marketplace: string;
-  installed: false;
-  available: MarketplacePlugin;
-};
+type UnifiedPlugin =
+  | {
+      name: string;
+      marketplace: string;
+      installed: true;
+      plugin: PluginEntry;
+    }
+  | {
+      name: string;
+      marketplace: string;
+      installed: false;
+      available: MarketplacePlugin;
+    };
 
 export function PluginsPanel({ config, onRescan }: Props) {
   const { plugins, marketplaces, available } = config.plugins;
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [expandedPlugin, setExpandedPlugin] = useState<string | null>(null);
-  const [expandedMarketplaces, setExpandedMarketplaces] = useState<Set<string>>(() => new Set());
+  const [expandedMarketplaces, setExpandedMarketplaces] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [addMarketplaceOpen, setAddMarketplaceOpen] = useState(false);
-  const [addMarketplaceInput, setAddMarketplaceInput] = useState('');
+  const [addMarketplaceInput, setAddMarketplaceInput] = useState("");
 
-  const { run, acting, output, error, clearError, clearOutput } = usePluginAction(onRescan);
+  const { run, acting, output, error, clearError, clearOutput } =
+    usePluginAction(onRescan);
   const [actingPlugin, setActingPlugin] = useState<string | null>(null);
-  const [pluginOutputs, setPluginOutputs] = useState<Map<string, string>>(new Map());
+  const [pluginOutputs, setPluginOutputs] = useState<Map<string, string>>(
+    new Map(),
+  );
 
   const q = search.toLowerCase();
 
@@ -52,39 +72,82 @@ export function PluginsPanel({ config, onRescan }: Props) {
   const byMarketplace = new Map<string, UnifiedPlugin[]>();
 
   for (const p of plugins) {
-    if (q && !p.name.toLowerCase().includes(q) && !p.marketplace.toLowerCase().includes(q) && !(p.description && p.description.toLowerCase().includes(q))) continue;
-    const arr = byMarketplace.get(p.marketplace) || [];
-    arr.push({ name: p.name, marketplace: p.marketplace, installed: true, plugin: p });
+    if (
+      q &&
+      !p.name.toLowerCase().includes(q) &&
+      !p.marketplace.toLowerCase().includes(q) &&
+      !p.description?.toLowerCase().includes(q)
+    )
+      continue;
+    const arr = byMarketplace.get(p.marketplace) ?? [];
+    arr.push({
+      name: p.name,
+      marketplace: p.marketplace,
+      installed: true,
+      plugin: p,
+    });
     byMarketplace.set(p.marketplace, arr);
   }
 
-  for (const a of (available || [])) {
+  for (const a of available ?? []) {
     if (a.installed) continue;
-    if (q && !a.name.toLowerCase().includes(q) && !a.marketplace.toLowerCase().includes(q) && !(a.description && a.description.toLowerCase().includes(q))) continue;
-    const arr = byMarketplace.get(a.marketplace) || [];
-    arr.push({ name: a.name, marketplace: a.marketplace, installed: false, available: a });
+    if (
+      q &&
+      !a.name.toLowerCase().includes(q) &&
+      !a.marketplace.toLowerCase().includes(q) &&
+      !a.description?.toLowerCase().includes(q)
+    )
+      continue;
+    const arr = byMarketplace.get(a.marketplace) ?? [];
+    arr.push({
+      name: a.name,
+      marketplace: a.marketplace,
+      installed: false,
+      available: a,
+    });
     byMarketplace.set(a.marketplace, arr);
   }
 
   const allMarketplaceNames = [...byMarketplace.keys()].sort();
 
   // Summary counts
-  const totalSkills = plugins.reduce((s, p) => s + (p.contents?.skills.length || 0), 0);
-  const totalHooks = plugins.reduce((s, p) => s + (p.contents?.hooks.length || 0), 0);
-  const totalAgents = plugins.reduce((s, p) => s + (p.contents?.agents.length || 0), 0);
-  const totalCommands = plugins.reduce((s, p) => s + (p.contents?.commands.length || 0), 0);
-  const totalMcps = config.mcp.servers.filter(s => s.pluginName && s.pluginInstalled !== false).length;
-  const notInstalledCount = (available || []).filter(a => !a.installed).length;
-  const totalFiltered = [...byMarketplace.values()].reduce((s, arr) => s + arr.length, 0);
+  const totalSkills = plugins.reduce(
+    (s, p) => s + (p.contents?.skills.length ?? 0),
+    0,
+  );
+  const totalHooks = plugins.reduce(
+    (s, p) => s + (p.contents?.hooks.length ?? 0),
+    0,
+  );
+  const totalAgents = plugins.reduce(
+    (s, p) => s + (p.contents?.agents.length ?? 0),
+    0,
+  );
+  const totalCommands = plugins.reduce(
+    (s, p) => s + (p.contents?.commands.length ?? 0),
+    0,
+  );
+  const totalMcps = config.mcp.servers.filter(
+    (s) => s.pluginName && s.pluginInstalled !== false,
+  ).length;
+  const notInstalledCount = (available ?? []).filter(
+    (a) => !a.installed,
+  ).length;
+  const totalFiltered = [...byMarketplace.values()].reduce(
+    (s, arr) => s + arr.length,
+    0,
+  );
 
-  const [confirmRemoveMarketplace, setConfirmRemoveMarketplace] = useState<string | null>(null);
+  const [confirmRemoveMarketplace, setConfirmRemoveMarketplace] = useState<
+    string | null
+  >(null);
 
   const togglePlugin = (key: string) => {
     setExpandedPlugin(expandedPlugin === key ? null : key);
   };
 
   const toggleMarketplace = (mp: string) => {
-    setExpandedMarketplaces(prev => {
+    setExpandedMarketplaces((prev) => {
       const next = new Set(prev);
       if (next.has(mp)) next.delete(mp);
       else next.add(mp);
@@ -92,24 +155,39 @@ export function PluginsPanel({ config, onRescan }: Props) {
     });
   };
 
-  const isExpanded = (mp: string) => q ? true : expandedMarketplaces.has(mp);
+  const isExpanded = (mp: string) => (q ? true : expandedMarketplaces.has(mp));
 
-  const runForPlugin = useCallback(async (pluginKey: string, req: PluginActionRequest) => {
-    setActingPlugin(pluginKey);
-    setPluginOutputs(prev => { const m = new Map(prev); m.delete(pluginKey); return m; });
-    clearOutput();
-    const result = await run(req);
-    setActingPlugin(null);
-    if (result.output) {
-      setPluginOutputs(prev => new Map(prev).set(pluginKey, result.output!));
-    }
-    return result;
-  }, [run, clearOutput]);
+  const runForPlugin = useCallback(
+    async (pluginKey: string, req: PluginActionRequest) => {
+      setActingPlugin(pluginKey);
+      setPluginOutputs((prev) => {
+        const m = new Map(prev);
+        m.delete(pluginKey);
+        return m;
+      });
+      clearOutput();
+      const result = await run(req);
+      setActingPlugin(null);
+      if (result.output) {
+        setPluginOutputs((prev) =>
+          new Map(prev).set(pluginKey, result.output ?? ""),
+        );
+      }
+      return result;
+    },
+    [run, clearOutput],
+  );
 
-  const updatablePlugins = plugins.filter(p => p.updateAvailable && p.enabled);
+  const updatablePlugins = plugins.filter(
+    (p) => p.updateAvailable && p.enabled,
+  );
   const updateAll = async () => {
     for (const p of updatablePlugins) {
-      const result = await runForPlugin(`${p.name}@${p.marketplace}`, { action: PluginAction.Update, plugin: `${p.name}@${p.marketplace}`, scope: p.scope });
+      const result = await runForPlugin(`${p.name}@${p.marketplace}`, {
+        action: PluginAction.Update,
+        plugin: `${p.name}@${p.marketplace}`,
+        scope: p.scope,
+      });
       if (!result.success) break;
     }
   };
@@ -117,33 +195,33 @@ export function PluginsPanel({ config, onRescan }: Props) {
   return (
     <PanelShell
       title="Plugins"
-      subtitle={`${plugins.length} installed${notInstalledCount > 0 ? `, ${notInstalledCount} available` : ''}`}
+      subtitle={`${plugins.length} installed${notInstalledCount > 0 ? `, ${notInstalledCount} available` : ""}`}
     >
       {/* Summary badges */}
       {plugins.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-8">
+        <div className="mb-8 flex flex-wrap gap-2">
           {totalSkills > 0 && (
-            <span className="px-2 py-0.5 rounded text-xs font-medium text-amber-400 bg-amber-500/15">
+            <span className="rounded bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-400">
               {totalSkills} skills
             </span>
           )}
           {totalHooks > 0 && (
-            <span className="px-2 py-0.5 rounded text-xs font-medium text-emerald-400 bg-emerald-500/15">
+            <span className="rounded bg-emerald-500/15 px-2 py-0.5 text-xs font-medium text-emerald-400">
               {totalHooks} hooks
             </span>
           )}
           {totalAgents > 0 && (
-            <span className="px-2 py-0.5 rounded text-xs font-medium text-purple-400 bg-purple-500/15">
+            <span className="rounded bg-purple-500/15 px-2 py-0.5 text-xs font-medium text-purple-400">
               {totalAgents} agents
             </span>
           )}
           {totalCommands > 0 && (
-            <span className="px-2 py-0.5 rounded text-xs font-medium text-cyan-400 bg-cyan-500/15">
+            <span className="rounded bg-cyan-500/15 px-2 py-0.5 text-xs font-medium text-cyan-400">
               {totalCommands} commands
             </span>
           )}
           {totalMcps > 0 && (
-            <span className="px-2 py-0.5 rounded text-xs font-medium text-blue-400 bg-blue-500/15">
+            <span className="rounded bg-blue-500/15 px-2 py-0.5 text-xs font-medium text-blue-400">
               {totalMcps} MCPs
             </span>
           )}
@@ -153,37 +231,52 @@ export function PluginsPanel({ config, onRescan }: Props) {
       {/* Updates banner */}
       {updatablePlugins.length > 0 && (
         <div className="mb-6 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-amber-400 uppercase tracking-wide">
-              {updatablePlugins.length} update{updatablePlugins.length !== 1 ? 's' : ''} available
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wide text-amber-400">
+              {updatablePlugins.length} update
+              {updatablePlugins.length !== 1 ? "s" : ""} available
             </span>
             <button
-              onClick={updateAll}
+              onClick={() => void updateAll()}
               disabled={acting}
-              className="px-3 py-1 text-xs font-medium rounded bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors disabled:opacity-50"
+              className="rounded bg-amber-500/20 px-3 py-1 text-xs font-medium text-amber-400 transition-colors hover:bg-amber-500/30 disabled:opacity-50"
             >
-              {acting ? 'Updating...' : 'Update all'}
+              {acting ? "Updating..." : "Update all"}
             </button>
           </div>
           <div className="flex flex-col gap-1.5">
-            {updatablePlugins.map(p => {
+            {updatablePlugins.map((p) => {
               const key = `${p.name}@${p.marketplace}`;
               const isActing = acting && actingPlugin === key;
               return (
                 <div key={key} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-sm text-gray-200 font-medium">{p.name}</span>
-                    <span className="text-xs text-gray-500 font-mono">{p.marketplace}</span>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="text-sm font-medium text-gray-200">
+                      {p.name}
+                    </span>
+                    <span className="font-mono text-xs text-gray-500">
+                      {p.marketplace}
+                    </span>
                     <span className="text-xs text-gray-600">→</span>
-                    <span className="text-xs text-amber-400 font-mono">{p.latestVersion?.slice(0, 12)}</span>
+                    <span className="font-mono text-xs text-amber-400">
+                      {p.latestVersion?.slice(0, 12)}
+                    </span>
                   </div>
                   <button
-                    onClick={() => runForPlugin(key, { action: PluginAction.Update, plugin: key, scope: p.scope })}
+                    onClick={() =>
+                      void runForPlugin(key, {
+                        action: PluginAction.Update,
+                        plugin: key,
+                        scope: p.scope,
+                      })
+                    }
                     disabled={acting}
-                    className="ml-3 px-2 py-0.5 text-xs font-medium rounded bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 transition-colors disabled:opacity-50 flex-shrink-0 flex items-center gap-1"
+                    className="ml-3 flex flex-shrink-0 items-center gap-1 rounded bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-400 transition-colors hover:bg-amber-500/25 disabled:opacity-50"
                   >
-                    {isActing && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />}
-                    {isActing ? 'Updating...' : 'Update'}
+                    {isActing && (
+                      <span className="h-1.5 w-1.5 animate-ping rounded-full bg-amber-400" />
+                    )}
+                    {isActing ? "Updating..." : "Update"}
                   </button>
                 </div>
               );
@@ -201,9 +294,14 @@ export function PluginsPanel({ config, onRescan }: Props) {
       />
 
       {error && (
-        <div className="mb-4 px-4 py-2 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm flex items-center justify-between">
+        <div className="mb-4 flex items-center justify-between rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-400">
           <span>{error}</span>
-          <button onClick={clearError} className="text-red-400 hover:text-red-300 ml-2">&times;</button>
+          <button
+            onClick={clearError}
+            className="ml-2 text-red-400 hover:text-red-300"
+          >
+            &times;
+          </button>
         </div>
       )}
 
@@ -211,29 +309,36 @@ export function PluginsPanel({ config, onRescan }: Props) {
         <PanelEmpty>No plugins installed</PanelEmpty>
       ) : (
         <div className="flex flex-col gap-5">
-          {allMarketplaceNames.map(mp => {
-            const items = (byMarketplace.get(mp) || []).sort((a, b) => {
+          {allMarketplaceNames.map((mp) => {
+            const items = (byMarketplace.get(mp) ?? []).sort((a, b) => {
               // Installed before available, then alphabetical
               if (a.installed !== b.installed) return a.installed ? -1 : 1;
               return a.name.localeCompare(b.name);
             });
-            const installedCount = items.filter(i => i.installed).length;
-            const availableCount = items.filter(i => !i.installed).length;
-            const mpInfo = marketplaces.find(m => m.name === mp);
+            const installedCount = items.filter((i) => i.installed).length;
+            const availableCount = items.filter((i) => !i.installed).length;
+            const mpInfo = marketplaces.find((m) => m.name === mp);
             const open = isExpanded(mp);
-            const isOfficial = mp === 'claude-plugins-official';
 
             return (
-              <div key={mp} className="bg-card border border-border rounded-lg overflow-hidden">
+              <div
+                key={mp}
+                className="overflow-hidden rounded-lg border border-border bg-card"
+              >
                 <div
                   role="button"
                   tabIndex={0}
                   onClick={() => toggleMarketplace(mp)}
-                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleMarketplace(mp); } }}
-                  className="w-full text-left px-4 py-5 flex items-center gap-3 hover:bg-white/[0.02] transition-colors cursor-pointer"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      toggleMarketplace(mp);
+                    }
+                  }}
+                  className="flex w-full cursor-pointer items-center gap-3 px-4 py-5 text-left transition-colors hover:bg-white/[0.02]"
                 >
                   <svg
-                    className={`w-4 h-4 text-gray-500 flex-shrink-0 transition-transform duration-150 ${open ? 'rotate-90' : ''}`}
+                    className={`h-4 w-4 flex-shrink-0 text-gray-500 transition-transform duration-150 ${open ? "rotate-90" : ""}`}
                     viewBox="0 0 16 16"
                     fill="currentColor"
                   >
@@ -241,35 +346,57 @@ export function PluginsPanel({ config, onRescan }: Props) {
                   </svg>
                   <span className="font-semibold text-gray-200">{mp}</span>
                   <span className="text-xs text-gray-500">
-                    {installedCount} installed{availableCount > 0 ? `, ${availableCount} available` : ''}
+                    {installedCount} installed
+                    {availableCount > 0 ? `, ${availableCount} available` : ""}
                   </span>
                   {mpInfo?.url && (
-                    <span className="ml-auto text-xs text-gray-600 font-mono truncate max-w-[300px]">{mpInfo.url}</span>
+                    <span className="ml-auto max-w-[300px] truncate font-mono text-xs text-gray-600">
+                      {mpInfo.url}
+                    </span>
                   )}
                   {confirmRemoveMarketplace === mp ? (
-                    <div className="ml-auto flex items-center gap-1.5 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                    <div
+                      className="ml-auto flex flex-shrink-0 items-center gap-1.5"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <span className="text-xs text-red-400">
-                        Remove{installedCount > 0 ? ` + uninstall ${installedCount} plugin${installedCount !== 1 ? 's' : ''}` : ''}?
+                        Remove
+                        {installedCount > 0
+                          ? ` + uninstall ${installedCount} plugin${installedCount !== 1 ? "s" : ""}`
+                          : ""}
+                        ?
                       </span>
                       <button
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          setConfirmRemoveMarketplace(null);
-                          // Uninstall all installed plugins from this marketplace first
-                          for (const item of items) {
-                            if (!item.installed) continue;
-                            await run({ action: PluginAction.Uninstall, plugin: `${item.name}@${item.marketplace}`, scope: item.plugin.scope });
-                          }
-                          await run({ action: PluginAction.MarketplaceRemove, plugin: mp });
-                        }}
+                        onClick={(e) =>
+                          void (async () => {
+                            e.stopPropagation();
+                            setConfirmRemoveMarketplace(null);
+                            // Uninstall all installed plugins from this marketplace first
+                            for (const item of items) {
+                              if (!item.installed) continue;
+                              await run({
+                                action: PluginAction.Uninstall,
+                                plugin: `${item.name}@${item.marketplace}`,
+                                scope: item.plugin.scope,
+                              });
+                            }
+                            await run({
+                              action: PluginAction.MarketplaceRemove,
+                              plugin: mp,
+                            });
+                          })()
+                        }
                         disabled={acting}
-                        className="px-2 py-0.5 text-xs font-medium rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors disabled:opacity-50"
+                        className="rounded bg-red-500/20 px-2 py-0.5 text-xs font-medium text-red-400 transition-colors hover:bg-red-500/30 disabled:opacity-50"
                       >
                         Yes
                       </button>
                       <button
-                        onClick={e => { e.stopPropagation(); setConfirmRemoveMarketplace(null); }}
-                        className="px-2 py-0.5 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setConfirmRemoveMarketplace(null);
+                        }}
+                        className="px-2 py-0.5 text-xs text-gray-500 transition-colors hover:text-gray-300"
                       >
                         No
                       </button>
@@ -281,7 +408,7 @@ export function PluginsPanel({ config, onRescan }: Props) {
                         setConfirmRemoveMarketplace(mp);
                       }}
                       disabled={acting}
-                      className="ml-auto px-2 py-0.5 text-xs font-medium rounded bg-gray-500/10 text-gray-500 hover:bg-red-500/10 hover:text-red-400 transition-colors disabled:opacity-50 flex-shrink-0"
+                      className="ml-auto flex-shrink-0 rounded bg-gray-500/10 px-2 py-0.5 text-xs font-medium text-gray-500 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
                       title="Remove marketplace"
                     >
                       Remove
@@ -291,32 +418,85 @@ export function PluginsPanel({ config, onRescan }: Props) {
 
                 {open && (
                   <div className="border-t border-border/50">
-                    {items.map(item => {
+                    {items.map((item) => {
                       if (item.installed) {
                         const key = `${item.name}@${item.marketplace}`;
                         return (
                           <InstalledPluginRow
                             key={key}
                             plugin={item.plugin}
-                            mcpServers={config.mcp.servers.filter(s => s.pluginName === item.name)}
+                            mcpServers={config.mcp.servers.filter(
+                              (s) => s.pluginName === item.name,
+                            )}
                             expanded={expandedPlugin === key}
                             onToggle={() => togglePlugin(key)}
-                            onEnable={() => runForPlugin(key, { action: PluginAction.Enable, plugin: `${item.name}@${item.marketplace}` })}
-                            onDisable={() => runForPlugin(key, { action: PluginAction.Disable, plugin: `${item.name}@${item.marketplace}` })}
-                            onUninstall={() => runForPlugin(key, { action: PluginAction.Uninstall, plugin: `${item.name}@${item.marketplace}`, scope: item.plugin.scope })}
-                            onUpdate={() => runForPlugin(key, { action: PluginAction.Update, plugin: `${item.name}@${item.marketplace}`, scope: item.plugin.scope })}
+                            onEnable={() =>
+                              void runForPlugin(key, {
+                                action: PluginAction.Enable,
+                                plugin: `${item.name}@${item.marketplace}`,
+                              })
+                            }
+                            onDisable={() =>
+                              void runForPlugin(key, {
+                                action: PluginAction.Disable,
+                                plugin: `${item.name}@${item.marketplace}`,
+                              })
+                            }
+                            onUninstall={() =>
+                              void runForPlugin(key, {
+                                action: PluginAction.Uninstall,
+                                plugin: `${item.name}@${item.marketplace}`,
+                                scope: item.plugin.scope,
+                              })
+                            }
+                            onUpdate={() =>
+                              void runForPlugin(key, {
+                                action: PluginAction.Update,
+                                plugin: `${item.name}@${item.marketplace}`,
+                                scope: item.plugin.scope,
+                              })
+                            }
                             onCopy={async () => {
-                              const targetScope = item.plugin.scope === PluginScope.User ? PluginScope.Project : PluginScope.User;
-                              await runForPlugin(key, { action: PluginAction.Install, plugin: `${item.name}@${item.marketplace}`, scope: targetScope });
+                              const targetScope =
+                                item.plugin.scope === PluginScope.User
+                                  ? PluginScope.Project
+                                  : PluginScope.User;
+                              await runForPlugin(key, {
+                                action: PluginAction.Install,
+                                plugin: `${item.name}@${item.marketplace}`,
+                                scope: targetScope,
+                              });
                             }}
                             onMove={async () => {
-                              const targetScope = item.plugin.scope === PluginScope.User ? PluginScope.Project : PluginScope.User;
-                              const result = await runForPlugin(key, { action: PluginAction.Install, plugin: `${item.name}@${item.marketplace}`, scope: targetScope });
-                              if (result.success) await runForPlugin(key, { action: PluginAction.Uninstall, plugin: `${item.name}@${item.marketplace}`, scope: item.plugin.scope });
+                              const targetScope =
+                                item.plugin.scope === PluginScope.User
+                                  ? PluginScope.Project
+                                  : PluginScope.User;
+                              const result = await runForPlugin(key, {
+                                action: PluginAction.Install,
+                                plugin: `${item.name}@${item.marketplace}`,
+                                scope: targetScope,
+                              });
+                              if (result.success)
+                                await runForPlugin(key, {
+                                  action: PluginAction.Uninstall,
+                                  plugin: `${item.name}@${item.marketplace}`,
+                                  scope: item.plugin.scope,
+                                });
                             }}
                             acting={acting && actingPlugin === key}
-                            actingOutput={actingPlugin === key ? output : (pluginOutputs.get(key) ?? null)}
-                            onDismissOutput={() => setPluginOutputs(prev => { const m = new Map(prev); m.delete(key); return m; })}
+                            actingOutput={
+                              actingPlugin === key
+                                ? output
+                                : (pluginOutputs.get(key) ?? null)
+                            }
+                            onDismissOutput={() =>
+                              setPluginOutputs((prev) => {
+                                const m = new Map(prev);
+                                m.delete(key);
+                                return m;
+                              })
+                            }
                           />
                         );
                       } else {
@@ -324,7 +504,13 @@ export function PluginsPanel({ config, onRescan }: Props) {
                           <AvailablePluginRow
                             key={`${item.name}@${item.marketplace}`}
                             plugin={item.available}
-                            onInstall={(scope) => run({ action: PluginAction.Install, plugin: `${item.name}@${item.marketplace}`, scope })}
+                            onInstall={(scope) =>
+                              void run({
+                                action: PluginAction.Install,
+                                plugin: `${item.name}@${item.marketplace}`,
+                                scope,
+                              })
+                            }
                             acting={acting}
                           />
                         );
@@ -339,32 +525,43 @@ export function PluginsPanel({ config, onRescan }: Props) {
       )}
 
       {/* Add Marketplace section */}
-      <div className="mt-4 bg-card border border-border rounded-lg overflow-hidden">
+      <div className="mt-4 overflow-hidden rounded-lg border border-border bg-card">
         <button
-          onClick={() => setAddMarketplaceOpen(o => !o)}
-          className="w-full text-left px-4 py-4 flex items-center gap-2 hover:bg-white/[0.02] transition-colors"
+          onClick={() => setAddMarketplaceOpen((o) => !o)}
+          className="flex w-full items-center gap-2 px-4 py-4 text-left transition-colors hover:bg-white/[0.02]"
         >
           <svg
-            className={`w-4 h-4 text-gray-500 transition-transform flex-shrink-0 ${addMarketplaceOpen ? 'rotate-45' : ''}`}
+            className={`h-4 w-4 flex-shrink-0 text-gray-500 transition-transform ${addMarketplaceOpen ? "rotate-45" : ""}`}
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
             strokeWidth={2}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 4v16m8-8H4"
+            />
           </svg>
-          <span className="text-sm font-medium text-gray-400">Add Marketplace</span>
+          <span className="text-sm font-medium text-gray-400">
+            Add Marketplace
+          </span>
         </button>
         {addMarketplaceOpen && (
           <div className="border-t border-border/50 px-4 py-4">
             <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                const val = addMarketplaceInput.trim();
-                if (!val) return;
-                const result = await run({ action: PluginAction.MarketplaceAdd, plugin: val });
-                if (result.success) setAddMarketplaceInput('');
-              }}
+              onSubmit={(e) =>
+                void (async () => {
+                  e.preventDefault();
+                  const val = addMarketplaceInput.trim();
+                  if (!val) return;
+                  const result = await run({
+                    action: PluginAction.MarketplaceAdd,
+                    plugin: val,
+                  });
+                  if (result.success) setAddMarketplaceInput("");
+                })()
+              }
               className="flex items-center gap-2"
             >
               <input
@@ -373,20 +570,19 @@ export function PluginsPanel({ config, onRescan }: Props) {
                 onChange={(e) => setAddMarketplaceInput(e.target.value)}
                 placeholder="github:owner/repo or owner/repo"
                 disabled={acting}
-                className="flex-1 bg-bg border border-border rounded px-3 py-1.5 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-accent/50 disabled:opacity-50"
+                className="flex-1 rounded border border-border bg-bg px-3 py-1.5 text-xs text-gray-200 placeholder-gray-600 focus:border-accent/50 focus:outline-none disabled:opacity-50"
               />
               <button
                 type="submit"
                 disabled={acting || !addMarketplaceInput.trim()}
-                className="px-3 py-1.5 text-xs font-medium rounded bg-accent/20 text-accent hover:bg-accent/30 transition-colors disabled:opacity-50"
+                className="rounded bg-accent/20 px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/30 disabled:opacity-50"
               >
-                {acting ? 'Adding...' : 'Add'}
+                {acting ? "Adding..." : "Add"}
               </button>
             </form>
           </div>
         )}
       </div>
-
     </PanelShell>
   );
 }
@@ -424,20 +620,30 @@ function InstalledPluginRow({
   const [confirmUninstall, setConfirmUninstall] = useState(false);
 
   return (
-    <div id={`plugin-${slug(plugin.name)}-${plugin.scope}`} className={`border-t border-border/30 ${expanded ? 'bg-white/[0.02]' : ''} ${!plugin.enabled ? 'opacity-60' : ''}`}>
+    <div
+      id={`plugin-${slug(plugin.name)}-${plugin.scope}`}
+      className={`border-t border-border/30 ${expanded ? "bg-white/[0.02]" : ""} ${!plugin.enabled ? "opacity-60" : ""}`}
+    >
       <div className="flex items-center px-4 py-5">
         {/* Toggle switch */}
         <button
-          onClick={(e) => { e.stopPropagation(); plugin.enabled ? onDisable() : onEnable(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (plugin.enabled) {
+              onDisable();
+            } else {
+              onEnable();
+            }
+          }}
           disabled={acting}
-          className={`relative w-10 h-5 rounded-full transition-colors disabled:opacity-50 flex-shrink-0 mr-3 ${
-            plugin.enabled ? 'bg-green-500/40' : 'bg-gray-600/40'
+          className={`relative mr-3 h-5 w-10 flex-shrink-0 rounded-full transition-colors disabled:opacity-50 ${
+            plugin.enabled ? "bg-green-500/40" : "bg-gray-600/40"
           }`}
-          title={plugin.enabled ? 'Disable plugin' : 'Enable plugin'}
+          title={plugin.enabled ? "Disable plugin" : "Enable plugin"}
         >
           <span
-            className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
-              plugin.enabled ? 'left-5' : 'left-0.5'
+            className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
+              plugin.enabled ? "left-5" : "left-0.5"
             }`}
           />
         </button>
@@ -445,87 +651,126 @@ function InstalledPluginRow({
         {/* Clickable row for expand/collapse */}
         <button
           onClick={onToggle}
-          className="flex-1 text-left focus:outline-none flex items-center gap-2 min-w-0"
+          className="flex min-w-0 flex-1 items-center gap-2 text-left focus:outline-none"
         >
           <svg
-            className={`w-4 h-4 text-gray-500 flex-shrink-0 transition-transform duration-150 ${expanded ? 'rotate-90' : ''}`}
+            className={`h-4 w-4 flex-shrink-0 text-gray-500 transition-transform duration-150 ${expanded ? "rotate-90" : ""}`}
             viewBox="0 0 16 16"
             fill="currentColor"
           >
             <path d="M6 3l5 5-5 5V3z" />
           </svg>
-          <span className={`font-medium ${plugin.enabled ? 'text-gray-200' : 'text-gray-400'}`}>{plugin.name}</span>
-          <ScopeIndicator scope={plugin.scope === PluginScope.User ? ConfigScope.Global : ConfigScope.Project} />
-          {(plugin.contents || mcpServers.length > 0) && (
-            <div className="flex gap-1.5 ml-1">
-              {plugin.contents && CONTENT_LABELS.map(({ key, label, singular }) => {
-                const items = plugin.contents![key];
-                if (!items.length) return null;
-                const badgeStyle = PLUGIN_CONTENT_BADGE_STYLES[key as keyof typeof PLUGIN_CONTENT_BADGE_STYLES];
-                return (
-                  <span key={key} className={`px-2 py-0.5 rounded text-xs font-medium ${badgeStyle.bg} ${badgeStyle.color}`}>
-                    {items.length} {items.length === 1 ? singular : label}
-                  </span>
-                );
-              })}
+          <span
+            className={`font-medium ${plugin.enabled ? "text-gray-200" : "text-gray-400"}`}
+          >
+            {plugin.name}
+          </span>
+          <ScopeIndicator
+            scope={
+              plugin.scope === PluginScope.User
+                ? ConfigScope.Global
+                : ConfigScope.Project
+            }
+          />
+          {(plugin.contents ?? mcpServers.length > 0) && (
+            <div className="ml-1 flex gap-1.5">
+              {plugin.contents &&
+                CONTENT_LABELS.map(({ key, label, singular }) => {
+                  const items = plugin.contents?.[key] ?? [];
+                  if (!items.length) return null;
+                  const badgeStyle =
+                    PLUGIN_CONTENT_BADGE_STYLES[
+                      key as keyof typeof PLUGIN_CONTENT_BADGE_STYLES
+                    ];
+                  return (
+                    <span
+                      key={key}
+                      className={`rounded px-2 py-0.5 text-xs font-medium ${badgeStyle.bg} ${badgeStyle.color}`}
+                    >
+                      {items.length} {items.length === 1 ? singular : label}
+                    </span>
+                  );
+                })}
               {mcpServers.length > 0 && (
-                <span className="px-2 py-0.5 rounded text-xs font-medium text-blue-400 bg-blue-500/15">
-                  {mcpServers.length} {mcpServers.length === 1 ? 'MCP' : 'MCPs'}
+                <span className="rounded bg-blue-500/15 px-2 py-0.5 text-xs font-medium text-blue-400">
+                  {mcpServers.length} {mcpServers.length === 1 ? "MCP" : "MCPs"}
                 </span>
               )}
             </div>
           )}
-          <div className="ml-auto flex items-center gap-2 flex-shrink-0">
+          <div className="ml-auto flex flex-shrink-0 items-center gap-2">
             {plugin.updateAvailable && plugin.enabled && (
               <button
-                onClick={(e) => { e.stopPropagation(); onUpdate(); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onUpdate();
+                }}
                 disabled={acting}
-                className="px-2 py-0.5 text-xs font-medium rounded bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors disabled:opacity-50 flex items-center gap-1"
+                className="flex items-center gap-1 rounded bg-amber-500/20 px-2 py-0.5 text-xs font-medium text-amber-400 transition-colors hover:bg-amber-500/30 disabled:opacity-50"
                 title={`Update available: ${plugin.latestVersion}`}
               >
-                {acting ? <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse inline-block" /> : null}
-                {acting ? 'Updating...' : 'Update'}
+                {acting ? (
+                  <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-amber-400" />
+                ) : null}
+                {acting ? "Updating..." : "Update"}
               </button>
             )}
-            <span onClick={e => e.stopPropagation()}>
+            <span onClick={(e) => e.stopPropagation()}>
               <ScopeMoveButton
                 saving={acting}
-                options={[{
-                  label: plugin.scope === PluginScope.User ? 'Project' : 'User',
-                  scope: plugin.scope === PluginScope.User ? ConfigScope.Project : ConfigScope.Global,
-                  onCopy,
-                  onMove,
-                }]}
+                options={[
+                  {
+                    label:
+                      plugin.scope === PluginScope.User ? "Project" : "User",
+                    scope:
+                      plugin.scope === PluginScope.User
+                        ? ConfigScope.Project
+                        : ConfigScope.Global,
+                    onCopy,
+                    onMove,
+                  },
+                ]}
               />
             </span>
             {!confirmUninstall ? (
               <button
-                onClick={(e) => { e.stopPropagation(); setConfirmUninstall(true); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setConfirmUninstall(true);
+                }}
                 disabled={acting}
-                className="px-2 py-0.5 text-xs font-medium rounded bg-gray-500/10 text-gray-500 hover:bg-red-500/10 hover:text-red-400 transition-colors disabled:opacity-50"
+                className="rounded bg-gray-500/10 px-2 py-0.5 text-xs font-medium text-gray-500 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
                 title="Uninstall plugin"
               >
                 Uninstall
               </button>
             ) : (
-              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+              <div
+                className="flex items-center gap-1"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <span className="text-xs text-red-400">Sure?</span>
                 <button
-                  onClick={() => { onUninstall(); setConfirmUninstall(false); }}
+                  onClick={() => {
+                    onUninstall();
+                    setConfirmUninstall(false);
+                  }}
                   disabled={acting}
-                  className="px-2 py-0.5 text-xs font-medium rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors disabled:opacity-50"
+                  className="rounded bg-red-500/20 px-2 py-0.5 text-xs font-medium text-red-400 transition-colors hover:bg-red-500/30 disabled:opacity-50"
                 >
                   Yes
                 </button>
                 <button
                   onClick={() => setConfirmUninstall(false)}
-                  className="px-2 py-0.5 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                  className="px-2 py-0.5 text-xs text-gray-500 transition-colors hover:text-gray-300"
                 >
                   No
                 </button>
               </div>
             )}
-            <span className={`text-xs font-mono ${plugin.updateAvailable ? 'text-amber-500/70' : 'text-gray-500'}`}>
+            <span
+              className={`font-mono text-xs ${plugin.updateAvailable ? "text-amber-500/70" : "text-gray-500"}`}
+            >
               {plugin.version}
             </span>
           </div>
@@ -533,69 +778,89 @@ function InstalledPluginRow({
       </div>
 
       {!expanded && plugin.description && !acting && !actingOutput && (
-        <p className="text-xs text-gray-500 px-4 pb-4 ml-[52px] truncate">{plugin.description}</p>
+        <p className="ml-[52px] truncate px-4 pb-4 text-xs text-gray-500">
+          {plugin.description}
+        </p>
       )}
 
       {(acting || actingOutput) && (
         <div className="mx-4 mb-3 rounded border border-amber-500/20 bg-amber-500/5 px-3 py-2">
-          <div className="flex items-center justify-between mb-1">
+          <div className="mb-1 flex items-center justify-between">
             {acting ? (
-              <div className="flex items-center gap-2 text-xs text-amber-400 animate-pulse">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+              <div className="flex animate-pulse items-center gap-2 text-xs text-amber-400">
+                <span className="h-1.5 w-1.5 animate-ping rounded-full bg-amber-400" />
                 Running claude plugin...
               </div>
             ) : (
               <span className="text-xs text-gray-500">Output</span>
             )}
             {!acting && (
-              <button onClick={onDismissOutput} className="text-xs text-gray-600 hover:text-gray-400 transition-colors">✕</button>
+              <button
+                onClick={onDismissOutput}
+                className="text-xs text-gray-600 transition-colors hover:text-gray-400"
+              >
+                ✕
+              </button>
             )}
           </div>
           {actingOutput && (
-            <pre className="text-xs text-gray-300 whitespace-pre-wrap font-mono">{actingOutput}</pre>
+            <pre className="whitespace-pre-wrap font-mono text-xs text-gray-300">
+              {actingOutput}
+            </pre>
           )}
         </div>
       )}
 
       {expanded && (
-        <div className="px-4 pb-6 pt-4 space-y-5">
+        <div className="space-y-5 px-4 pb-6 pt-4">
           {/* Uninstall action */}
           <div className="flex items-center gap-2">
             {!confirmUninstall ? (
               <button
                 onClick={() => setConfirmUninstall(true)}
                 disabled={acting}
-                className="px-3 py-1.5 text-xs font-medium rounded bg-gray-500/10 text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-colors disabled:opacity-50"
+                className="rounded bg-gray-500/10 px-3 py-1.5 text-xs font-medium text-gray-400 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
               >
                 Uninstall
               </button>
             ) : (
               <div className="flex items-center gap-2">
-                <span className="text-xs text-red-400">Uninstall {plugin.name}?</span>
+                <span className="text-xs text-red-400">
+                  Uninstall {plugin.name}?
+                </span>
                 <button
-                  onClick={() => { onUninstall(); setConfirmUninstall(false); }}
+                  onClick={() => {
+                    onUninstall();
+                    setConfirmUninstall(false);
+                  }}
                   disabled={acting}
-                  className="px-2 py-1 text-xs font-medium rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors disabled:opacity-50"
+                  className="rounded bg-red-500/20 px-2 py-1 text-xs font-medium text-red-400 transition-colors hover:bg-red-500/30 disabled:opacity-50"
                 >
                   Confirm
                 </button>
                 <button
                   onClick={() => setConfirmUninstall(false)}
-                  className="px-2 py-1 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                  className="px-2 py-1 text-xs text-gray-500 transition-colors hover:text-gray-300"
                 >
                   Cancel
                 </button>
               </div>
             )}
             {acting && (
-              <span className="text-xs text-gray-500 animate-pulse">Working...</span>
+              <span className="animate-pulse text-xs text-gray-500">
+                Working...
+              </span>
             )}
           </div>
 
           {plugin.description && (
             <div>
-              <span className="text-xs text-gray-500 uppercase tracking-wide">Description</span>
-              <p className="text-sm text-gray-300 mt-0.5">{plugin.description}</p>
+              <span className="text-xs uppercase tracking-wide text-gray-500">
+                Description
+              </span>
+              <p className="mt-0.5 text-sm text-gray-300">
+                {plugin.description}
+              </p>
             </div>
           )}
 
@@ -603,25 +868,38 @@ function InstalledPluginRow({
           {plugin.contents && (
             <div className="space-y-3">
               {CONTENT_LABELS.map(({ key, label }) => {
-                const items = plugin.contents![key];
+                const items = plugin.contents?.[key] ?? [];
                 if (!items.length) return null;
-                const badgeStyle = PLUGIN_CONTENT_BADGE_STYLES[key as keyof typeof PLUGIN_CONTENT_BADGE_STYLES];
+                const badgeStyle =
+                  PLUGIN_CONTENT_BADGE_STYLES[
+                    key as keyof typeof PLUGIN_CONTENT_BADGE_STYLES
+                  ];
                 return (
                   <div key={key}>
-                    <span className={`text-xs uppercase tracking-wide font-medium ${badgeStyle.color}`}>
+                    <span
+                      className={`text-xs font-medium uppercase tracking-wide ${badgeStyle.color}`}
+                    >
                       {label} ({items.length})
                     </span>
-                    <div className="flex flex-col gap-1.5 mt-1">
-                      {items.map(item => {
-                        const name = typeof item === 'string' ? item : item.name;
-                        const desc = typeof item === 'string' ? undefined : item.description;
+                    <div className="mt-1 flex flex-col gap-1.5">
+                      {items.map((item) => {
+                        const name =
+                          typeof item === "string" ? item : item.name;
+                        const desc =
+                          typeof item === "string"
+                            ? undefined
+                            : item.description;
                         return (
                           <div key={name} className="flex items-baseline gap-2">
-                            <span className={`px-2 py-0.5 rounded text-xs font-mono flex-shrink-0 ${badgeStyle.bg} ${badgeStyle.color}`}>
+                            <span
+                              className={`flex-shrink-0 rounded px-2 py-0.5 font-mono text-xs ${badgeStyle.bg} ${badgeStyle.color}`}
+                            >
                               {name}
                             </span>
                             {desc && (
-                              <span className="text-xs text-gray-500 truncate">{desc}</span>
+                              <span className="truncate text-xs text-gray-500">
+                                {desc}
+                              </span>
                             )}
                           </div>
                         );
@@ -636,32 +914,52 @@ function InstalledPluginRow({
           {/* MCP Servers */}
           {mcpServers.length > 0 && (
             <div>
-              <span className="text-xs uppercase tracking-wide font-medium text-blue-400">
+              <span className="text-xs font-medium uppercase tracking-wide text-blue-400">
                 MCP Servers ({mcpServers.length})
               </span>
-              <div className="flex flex-col gap-1.5 mt-1">
-                {mcpServers.map(server => {
-                  const displayName = server.name.replace(`plugin:${plugin.name}:`, '');
-                  const mcpTypeStyle = TYPE_BADGE_STYLES.mcp[server.type as keyof typeof TYPE_BADGE_STYLES.mcp] ?? TYPE_BADGE_STYLES.mcp.stdio;
+              <div className="mt-1 flex flex-col gap-1.5">
+                {mcpServers.map((server) => {
+                  const displayName = server.name.replace(
+                    `plugin:${plugin.name}:`,
+                    "",
+                  );
+                  const mcpTypeStyle =
+                    TYPE_BADGE_STYLES.mcp[
+                      server.type as keyof typeof TYPE_BADGE_STYLES.mcp
+                    ] ?? TYPE_BADGE_STYLES.mcp.stdio;
                   return (
                     <div key={server.name} className="flex items-center gap-2">
-                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${server.enabled ? 'bg-green-400' : 'bg-gray-600'}`} />
-                      <span className="px-2 py-0.5 rounded text-xs font-mono flex-shrink-0 text-blue-400 bg-blue-500/15">
+                      <span
+                        className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${server.enabled ? "bg-green-400" : "bg-gray-600"}`}
+                      />
+                      <span className="flex-shrink-0 rounded bg-blue-500/15 px-2 py-0.5 font-mono text-xs text-blue-400">
                         {displayName}
                       </span>
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${mcpTypeStyle.bg} ${mcpTypeStyle.text}`}>
+                      <span
+                        className={`rounded px-2 py-0.5 text-xs font-medium ${mcpTypeStyle.bg} ${mcpTypeStyle.text}`}
+                      >
                         {server.type}
                       </span>
-                      {server.type === 'stdio' && server.command && (
-                        <span className="text-xs text-gray-500 font-mono truncate">
-                          {server.command}{server.args?.length ? ' ' + server.args.join(' ') : ''}
-                        </span>
-                      )}
-                      {(server.type === 'http' || server.type === 'sse') && server.url && (
-                        <span className="text-xs text-gray-500 font-mono truncate">{server.url}</span>
-                      )}
-                      <span className={`ml-auto text-xs ${server.enabled ? 'text-green-400' : 'text-gray-600'}`}>
-                        {server.enabled ? 'enabled' : 'disabled'}
+                      {server.type === ("stdio" as McpServer["type"]) &&
+                        server.command && (
+                          <span className="truncate font-mono text-xs text-gray-500">
+                            {server.command}
+                            {server.args?.length
+                              ? " " + server.args.join(" ")
+                              : ""}
+                          </span>
+                        )}
+                      {(server.type === ("http" as McpServer["type"]) ||
+                        server.type === ("sse" as McpServer["type"])) &&
+                        server.url && (
+                          <span className="truncate font-mono text-xs text-gray-500">
+                            {server.url}
+                          </span>
+                        )}
+                      <span
+                        className={`ml-auto text-xs ${server.enabled ? "text-green-400" : "text-gray-600"}`}
+                      >
+                        {server.enabled ? "enabled" : "disabled"}
                       </span>
                     </div>
                   );
@@ -671,39 +969,49 @@ function InstalledPluginRow({
           )}
 
           {/* Detail grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <span className="text-xs text-gray-500 uppercase tracking-wide">Install Path</span>
-              <div className="text-sm font-mono text-gray-300 mt-0.5 bg-bg rounded px-2 py-1 overflow-x-auto">
+              <span className="text-xs uppercase tracking-wide text-gray-500">
+                Install Path
+              </span>
+              <div className="mt-0.5 overflow-x-auto rounded bg-bg px-2 py-1 font-mono text-sm text-gray-300">
                 {plugin.installPath}
               </div>
             </div>
             {plugin.installedAt && (
               <div>
-                <span className="text-xs text-gray-500 uppercase tracking-wide">Installed</span>
-                <div className="text-sm text-gray-300 mt-0.5 bg-bg rounded px-2 py-1">
+                <span className="text-xs uppercase tracking-wide text-gray-500">
+                  Installed
+                </span>
+                <div className="mt-0.5 rounded bg-bg px-2 py-1 text-sm text-gray-300">
                   {formatDate(plugin.installedAt)}
                 </div>
               </div>
             )}
             {plugin.gitSha && (
               <div>
-                <span className="text-xs text-gray-500 uppercase tracking-wide">Git Commit</span>
-                <div className="text-sm font-mono text-gray-300 mt-0.5 bg-bg rounded px-2 py-1">
+                <span className="text-xs uppercase tracking-wide text-gray-500">
+                  Git Commit
+                </span>
+                <div className="mt-0.5 rounded bg-bg px-2 py-1 font-mono text-sm text-gray-300">
                   {plugin.gitSha}
                 </div>
               </div>
             )}
             {plugin.latestVersion && (
               <div>
-                <span className="text-xs text-gray-500 uppercase tracking-wide">
-                  {plugin.updateAvailable ? 'Latest Version' : 'Up to date'}
+                <span className="text-xs uppercase tracking-wide text-gray-500">
+                  {plugin.updateAvailable ? "Latest Version" : "Up to date"}
                 </span>
-                <div className={`text-sm font-mono mt-0.5 bg-bg rounded px-2 py-1 flex items-center gap-2 ${plugin.updateAvailable ? 'text-amber-400' : 'text-green-400'}`}>
+                <div
+                  className={`mt-0.5 flex items-center gap-2 rounded bg-bg px-2 py-1 font-mono text-sm ${plugin.updateAvailable ? "text-amber-400" : "text-green-400"}`}
+                >
                   {plugin.updateAvailable
                     ? plugin.latestVersion.slice(0, 12)
                     : plugin.version}
-                  {!plugin.updateAvailable && <span className="text-xs">✓</span>}
+                  {!plugin.updateAvailable && (
+                    <span className="text-xs">✓</span>
+                  )}
                 </div>
               </div>
             )}
@@ -713,15 +1021,20 @@ function InstalledPluginRow({
             <div>
               <button
                 onClick={() => setShowFiles(!showFiles)}
-                className="text-xs font-medium text-accent hover:text-accent/80 transition-colors"
+                className="text-xs font-medium text-accent transition-colors hover:text-accent/80"
               >
-                {showFiles ? '-- Hide Files' : `++ View Files (${plugin.files.length})`}
+                {showFiles
+                  ? "-- Hide Files"
+                  : `++ View Files (${plugin.files.length})`}
               </button>
               {showFiles && (
-                <div className="mt-2 bg-bg rounded-lg border border-border p-3 max-h-64 overflow-y-auto">
+                <div className="mt-2 max-h-64 overflow-y-auto rounded-lg border border-border bg-bg p-3">
                   <div className="space-y-0.5">
                     {plugin.files.map((file, idx) => (
-                      <div key={idx} className="text-xs font-mono text-gray-400 py-0.5">
+                      <div
+                        key={idx}
+                        className="py-0.5 font-mono text-xs text-gray-400"
+                      >
                         <FileIcon filename={file} />
                         <span className="ml-1.5">{file}</span>
                       </div>
@@ -747,26 +1060,26 @@ function AvailablePluginRow({
   acting: boolean;
 }) {
   return (
-    <div className="border-t border-border/40 px-4 py-5 opacity-60 hover:opacity-90 transition-opacity">
+    <div className="border-t border-border/40 px-4 py-5 opacity-60 transition-opacity hover:opacity-90">
       <div className="flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full flex-shrink-0 bg-gray-600" />
+        <span className="h-2 w-2 flex-shrink-0 rounded-full bg-gray-600" />
         <span className="text-sm text-gray-400">{plugin.name}</span>
         {plugin.external && (
-          <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-500/10 text-blue-400">
+          <span className="rounded bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-blue-400">
             External
           </span>
         )}
         {!plugin.installed && (
-          <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-500/10 text-gray-600">
+          <span className="rounded bg-gray-500/10 px-2 py-0.5 text-xs font-medium text-gray-600">
             Not installed
           </span>
         )}
         <div className="ml-auto flex items-center gap-1">
-          <span className="text-xs text-gray-600 mr-1">Install for:</span>
+          <span className="mr-1 text-xs text-gray-600">Install for:</span>
           <button
             onClick={() => onInstall(PluginScope.User)}
             disabled={acting}
-            className="px-2 py-0.5 text-xs font-medium rounded bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors disabled:opacity-50"
+            className="rounded bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-blue-400 transition-colors hover:bg-blue-500/20 disabled:opacity-50"
             title="Install for current user (global)"
           >
             User
@@ -774,7 +1087,7 @@ function AvailablePluginRow({
           <button
             onClick={() => onInstall(PluginScope.Project)}
             disabled={acting}
-            className="px-2 py-0.5 text-xs font-medium rounded bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors disabled:opacity-50"
+            className="rounded bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-400 transition-colors hover:bg-green-500/20 disabled:opacity-50"
             title="Install for this project only"
           >
             Project
@@ -782,7 +1095,9 @@ function AvailablePluginRow({
         </div>
       </div>
       {plugin.description && (
-        <p className="text-xs text-gray-600 mt-1.5 ml-4 truncate">{plugin.description}</p>
+        <p className="ml-4 mt-1.5 truncate text-xs text-gray-600">
+          {plugin.description}
+        </p>
       )}
     </div>
   );
@@ -792,11 +1107,11 @@ function formatDate(iso: string): string {
   try {
     const d = new Date(iso);
     return d.toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   } catch {
     return iso;
@@ -804,20 +1119,25 @@ function formatDate(iso: string): string {
 }
 
 function FileIcon({ filename }: { filename: string }) {
-  const ext = filename.split('.').pop()?.toLowerCase() || '';
-  let color = 'text-gray-600';
-  let icon = 'F';
+  const ext = filename.split(".").pop()?.toLowerCase() ?? "";
+  let color = "text-gray-600";
+  let icon = "F";
 
-  if (ext === 'md' || ext === 'mdc') {
-    color = 'text-blue-500'; icon = 'M';
-  } else if (ext === 'json') {
-    color = 'text-yellow-500'; icon = 'J';
-  } else if (ext === 'ts' || ext === 'tsx' || ext === 'js' || ext === 'jsx') {
-    color = 'text-cyan-500'; icon = 'S';
-  } else if (ext === 'yaml' || ext === 'yml') {
-    color = 'text-pink-500'; icon = 'Y';
-  } else if (ext === 'toml') {
-    color = 'text-orange-500'; icon = 'T';
+  if (ext === "md" || ext === "mdc") {
+    color = "text-blue-500";
+    icon = "M";
+  } else if (ext === "json") {
+    color = "text-yellow-500";
+    icon = "J";
+  } else if (ext === "ts" || ext === "tsx" || ext === "js" || ext === "jsx") {
+    color = "text-cyan-500";
+    icon = "S";
+  } else if (ext === "yaml" || ext === "yml") {
+    color = "text-pink-500";
+    icon = "Y";
+  } else if (ext === "toml") {
+    color = "text-orange-500";
+    icon = "T";
   }
 
   return (

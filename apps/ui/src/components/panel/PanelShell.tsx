@@ -1,5 +1,5 @@
-import React from 'react';
-import { ViewToggle } from './ViewToggle.js';
+import React from "react";
+import { ViewToggle } from "./ViewToggle.js";
 
 interface PanelShellProps {
   title: string;
@@ -22,18 +22,22 @@ export function PanelShell({
 }: PanelShellProps) {
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4 flex items-center justify-between">
         <h2 className="text-xl font-bold">{title}</h2>
-        {(actions || viewOptions) && (
+        {(actions ?? viewOptions) && (
           <div className="flex items-center gap-2">
             {actions}
             {viewOptions && view !== undefined && onViewChange && (
-              <ViewToggle options={viewOptions} value={view} onChange={onViewChange} />
+              <ViewToggle
+                options={viewOptions}
+                value={view}
+                onChange={onViewChange}
+              />
             )}
           </div>
         )}
       </div>
-      {subtitle && <p className="text-sm text-gray-500 mb-6">{subtitle}</p>}
+      {subtitle && <p className="mb-6 text-sm text-gray-500">{subtitle}</p>}
       {children}
     </div>
   );

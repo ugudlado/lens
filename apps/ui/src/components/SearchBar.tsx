@@ -6,7 +6,13 @@ interface Props {
   filteredCount?: number;
 }
 
-export function SearchBar({ value, onChange, placeholder = 'Search...', itemCount, filteredCount }: Props) {
+export function SearchBar({
+  value,
+  onChange,
+  placeholder = "Search...",
+  itemCount,
+  filteredCount,
+}: Props) {
   if (itemCount === 0) return null;
 
   return (
@@ -16,7 +22,7 @@ export function SearchBar({ value, onChange, placeholder = 'Search...', itemCoun
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 20 20"
           fill="currentColor"
-          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600"
+          className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-600"
         >
           <path
             fillRule="evenodd"
@@ -27,14 +33,14 @@ export function SearchBar({ value, onChange, placeholder = 'Search...', itemCoun
         <input
           type="text"
           value={value}
-          onChange={e => onChange(e.target.value)}
+          onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full bg-bg border border-border rounded pl-9 pr-8 py-2 font-mono text-sm text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-accent/50"
+          className="w-full rounded border border-border bg-bg py-2 pl-9 pr-8 font-mono text-sm text-gray-200 placeholder:text-gray-600 focus:border-accent/50 focus:outline-none"
         />
         {value && (
           <button
-            onClick={() => onChange('')}
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded text-gray-500 hover:text-gray-300 hover:bg-white/10 transition-colors"
+            onClick={() => onChange("")}
+            className="absolute right-2 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded text-gray-500 transition-colors hover:bg-white/10 hover:text-gray-300"
             title="Clear search"
           >
             &times;
@@ -42,7 +48,7 @@ export function SearchBar({ value, onChange, placeholder = 'Search...', itemCoun
         )}
       </div>
       {value && filteredCount !== undefined && (
-        <p className="text-xs text-gray-500 mt-1.5">
+        <p className="mt-1.5 text-xs text-gray-500">
           Showing {filteredCount} of {itemCount}
         </p>
       )}

@@ -1,6 +1,10 @@
-import { useState } from 'react';
-import { NavSection, SuggestionCategory, SuggestionSeverity } from '@lens/schema';
-import type { Suggestion } from '@lens/schema';
+import { useState } from "react";
+import {
+  NavSection,
+  SuggestionCategory,
+  SuggestionSeverity,
+} from "@lens/schema";
+import type { Suggestion } from "@lens/schema";
 
 interface SuggestionsBoxProps {
   suggestions: Suggestion[] | null;
@@ -8,9 +12,9 @@ interface SuggestionsBoxProps {
 }
 
 const CATEGORY_LABELS: Record<SuggestionCategory, string> = {
-  [SuggestionCategory.Health]: 'Health Checks',
-  [SuggestionCategory.BestPractice]: 'Best Practices',
-  [SuggestionCategory.Contextual]: 'Contextual',
+  [SuggestionCategory.Health]: "Health Checks",
+  [SuggestionCategory.BestPractice]: "Best Practices",
+  [SuggestionCategory.Contextual]: "Contextual",
 };
 
 const CATEGORY_ORDER: SuggestionCategory[] = [
@@ -20,16 +24,16 @@ const CATEGORY_ORDER: SuggestionCategory[] = [
 ];
 
 const NAV_LABELS: Partial<Record<NavSection, string>> = {
-  [NavSection.ClaudeMd]: 'CLAUDE.md',
-  [NavSection.Settings]: 'Settings',
-  [NavSection.Permissions]: 'Permissions',
-  [NavSection.Mcp]: 'MCP Servers',
-  [NavSection.Hooks]: 'Hooks',
-  [NavSection.Skills]: 'Skills',
-  [NavSection.Memory]: 'Memory',
-  [NavSection.Sandbox]: 'Sandbox',
-  [NavSection.Commands]: 'Commands',
-  [NavSection.Plugins]: 'Plugins',
+  [NavSection.ClaudeMd]: "CLAUDE.md",
+  [NavSection.Settings]: "Settings",
+  [NavSection.Permissions]: "Permissions",
+  [NavSection.Mcp]: "MCP Servers",
+  [NavSection.Hooks]: "Hooks",
+  [NavSection.Skills]: "Skills",
+  [NavSection.Memory]: "Memory",
+  [NavSection.Sandbox]: "Sandbox",
+  [NavSection.Commands]: "Commands",
+  [NavSection.Plugins]: "Plugins",
 };
 
 function SkeletonCards() {
@@ -38,13 +42,13 @@ function SkeletonCards() {
       {[0, 1, 2].map((i) => (
         <div
           key={i}
-          className="animate-pulse bg-card/50 border border-border rounded-lg p-4"
+          className="animate-pulse rounded-lg border border-border bg-card/50 p-4"
         >
           <div className="flex items-start gap-3">
-            <div className="w-5 h-5 rounded bg-border/50 mt-0.5 flex-shrink-0" />
+            <div className="mt-0.5 h-5 w-5 flex-shrink-0 rounded bg-border/50" />
             <div className="flex-1 space-y-2">
-              <div className="h-4 bg-border/50 rounded w-2/3" />
-              <div className="h-3 bg-border/30 rounded w-full" />
+              <div className="h-4 w-2/3 rounded bg-border/50" />
+              <div className="h-3 w-full rounded bg-border/30" />
             </div>
           </div>
         </div>
@@ -61,28 +65,29 @@ function SuggestionCard({
   onNavigate: (section: NavSection) => void;
 }) {
   const isWarning = suggestion.severity === SuggestionSeverity.Warning;
-  const sectionLabel = NAV_LABELS[suggestion.navSection] ?? suggestion.navSection;
+  const sectionLabel =
+    NAV_LABELS[suggestion.navSection] ?? suggestion.navSection;
 
   return (
-    <div className="bg-card border border-border rounded-lg p-4 transition-all hover:border-accent/50 hover:bg-card/80">
+    <div className="rounded-lg border border-border bg-card p-4 transition-all hover:border-accent/50 hover:bg-card/80">
       <div className="flex items-start gap-3">
         <span
-          className={`text-base mt-0.5 flex-shrink-0 ${
-            isWarning ? 'text-amber-400' : 'text-blue-400'
+          className={`mt-0.5 flex-shrink-0 text-base ${
+            isWarning ? "text-amber-400" : "text-blue-400"
           }`}
         >
-          {isWarning ? '\u26A0' : '\u2139'}
+          {isWarning ? "\u26A0" : "\u2139"}
         </span>
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="text-sm font-semibold text-gray-200">
             {suggestion.title}
           </div>
-          <div className="text-sm text-gray-500 mt-0.5">
+          <div className="mt-0.5 text-sm text-gray-500">
             {suggestion.description}
           </div>
           <button
             onClick={() => onNavigate(suggestion.navSection)}
-            className="mt-2 text-xs text-accent hover:text-accent-hover transition-colors"
+            className="mt-2 text-xs text-accent transition-colors hover:text-accent-hover"
           >
             Go to {sectionLabel} &rarr;
           </button>
@@ -107,23 +112,26 @@ function CategoryGroup({
     <div>
       <button
         onClick={() => setExpanded((prev) => !prev)}
-        className="flex items-center gap-2 w-full text-left py-2 group"
+        className="group flex w-full items-center gap-2 py-2 text-left"
       >
-        <span className="text-gray-500 text-xs transition-transform duration-150" style={{
-          display: 'inline-block',
-          transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
-        }}>
+        <span
+          className="text-xs text-gray-500 transition-transform duration-150"
+          style={{
+            display: "inline-block",
+            transform: expanded ? "rotate(90deg)" : "rotate(0deg)",
+          }}
+        >
           &#9654;
         </span>
-        <span className="text-sm font-medium text-gray-300 group-hover:text-gray-200 transition-colors">
+        <span className="text-sm font-medium text-gray-300 transition-colors group-hover:text-gray-200">
           {CATEGORY_LABELS[category]}
         </span>
-        <span className="text-xs bg-border/60 text-gray-400 rounded-full px-2 py-0.5 tabular-nums">
+        <span className="rounded-full bg-border/60 px-2 py-0.5 text-xs tabular-nums text-gray-400">
           {suggestions.length}
         </span>
       </button>
       {expanded && (
-        <div className="space-y-2 ml-5 mb-4">
+        <div className="mb-4 ml-5 space-y-2">
           {suggestions.map((s) => (
             <SuggestionCard key={s.id} suggestion={s} onNavigate={onNavigate} />
           ))}
@@ -133,12 +141,15 @@ function CategoryGroup({
   );
 }
 
-export function SuggestionsBox({ suggestions, onNavigate }: SuggestionsBoxProps) {
+export function SuggestionsBox({
+  suggestions,
+  onNavigate,
+}: SuggestionsBoxProps) {
   // Loading state
   if (suggestions === null) {
     return (
       <div className="mt-8">
-        <h3 className="text-sm font-medium text-gray-400 mb-4">Suggestions</h3>
+        <h3 className="mb-4 text-sm font-medium text-gray-400">Suggestions</h3>
         <SkeletonCards />
       </div>
     );
@@ -148,10 +159,10 @@ export function SuggestionsBox({ suggestions, onNavigate }: SuggestionsBoxProps)
   if (suggestions.length === 0) {
     return (
       <div className="mt-8">
-        <h3 className="text-sm font-medium text-gray-400 mb-4">Suggestions</h3>
-        <div className="bg-card border border-border rounded-lg p-5 text-center">
-          <span className="text-green-400 text-2xl">&#10003;</span>
-          <p className="text-green-400 text-sm font-medium mt-2">
+        <h3 className="mb-4 text-sm font-medium text-gray-400">Suggestions</h3>
+        <div className="rounded-lg border border-border bg-card p-5 text-center">
+          <span className="text-2xl text-green-400">&#10003;</span>
+          <p className="mt-2 text-sm font-medium text-green-400">
             Your configuration looks great!
           </p>
         </div>
@@ -172,16 +183,20 @@ export function SuggestionsBox({ suggestions, onNavigate }: SuggestionsBoxProps)
 
   return (
     <div className="mt-8">
-      <h3 className="text-sm font-medium text-gray-400 mb-4">Suggestions</h3>
+      <h3 className="mb-4 text-sm font-medium text-gray-400">Suggestions</h3>
       <div className="space-y-1">
-        {CATEGORY_ORDER.filter((cat) => grouped.has(cat)).map((cat) => (
-          <CategoryGroup
-            key={cat}
-            category={cat}
-            suggestions={grouped.get(cat)!}
-            onNavigate={onNavigate}
-          />
-        ))}
+        {CATEGORY_ORDER.filter((cat) => grouped.has(cat)).map((cat) => {
+          const categorySuggestions = grouped.get(cat);
+          if (!categorySuggestions) return null;
+          return (
+            <CategoryGroup
+              key={cat}
+              category={cat}
+              suggestions={categorySuggestions}
+              onNavigate={onNavigate}
+            />
+          );
+        })}
       </div>
     </div>
   );

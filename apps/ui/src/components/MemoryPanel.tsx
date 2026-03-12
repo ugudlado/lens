@@ -1,13 +1,19 @@
-import { useState } from 'react';
-import { ConfigScope } from '@lens/schema';
-import type { ConfigSnapshot } from '@lens/schema';
-import { EditableContent } from './EditableContent';
-import { RawJsonView } from './RawJsonView';
-import { ScopeIndicator } from './ScopeIndicator.js';
-import { useConfigUpdate } from '../hooks/useConfigUpdate';
-import { useFileDelete } from '../hooks/useFileDelete';
-import { PanelShell, PanelRow, PanelEmpty, DeleteButton, AddButton } from './panel/index.js';
-import { slug } from '../constants.js';
+import { useState } from "react";
+import { ConfigScope } from "@lens/schema";
+import type { ConfigSnapshot } from "@lens/schema";
+import { EditableContent } from "./EditableContent";
+import { RawJsonView } from "./RawJsonView";
+import { ScopeIndicator } from "./ScopeIndicator.js";
+import { useConfigUpdate } from "../hooks/useConfigUpdate";
+import { useFileDelete } from "../hooks/useFileDelete";
+import {
+  PanelShell,
+  PanelRow,
+  PanelEmpty,
+  DeleteButton,
+  AddButton,
+} from "./panel/index.js";
+import { slug } from "../constants.js";
 
 interface Props {
   config: ConfigSnapshot;
@@ -17,21 +23,28 @@ interface Props {
 export function MemoryPanel({ config, onRescan }: Props) {
   const { memoryDir, files } = config.memory;
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
-  const [view, setView] = useState<'effective' | 'json'>('effective');
-  const [jumpTarget, setJumpTarget] = useState<{ filePath: string; key: string } | null>(null);
+  const [view, setView] = useState<"effective" | "json">("effective");
+  const [jumpTarget, setJumpTarget] = useState<{
+    filePath: string;
+    key: string;
+  } | null>(null);
   const [showNewForm, setShowNewForm] = useState(false);
-  const [newFileName, setNewFileName] = useState('');
+  const [newFileName, setNewFileName] = useState("");
 
-  const { update, saving: creating, error: createError } = useConfigUpdate(onRescan);
+  const {
+    update,
+    saving: creating,
+    error: createError,
+  } = useConfigUpdate(onRescan);
   const { deleteFile, deleting, error: deleteError } = useFileDelete(onRescan);
 
   function jumpToFile(name: string, filePath: string) {
     setJumpTarget({ filePath, key: name });
-    setView('json');
+    setView("json");
   }
 
   const toggle = (idx: number) => {
-    setExpanded(prev => {
+    setExpanded((prev) => {
       const next = new Set(prev);
       if (next.has(idx)) next.delete(idx);
       else next.add(idx);
@@ -41,16 +54,21 @@ export function MemoryPanel({ config, onRescan }: Props) {
 
   async function handleCreate() {
     if (!memoryDir || !newFileName.trim()) return;
-    const name = newFileName.trim().endsWith('.md')
+    const name = newFileName.trim().endsWith(".md")
       ? newFileName.trim()
       : `${newFileName.trim()}.md`;
     // Strip path separators and traversal sequences
-    const safeName = name.replace(/[/\\]/g, '-').replace(/\.\./g, '');
+    const safeName = name.replace(/[/\\]/g, "-").replace(/\.\./g, "");
     const filePath = `${memoryDir}/${safeName}`;
-    const baseName = safeName.replace(/\.md$/, '');
+    const baseName = safeName.replace(/\.md$/, "");
     const content = `# ${baseName}\n\nTODO: Add memory content here.\n`;
-    await update({ surface: 'memory', scope: ConfigScope.Global, filePath, value: content });
-    setNewFileName('');
+    await update({
+      surface: "memory",
+      scope: ConfigScope.Global,
+      filePath,
+      value: content,
+    });
+    setNewFileName("");
     setShowNewForm(false);
   }
 
@@ -61,53 +79,72 @@ export function MemoryPanel({ config, onRescan }: Props) {
 
   // Sort MEMORY.md first
   const sorted = [...files].sort((a, b) => {
-    if (a.name === 'MEMORY.md') return -1;
-    if (b.name === 'MEMORY.md') return 1;
+    if (a.name === "MEMORY.md") return -1;
+    if (b.name === "MEMORY.md") return 1;
     return a.name.localeCompare(b.name);
   });
 
   return (
     <PanelShell
       title="Memory"
-      subtitle={`${files.length} file${files.length !== 1 ? 's' : ''}`}
+      subtitle={`${files.length} file${files.length !== 1 ? "s" : ""}`}
       actions={
         memoryDir ? (
-          <AddButton variant="header" onClick={() => setShowNewForm(v => !v)}>+ New File</AddButton>
+          <AddButton variant="header" onClick={() => setShowNewForm((v) => !v)}>
+            + New File
+          </AddButton>
         ) : (
-          <AddButton variant="header" onClick={() => {}} disabled>+ New File</AddButton>
+          <AddButton variant="header" onClick={() => {}} disabled>
+            + New File
+          </AddButton>
         )
       }
       view={view}
-      onViewChange={(v) => { setView(v as 'effective' | 'json'); if (v === 'effective') setJumpTarget(null); }}
-      viewOptions={[{ value: 'effective', label: 'Effective' }, { value: 'json', label: 'Files' }]}
+      onViewChange={(v) => {
+        setView(v as "effective" | "json");
+        if (v === "effective") setJumpTarget(null);
+      }}
+      viewOptions={[
+        { value: "effective", label: "Effective" },
+        { value: "json", label: "Files" },
+      ]}
     >
       {memoryDir && (
-        <p className="text-xs text-gray-600 font-mono mb-6">{memoryDir}</p>
+        <p className="mb-6 font-mono text-xs text-gray-600">{memoryDir}</p>
       )}
 
       {showNewForm && memoryDir && (
-        <div className="mb-4 bg-card border border-border rounded-lg p-4 space-y-3">
+        <div className="mb-4 space-y-3 rounded-lg border border-border bg-card p-4">
           <p className="text-sm font-medium text-gray-300">New memory file</p>
           <div className="flex gap-2">
             <input
               type="text"
               value={newFileName}
-              onChange={e => setNewFileName(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') { setShowNewForm(false); setNewFileName(''); } }}
+              onChange={(e) => setNewFileName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void handleCreate();
+                if (e.key === "Escape") {
+                  setShowNewForm(false);
+                  setNewFileName("");
+                }
+              }}
               placeholder="filename (e.g. work-context)"
-              className="flex-1 bg-bg border border-border rounded px-3 py-1.5 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-accent"
+              className="flex-1 rounded border border-border bg-bg px-3 py-1.5 text-sm text-gray-200 placeholder-gray-600 focus:border-accent focus:outline-none"
               autoFocus
             />
             <button
-              onClick={handleCreate}
+              onClick={() => void handleCreate()}
               disabled={creating || !newFileName.trim()}
-              className="px-3 py-1.5 text-xs font-medium bg-accent/20 text-accent hover:bg-accent/30 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rounded bg-accent/20 px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/30 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {creating ? 'Saving...' : 'Save'}
+              {creating ? "Saving..." : "Save"}
             </button>
             <button
-              onClick={() => { setShowNewForm(false); setNewFileName(''); }}
-              className="px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-gray-200 rounded transition-colors"
+              onClick={() => {
+                setShowNewForm(false);
+                setNewFileName("");
+              }}
+              className="rounded px-3 py-1.5 text-xs font-medium text-gray-400 transition-colors hover:text-gray-200"
             >
               Cancel
             </button>
@@ -117,82 +154,105 @@ export function MemoryPanel({ config, onRescan }: Props) {
       )}
 
       {deleteError && (
-        <div className="mb-4 text-xs text-red-400 bg-red-400/10 border border-red-400/20 rounded px-3 py-2">
+        <div className="mb-4 rounded border border-red-400/20 bg-red-400/10 px-3 py-2 text-xs text-red-400">
           {deleteError}
         </div>
       )}
 
-      {view === 'json' ? (
-        <RawJsonView files={files.map(f => ({ scope: ConfigScope.Project, filePath: f.filePath }))} onRescan={onRescan} autoExpandFile={jumpTarget?.filePath} highlightKey={jumpTarget?.key} />
-      ) : files.length === 0 ? (
-        <PanelEmpty>No memory files found</PanelEmpty>
-      ) : (
-        <div className="space-y-3">
-          {sorted.map((file, i) => {
-            const isExpanded = expanded.has(i);
-            const isMemoryMd = file.name === 'MEMORY.md';
-            return (
-              <PanelRow
-                key={i}
-                label={file.name}
-                expanded={isExpanded}
-                onToggle={() => toggle(i)}
-                actions={
-                  <DeleteButton
-                    onClick={() => handleDelete(file.filePath, file.name)}
-                    disabled={deleting}
-                    title={`Delete ${file.name}`}
-                  />
-                }
-                trigger={
-                  <>
-                    <span className={`text-xs transition-transform ${isExpanded ? 'rotate-90' : ''}`}>
-                      {'\u25B6'}
-                    </span>
-                    <span className={`font-medium ${isMemoryMd ? 'text-accent' : 'text-gray-200'}`}>
-                      {file.name}
-                    </span>
-                    <ScopeIndicator scope={ConfigScope.Global} />
-                    <span className="text-xs text-gray-500 bg-bg px-2 py-0.5 rounded">
-                      {file.lineCount} lines
-                    </span>
-                    {isMemoryMd && (
-                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-accent/20 text-accent">
-                        System prompt
+      {(() => {
+        if (view === "json") {
+          return (
+            <RawJsonView
+              files={files.map((f) => ({
+                scope: ConfigScope.Project,
+                filePath: f.filePath,
+              }))}
+              onRescan={onRescan}
+              autoExpandFile={jumpTarget?.filePath}
+              highlightKey={jumpTarget?.key}
+            />
+          );
+        }
+        if (files.length === 0) {
+          return <PanelEmpty>No memory files found</PanelEmpty>;
+        }
+        return (
+          <div className="space-y-3">
+            {sorted.map((file, i) => {
+              const isExpanded = expanded.has(i);
+              const isMemoryMd = file.name === "MEMORY.md";
+              return (
+                <PanelRow
+                  key={i}
+                  label={file.name}
+                  expanded={isExpanded}
+                  onToggle={() => toggle(i)}
+                  actions={
+                    <DeleteButton
+                      onClick={() =>
+                        void handleDelete(file.filePath, file.name)
+                      }
+                      disabled={deleting}
+                      title={`Delete ${file.name}`}
+                    />
+                  }
+                  trigger={
+                    <>
+                      <span
+                        className={`text-xs transition-transform ${isExpanded ? "rotate-90" : ""}`}
+                      >
+                        {"\u25B6"}
                       </span>
-                    )}
-                  </>
-                }
-              >
-                <div id={`memory-${slug(file.name)}`} className="border-t border-border px-4 py-3">
-                  {isMemoryMd && (
-                    <div className="text-xs text-gray-500 mb-2">
-                      First 200 lines are loaded into the system prompt
-                    </div>
-                  )}
-                  <pre className="text-sm font-mono text-gray-300 whitespace-pre-wrap overflow-x-auto max-h-96 overflow-y-auto">
-                    {file.content}
-                  </pre>
-                  <button
-                    onClick={() => jumpToFile(file.name, file.filePath)}
-                    className="mt-3 text-xs text-gray-600 font-mono truncate hover:text-accent transition-colors block"
-                    title={file.filePath}
+                      <span
+                        className={`font-medium ${isMemoryMd ? "text-accent" : "text-gray-200"}`}
+                      >
+                        {file.name}
+                      </span>
+                      <ScopeIndicator scope={ConfigScope.Global} />
+                      <span className="rounded bg-bg px-2 py-0.5 text-xs text-gray-500">
+                        {file.lineCount} lines
+                      </span>
+                      {isMemoryMd && (
+                        <span className="rounded bg-accent/20 px-2 py-0.5 text-xs font-medium text-accent">
+                          System prompt
+                        </span>
+                      )}
+                    </>
+                  }
+                >
+                  <div
+                    id={`memory-${slug(file.name)}`}
+                    className="border-t border-border px-4 py-3"
                   >
-                    {file.filePath} ↗
-                  </button>
-                  <EditableContent
-                    content={file.content}
-                    filePath={file.filePath}
-                    scope={ConfigScope.Project}
-                    surface="memory"
-                    onRescan={onRescan}
-                  />
-                </div>
-              </PanelRow>
-            );
-          })}
-        </div>
-      )}
+                    {isMemoryMd && (
+                      <div className="mb-2 text-xs text-gray-500">
+                        First 200 lines are loaded into the system prompt
+                      </div>
+                    )}
+                    <pre className="max-h-96 overflow-x-auto overflow-y-auto whitespace-pre-wrap font-mono text-sm text-gray-300">
+                      {file.content}
+                    </pre>
+                    <button
+                      onClick={() => jumpToFile(file.name, file.filePath)}
+                      className="mt-3 block truncate font-mono text-xs text-gray-600 transition-colors hover:text-accent"
+                      title={file.filePath}
+                    >
+                      {file.filePath} ↗
+                    </button>
+                    <EditableContent
+                      content={file.content}
+                      filePath={file.filePath}
+                      scope={ConfigScope.Project}
+                      surface="memory"
+                      onRescan={onRescan}
+                    />
+                  </div>
+                </PanelRow>
+              );
+            })}
+          </div>
+        );
+      })()}
     </PanelShell>
   );
 }

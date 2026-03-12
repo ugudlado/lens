@@ -1,5 +1,13 @@
-import { useState, useEffect, type ReactNode } from 'react';
-import { ConfigScope, PluginScope, PluginAction, HookSource, EntrySource } from '@lens/schema';
+import { useState, useEffect, type ReactNode } from "react";
+import {
+  ConfigScope,
+  PluginScope,
+  PluginAction,
+  HookSource,
+  EntrySource,
+  McpServerType,
+  PermissionType,
+} from "@lens/schema";
 import type {
   ConfigSnapshot,
   Workspace,
@@ -12,48 +20,64 @@ import type {
   PermissionRule,
   PluginEntry,
   ExportData,
-} from '@lens/schema';
+} from "@lens/schema";
 
 // ─── Section definitions ────────────────────────────────────────────────────
 
 export type ImportSection =
-  | 'mcp'
-  | 'hooks'
-  | 'skills'
-  | 'agents'
-  | 'rules'
-  | 'commands'
-  | 'permissions'
-  | 'plugins';
+  | "mcp"
+  | "hooks"
+  | "skills"
+  | "agents"
+  | "rules"
+  | "commands"
+  | "permissions"
+  | "plugins";
 
 const SECTION_LABELS: Record<ImportSection, string> = {
-  mcp: 'MCP Servers',
-  hooks: 'Hooks',
-  skills: 'Skills',
-  agents: 'Agents',
-  rules: 'Rules',
-  commands: 'Commands',
-  permissions: 'Permissions',
-  plugins: 'Plugins',
+  mcp: "MCP Servers",
+  hooks: "Hooks",
+  skills: "Skills",
+  agents: "Agents",
+  rules: "Rules",
+  commands: "Commands",
+  permissions: "Permissions",
+  plugins: "Plugins",
 };
 
 // ─── Item key helpers ───────────────────────────────────────────────────────
 
-function mcpKey(s: McpServer) { return s.name; }
-function hookKey(h: HookEntry) { return `${h.event}::${h.command || h.prompt || ''}`; }
-function skillKey(s: SkillEntry) { return s.name; }
-function agentKey(a: AgentEntry) { return a.name; }
-function ruleKey(r: RuleEntry) { return r.name; }
-function commandKey(c: CommandEntry) { return c.name; }
-function permKey(p: PermissionRule) { return `${p.type}::${p.rule}`; }
-function pluginKey(p: PluginEntry) { return `${p.name}@${p.marketplace}`; }
+function mcpKey(s: McpServer) {
+  return s.name;
+}
+function hookKey(h: HookEntry) {
+  return `${h.event}::${h.command ?? h.prompt ?? ""}`;
+}
+function skillKey(s: SkillEntry) {
+  return s.name;
+}
+function agentKey(a: AgentEntry) {
+  return a.name;
+}
+function ruleKey(r: RuleEntry) {
+  return r.name;
+}
+function commandKey(c: CommandEntry) {
+  return c.name;
+}
+function permKey(p: PermissionRule) {
+  return `${p.type}::${p.rule}`;
+}
+function pluginKey(p: PluginEntry) {
+  return `${p.name}@${p.marketplace}`;
+}
 
 // ─── Build config write payloads ────────────────────────────────────────────
 
 function buildMcpValue(s: McpServer) {
-  if (s.type === 'stdio') {
+  if (s.type === McpServerType.Stdio) {
     return {
-      type: 'stdio',
+      type: "stdio",
       command: s.command,
       ...(s.args?.length ? { args: s.args } : {}),
       ...(s.env && Object.keys(s.env).length ? { env: s.env } : {}),
@@ -64,7 +88,7 @@ function buildMcpValue(s: McpServer) {
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
-type ModalState = 'pick-workspace' | 'checklist' | 'importing';
+type ModalState = "pick-workspace" | "checklist" | "importing";
 
 interface SectionItems {
   mcp: McpServer[];
@@ -90,7 +114,14 @@ interface Props {
 }
 
 const ALL_SECTIONS: ImportSection[] = [
-  'plugins', 'mcp', 'hooks', 'skills', 'agents', 'rules', 'commands', 'permissions',
+  "plugins",
+  "mcp",
+  "hooks",
+  "skills",
+  "agents",
+  "rules",
+  "commands",
+  "permissions",
 ];
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -104,45 +135,78 @@ export function WorkspaceConfigImportModal({
   onRescan,
   onClose,
 }: Props) {
-  const otherWorkspaces = workspaces.filter(w => w.path !== activeProject);
+  const otherWorkspaces = workspaces.filter((w) => w.path !== activeProject);
 
-  const [importSource, setImportSource] = useState<'workspace' | 'file'>('workspace');
-  const [importFileName, setImportFileName] = useState<string>('');
-  const [state, setState] = useState<ModalState>('pick-workspace');
-  const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace | null>(null);
+  const [importSource, setImportSource] = useState<"workspace" | "file">(
+    "workspace",
+  );
+  const [importFileName, setImportFileName] = useState<string>("");
+  const [state, setState] = useState<ModalState>("pick-workspace");
+  const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace | null>(
+    null,
+  );
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<ImportSection>(
-    initialSection ?? sections[0]
+    initialSection ?? sections[0],
   );
 
   const [sourceItems, setSourceItems] = useState<SectionItems>({
-    mcp: [], hooks: [], skills: [], agents: [], rules: [], commands: [], permissions: [], plugins: [],
+    mcp: [],
+    hooks: [],
+    skills: [],
+    agents: [],
+    rules: [],
+    commands: [],
+    permissions: [],
+    plugins: [],
   });
   const [checked, setChecked] = useState<Record<ImportSection, Set<string>>>({
-    mcp: new Set(), hooks: new Set(), skills: new Set(), agents: new Set(),
-    rules: new Set(), commands: new Set(), permissions: new Set(), plugins: new Set(),
+    mcp: new Set(),
+    hooks: new Set(),
+    skills: new Set(),
+    agents: new Set(),
+    rules: new Set(),
+    commands: new Set(),
+    permissions: new Set(),
+    plugins: new Set(),
   });
 
   // Pre-compute existing item keys for each section
   const existingKeys: Record<ImportSection, Set<string>> = {
-    mcp: new Set(currentConfig.mcp.servers.filter(s => !s.pluginName).map(mcpKey)),
-    hooks: new Set(currentConfig.hooks.hooks.filter(h => !h.pluginName).map(hookKey)),
-    skills: new Set(currentConfig.skills.skills.filter(s => !s.pluginName).map(skillKey)),
-    agents: new Set(currentConfig.agents.agents.filter(a => !a.pluginName).map(agentKey)),
+    mcp: new Set(
+      currentConfig.mcp.servers.filter((s) => !s.pluginName).map(mcpKey),
+    ),
+    hooks: new Set(
+      currentConfig.hooks.hooks.filter((h) => !h.pluginName).map(hookKey),
+    ),
+    skills: new Set(
+      currentConfig.skills.skills.filter((s) => !s.pluginName).map(skillKey),
+    ),
+    agents: new Set(
+      currentConfig.agents.agents.filter((a) => !a.pluginName).map(agentKey),
+    ),
     rules: new Set(currentConfig.rules.rules.map(ruleKey)),
-    commands: new Set(currentConfig.commands.commands.filter(c => !c.pluginName).map(commandKey)),
+    commands: new Set(
+      currentConfig.commands.commands
+        .filter((c) => !c.pluginName)
+        .map(commandKey),
+    ),
     permissions: new Set(currentConfig.permissions.rules.map(permKey)),
-    plugins: new Set(currentConfig.plugins.plugins.filter(p => p.scope === PluginScope.Project).map(pluginKey)),
+    plugins: new Set(
+      currentConfig.plugins.plugins
+        .filter((p) => p.scope === PluginScope.Project)
+        .map(pluginKey),
+    ),
   };
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose();
+      if (e.key === "Escape") onClose();
     }
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
   async function loadWorkspace() {
@@ -150,42 +214,75 @@ export function WorkspaceConfigImportModal({
     setLoading(true);
     setLoadError(null);
     try {
-      const res = await fetch(`/api/config?project=${encodeURIComponent(selectedWorkspace.path)}`);
+      const res = await fetch(
+        `/api/config?project=${encodeURIComponent(selectedWorkspace.path)}`,
+      );
       if (!res.ok) {
-        const body = await res.json().catch(() => ({})) as { error?: string };
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(body.error ?? `HTTP ${res.status}`);
       }
-      const data = await res.json() as ConfigSnapshot;
+      const data = (await res.json()) as ConfigSnapshot;
 
       const items: SectionItems = {
-        mcp: (data.mcp?.servers ?? []).filter(s => !s.pluginName),
-        hooks: (data.hooks?.hooks ?? []).filter(h => !h.pluginName),
-        skills: (data.skills?.skills ?? []).filter(s => !s.pluginName),
-        agents: (data.agents?.agents ?? []).filter(a => !a.pluginName),
+        mcp: (data.mcp?.servers ?? []).filter((s) => !s.pluginName),
+        hooks: (data.hooks?.hooks ?? []).filter((h) => !h.pluginName),
+        skills: (data.skills?.skills ?? []).filter((s) => !s.pluginName),
+        agents: (data.agents?.agents ?? []).filter((a) => !a.pluginName),
         rules: data.rules?.rules ?? [],
-        commands: (data.commands?.commands ?? []).filter(c => !c.pluginName),
+        commands: (data.commands?.commands ?? []).filter((c) => !c.pluginName),
         permissions: data.permissions?.rules ?? [],
-        plugins: (data.plugins?.plugins ?? []).filter(p => p.scope === PluginScope.Project),
+        plugins: (data.plugins?.plugins ?? []).filter(
+          (p) => p.scope === PluginScope.Project,
+        ),
       };
 
       setSourceItems(items);
 
       // Pre-check all items that don't already exist
       const newChecked: Record<ImportSection, Set<string>> = {
-        mcp: new Set(), hooks: new Set(), skills: new Set(), agents: new Set(),
-        rules: new Set(), commands: new Set(), permissions: new Set(), plugins: new Set(),
+        mcp: new Set(),
+        hooks: new Set(),
+        skills: new Set(),
+        agents: new Set(),
+        rules: new Set(),
+        commands: new Set(),
+        permissions: new Set(),
+        plugins: new Set(),
       };
-      for (const s of items.mcp) { if (!existingKeys.mcp.has(mcpKey(s))) newChecked.mcp.add(mcpKey(s)); }
-      for (const h of items.hooks) { if (!existingKeys.hooks.has(hookKey(h))) newChecked.hooks.add(hookKey(h)); }
-      for (const s of items.skills) { if (!existingKeys.skills.has(skillKey(s))) newChecked.skills.add(skillKey(s)); }
-      for (const a of items.agents) { if (!existingKeys.agents.has(agentKey(a))) newChecked.agents.add(agentKey(a)); }
-      for (const r of items.rules) { if (!existingKeys.rules.has(ruleKey(r))) newChecked.rules.add(ruleKey(r)); }
-      for (const c of items.commands) { if (!existingKeys.commands.has(commandKey(c))) newChecked.commands.add(commandKey(c)); }
-      for (const p of items.permissions) { if (!existingKeys.permissions.has(permKey(p))) newChecked.permissions.add(permKey(p)); }
-      for (const p of items.plugins) { if (!existingKeys.plugins.has(pluginKey(p))) newChecked.plugins.add(pluginKey(p)); }
+      for (const s of items.mcp) {
+        if (!existingKeys.mcp.has(mcpKey(s))) newChecked.mcp.add(mcpKey(s));
+      }
+      for (const h of items.hooks) {
+        if (!existingKeys.hooks.has(hookKey(h)))
+          newChecked.hooks.add(hookKey(h));
+      }
+      for (const s of items.skills) {
+        if (!existingKeys.skills.has(skillKey(s)))
+          newChecked.skills.add(skillKey(s));
+      }
+      for (const a of items.agents) {
+        if (!existingKeys.agents.has(agentKey(a)))
+          newChecked.agents.add(agentKey(a));
+      }
+      for (const r of items.rules) {
+        if (!existingKeys.rules.has(ruleKey(r)))
+          newChecked.rules.add(ruleKey(r));
+      }
+      for (const c of items.commands) {
+        if (!existingKeys.commands.has(commandKey(c)))
+          newChecked.commands.add(commandKey(c));
+      }
+      for (const p of items.permissions) {
+        if (!existingKeys.permissions.has(permKey(p)))
+          newChecked.permissions.add(permKey(p));
+      }
+      for (const p of items.plugins) {
+        if (!existingKeys.plugins.has(pluginKey(p)))
+          newChecked.plugins.add(pluginKey(p));
+      }
 
       setChecked(newChecked);
-      setState('checklist');
+      setState("checklist");
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -205,22 +302,43 @@ export function WorkspaceConfigImportModal({
         const raw = JSON.parse(text);
 
         // Validate export file structure
-        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
-          throw new Error('Invalid file: expected a JSON object');
+        if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+          throw new Error("Invalid file: expected a JSON object");
         }
-        if (typeof raw.version !== 'number') {
-          throw new Error('Invalid file: missing "version" field. This does not appear to be a Claude export file.');
+        if (typeof raw.version !== "number") {
+          throw new Error(
+            'Invalid file: missing "version" field. This does not appear to be a Claude export file.',
+          );
         }
         if (raw.version !== 1) {
           throw new Error(`Unsupported export format version: ${raw.version}`);
         }
-        if (!raw.sections || typeof raw.sections !== 'object' || Array.isArray(raw.sections)) {
-          throw new Error('Invalid file: missing "sections" field. This does not appear to be a Claude export file.');
+        if (
+          !raw.sections ||
+          typeof raw.sections !== "object" ||
+          Array.isArray(raw.sections)
+        ) {
+          throw new Error(
+            'Invalid file: missing "sections" field. This does not appear to be a Claude export file.',
+          );
         }
         // Validate that section values are arrays (if present)
-        const knownSections = ['mcpServers', 'hooks', 'skills', 'agents', 'rules', 'commands', 'permissions', 'claudeMd', 'plugins'];
+        const knownSections = [
+          "mcpServers",
+          "hooks",
+          "skills",
+          "agents",
+          "rules",
+          "commands",
+          "permissions",
+          "claudeMd",
+          "plugins",
+        ];
         for (const key of Object.keys(raw.sections)) {
-          if (knownSections.includes(key) && !Array.isArray(raw.sections[key])) {
+          if (
+            knownSections.includes(key) &&
+            !Array.isArray(raw.sections[key])
+          ) {
             throw new Error(`Invalid file: section "${key}" must be an array`);
           }
         }
@@ -228,123 +346,180 @@ export function WorkspaceConfigImportModal({
 
         // Sanitize names from untrusted JSON to prevent path traversal
         const safeName = (name: unknown): string => {
-          if (typeof name !== 'string') throw new Error('Invalid item name in export file');
-          if (/[/\\]|\.\./.test(name)) throw new Error(`Invalid item name (path traversal): ${name}`);
+          if (typeof name !== "string")
+            throw new Error("Invalid item name in export file");
+          if (/[/\\]|\.\./.test(name))
+            throw new Error(`Invalid item name (path traversal): ${name}`);
           return name;
         };
 
         // Map ExportData to SectionItems
         // For skills and agents, we store content as a non-standard property that handleImport will use
         const items: SectionItems = {
-          mcp: (data.sections.mcpServers ?? []).map(s => ({
-            name: safeName(s.name),
-            type: s.type,
-            command: s.command,
-            args: s.args,
-            url: s.url,
-            env: s.env,
-            scope: ConfigScope.Project,
-            filePath: '',
-            editable: true,
-            enabled: true,
-          } as McpServer)),
-          hooks: (data.sections.hooks ?? []).map(h => ({
-            event: h.event,
-            type: h.type,
-            command: h.command,
-            prompt: h.prompt,
-            matcher: h.matcher,
-            timeout: h.timeout,
-            scope: ConfigScope.Project,
-            filePath: '',
-            source: HookSource.Settings,
-          } as HookEntry)),
-          skills: (data.sections.skills ?? []).map(s => ({
-            name: safeName(s.name),
-            scope: ConfigScope.Project,
-            filePath: '',
-            source: EntrySource.Project,
-            description: '',
-            userInvocable: true,
-            hasHooks: false,
-            // Store content as extra property for file imports
-            content: s.content,
-          } as SkillEntry & { content?: string })),
-          agents: (data.sections.agents ?? []).map(a => ({
-            name: safeName(a.name),
-            scope: ConfigScope.Project,
-            filePath: '',
-            source: EntrySource.Project,
-            description: '',
-            // Store content as extra property for file imports
-            content: a.content,
-          } as AgentEntry & { content?: string })),
-          rules: (data.sections.rules ?? []).map(r => ({
-            name: safeName(r.name),
-            content: r.content,
-            scope: ConfigScope.Project,
-            filePath: '',
-            lineCount: 0,
-            ext: r.ext,
-          } as RuleEntry & { ext?: 'md' | 'mdc' })),
-          commands: (data.sections.commands ?? []).map(c => ({
-            name: safeName(c.name),
-            content: c.content,
-            scope: ConfigScope.Project,
-            filePath: '',
-            source: EntrySource.Project,
-            supersededBySkill: false,
-          } as CommandEntry)),
-          permissions: (data.sections.permissions ?? []).map(p => ({
-            type: p.type,
-            rule: p.rule,
-            scope: ConfigScope.Project,
-            filePath: '',
-          } as PermissionRule)),
-          plugins: (data.sections.plugins ?? []).map(p => ({
-            name: safeName(p.name),
-            marketplace: safeName(p.marketplace),
-            version: '',
-            installPath: '',
-            installedAt: '',
-            enabled: typeof p.enabled === 'boolean' ? p.enabled : true,
-            scope: PluginScope.Project,
-          } as PluginEntry)),
+          mcp: (data.sections.mcpServers ?? []).map(
+            (s) =>
+              ({
+                name: safeName(s.name),
+                type: s.type,
+                command: s.command,
+                args: s.args,
+                url: s.url,
+                env: s.env,
+                scope: ConfigScope.Project,
+                filePath: "",
+                editable: true,
+                enabled: true,
+              }) as McpServer,
+          ),
+          hooks: (data.sections.hooks ?? []).map(
+            (h) =>
+              ({
+                event: h.event,
+                type: h.type,
+                command: h.command,
+                prompt: h.prompt,
+                matcher: h.matcher,
+                timeout: h.timeout,
+                scope: ConfigScope.Project,
+                filePath: "",
+                source: HookSource.Settings,
+              }) as HookEntry,
+          ),
+          skills: (data.sections.skills ?? []).map(
+            (s) =>
+              ({
+                name: safeName(s.name),
+                scope: ConfigScope.Project,
+                filePath: "",
+                source: EntrySource.Project,
+                description: "",
+                userInvocable: true,
+                hasHooks: false,
+                // Store content as extra property for file imports
+                content: s.content,
+              }) as SkillEntry & { content?: string },
+          ),
+          agents: (data.sections.agents ?? []).map(
+            (a) =>
+              ({
+                name: safeName(a.name),
+                scope: ConfigScope.Project,
+                filePath: "",
+                source: EntrySource.Project,
+                description: "",
+                // Store content as extra property for file imports
+                content: a.content,
+              }) as AgentEntry & { content?: string },
+          ),
+          rules: (data.sections.rules ?? []).map(
+            (r) =>
+              ({
+                name: safeName(r.name),
+                content: r.content,
+                scope: ConfigScope.Project,
+                filePath: "",
+                lineCount: 0,
+                ext: r.ext,
+              }) as RuleEntry & { ext?: "md" | "mdc" },
+          ),
+          commands: (data.sections.commands ?? []).map(
+            (c) =>
+              ({
+                name: safeName(c.name),
+                content: c.content,
+                scope: ConfigScope.Project,
+                filePath: "",
+                source: EntrySource.Project,
+                supersededBySkill: false,
+              }) as CommandEntry,
+          ),
+          permissions: (data.sections.permissions ?? []).map(
+            (p) =>
+              ({
+                type: p.type,
+                rule: p.rule,
+                scope: ConfigScope.Project,
+                filePath: "",
+              }) as PermissionRule,
+          ),
+          plugins: (data.sections.plugins ?? []).map(
+            (p) =>
+              ({
+                name: safeName(p.name),
+                marketplace: safeName(p.marketplace),
+                version: "",
+                installPath: "",
+                installedAt: "",
+                enabled: typeof p.enabled === "boolean" ? p.enabled : true,
+                scope: PluginScope.Project,
+              }) as PluginEntry,
+          ),
         };
 
         setSourceItems(items);
 
         // Pre-check all items that don't already exist
         const newChecked: Record<ImportSection, Set<string>> = {
-          mcp: new Set(), hooks: new Set(), skills: new Set(), agents: new Set(),
-          rules: new Set(), commands: new Set(), permissions: new Set(), plugins: new Set(),
+          mcp: new Set(),
+          hooks: new Set(),
+          skills: new Set(),
+          agents: new Set(),
+          rules: new Set(),
+          commands: new Set(),
+          permissions: new Set(),
+          plugins: new Set(),
         };
-        for (const s of items.mcp) { if (!existingKeys.mcp.has(mcpKey(s))) newChecked.mcp.add(mcpKey(s)); }
-        for (const h of items.hooks) { if (!existingKeys.hooks.has(hookKey(h))) newChecked.hooks.add(hookKey(h)); }
-        for (const s of items.skills) { if (!existingKeys.skills.has(skillKey(s))) newChecked.skills.add(skillKey(s)); }
-        for (const a of items.agents) { if (!existingKeys.agents.has(agentKey(a))) newChecked.agents.add(agentKey(a)); }
-        for (const r of items.rules) { if (!existingKeys.rules.has(ruleKey(r))) newChecked.rules.add(ruleKey(r)); }
-        for (const c of items.commands) { if (!existingKeys.commands.has(commandKey(c))) newChecked.commands.add(commandKey(c)); }
-        for (const p of items.permissions) { if (!existingKeys.permissions.has(permKey(p))) newChecked.permissions.add(permKey(p)); }
-        for (const p of items.plugins) { if (!existingKeys.plugins.has(pluginKey(p))) newChecked.plugins.add(pluginKey(p)); }
+        for (const s of items.mcp) {
+          if (!existingKeys.mcp.has(mcpKey(s))) newChecked.mcp.add(mcpKey(s));
+        }
+        for (const h of items.hooks) {
+          if (!existingKeys.hooks.has(hookKey(h)))
+            newChecked.hooks.add(hookKey(h));
+        }
+        for (const s of items.skills) {
+          if (!existingKeys.skills.has(skillKey(s)))
+            newChecked.skills.add(skillKey(s));
+        }
+        for (const a of items.agents) {
+          if (!existingKeys.agents.has(agentKey(a)))
+            newChecked.agents.add(agentKey(a));
+        }
+        for (const r of items.rules) {
+          if (!existingKeys.rules.has(ruleKey(r)))
+            newChecked.rules.add(ruleKey(r));
+        }
+        for (const c of items.commands) {
+          if (!existingKeys.commands.has(commandKey(c)))
+            newChecked.commands.add(commandKey(c));
+        }
+        for (const p of items.permissions) {
+          if (!existingKeys.permissions.has(permKey(p)))
+            newChecked.permissions.add(permKey(p));
+        }
+        for (const p of items.plugins) {
+          if (!existingKeys.plugins.has(pluginKey(p)))
+            newChecked.plugins.add(pluginKey(p));
+        }
 
         setChecked(newChecked);
-        setState('checklist');
+        setState("checklist");
         setLoading(false);
       } catch (err) {
-        setLoadError(err instanceof Error ? err.message : 'Invalid export file');
+        setLoadError(
+          err instanceof Error ? err.message : "Invalid export file",
+        );
         setLoading(false);
       }
     };
     reader.onerror = () => {
-      setLoadError('Failed to read file');
+      setLoadError("Failed to read file");
       setLoading(false);
     };
     reader.readAsText(file);
   }
 
   function toggleItem(section: ImportSection, key: string) {
-    setChecked(prev => {
+    setChecked((prev) => {
       const next = { ...prev, [section]: new Set(prev[section]) };
       if (next[section].has(key)) next[section].delete(key);
       else next[section].add(key);
@@ -356,38 +531,57 @@ export function WorkspaceConfigImportModal({
     return sections.reduce((n, s) => n + checked[s].size, 0);
   }
 
-  async function patchJson(filePath: string, key: string, value: unknown, scope: ConfigScope) {
-    const res = await fetch('/api/update', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ surface: 'import', scope, filePath, key, value }),
+  async function patchJson(
+    filePath: string,
+    key: string,
+    value: unknown,
+    scope: ConfigScope,
+  ) {
+    const res = await fetch("/api/update", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ surface: "import", scope, filePath, key, value }),
     });
     if (!res.ok) {
-      const body = await res.json().catch(() => ({})) as { error?: string };
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
       throw new Error(body.error ?? `HTTP ${res.status}`);
     }
   }
 
-  async function replaceJson(filePath: string, value: unknown, scope: ConfigScope) {
-    const res = await fetch('/api/update', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ surface: 'import', scope, filePath, value, replace: true }),
+  async function replaceJson(
+    filePath: string,
+    value: unknown,
+    scope: ConfigScope,
+  ) {
+    const res = await fetch("/api/update", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        surface: "import",
+        scope,
+        filePath,
+        value,
+        replace: true,
+      }),
     });
     if (!res.ok) {
-      const body = await res.json().catch(() => ({})) as { error?: string };
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
       throw new Error(body.error ?? `HTTP ${res.status}`);
     }
   }
 
-  async function patchFile(filePath: string, value: string, scope: ConfigScope) {
-    const res = await fetch('/api/update', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ surface: 'import', scope, filePath, value }),
+  async function patchFile(
+    filePath: string,
+    value: string,
+    scope: ConfigScope,
+  ) {
+    const res = await fetch("/api/update", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ surface: "import", scope, filePath, value }),
     });
     if (!res.ok) {
-      const body = await res.json().catch(() => ({})) as { error?: string };
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
       throw new Error(body.error ?? `HTTP ${res.status}`);
     }
   }
@@ -395,15 +589,17 @@ export function WorkspaceConfigImportModal({
   async function fetchFileContent(filePath: string): Promise<string> {
     const res = await fetch(`/api/file?path=${encodeURIComponent(filePath)}`);
     if (!res.ok) throw new Error(`Failed to fetch file: ${filePath}`);
-    const data = await res.json() as { content: string };
+    const data = (await res.json()) as { content: string };
     return data.content;
   }
 
-  async function fetchJsonOrEmpty(filePath: string): Promise<Record<string, unknown>> {
+  async function fetchJsonOrEmpty(
+    filePath: string,
+  ): Promise<Record<string, unknown>> {
     try {
       const res = await fetch(`/api/file?path=${encodeURIComponent(filePath)}`);
       if (!res.ok) return {};
-      const data = await res.json() as { content: string };
+      const data = (await res.json()) as { content: string };
       return JSON.parse(data.content) as Record<string, unknown>;
     } catch {
       return {};
@@ -412,7 +608,7 @@ export function WorkspaceConfigImportModal({
 
   async function handleImport() {
     if (totalChecked() === 0) return;
-    setState('importing');
+    setState("importing");
     setImportError(null);
 
     try {
@@ -420,36 +616,54 @@ export function WorkspaceConfigImportModal({
       const projectSettings = `${currentConfig.projectPath}/.claude/settings.json`;
 
       // ── MCP servers → .mcp.json ──────────────────────────────────────────
-      const mcpToImport = sourceItems.mcp.filter(s => checked.mcp.has(mcpKey(s)));
+      const mcpToImport = sourceItems.mcp.filter((s) =>
+        checked.mcp.has(mcpKey(s)),
+      );
       for (const s of mcpToImport) {
-        await patchJson(projectMcp, `mcpServers.${s.name}`, buildMcpValue(s), ConfigScope.Project);
+        await patchJson(
+          projectMcp,
+          `mcpServers.${s.name}`,
+          buildMcpValue(s),
+          ConfigScope.Project,
+        );
       }
 
       // ── Hooks + Permissions → settings.json (single read-merge-write) ─────
-      const hooksToImport = sourceItems.hooks.filter(h => checked.hooks.has(hookKey(h)));
-      const permsToImport = sourceItems.permissions.filter(p => checked.permissions.has(permKey(p)));
+      const hooksToImport = sourceItems.hooks.filter((h) =>
+        checked.hooks.has(hookKey(h)),
+      );
+      const permsToImport = sourceItems.permissions.filter((p) =>
+        checked.permissions.has(permKey(p)),
+      );
       if (hooksToImport.length > 0 || permsToImport.length > 0) {
         const settings = await fetchJsonOrEmpty(projectSettings);
 
         if (hooksToImport.length > 0) {
-          const hooksSection = (settings.hooks ?? {}) as Record<string, unknown[]>;
+          const hooksSection = (settings.hooks ?? {}) as Record<
+            string,
+            unknown[]
+          >;
           for (const h of hooksToImport) {
             const hookDef: Record<string, unknown> = { type: h.type };
             if (h.command) hookDef.command = h.command;
             if (h.prompt) hookDef.prompt = h.prompt;
             if (h.timeout) hookDef.timeout = h.timeout;
 
-            const existing = (hooksSection[h.event] ?? []) as Array<Record<string, unknown>>;
+            const existing = (hooksSection[h.event] ?? []) as Array<
+              Record<string, unknown>
+            >;
             const matcher = h.matcher;
-            let group = existing.find(g =>
-              matcher ? g.matcher === matcher : !g.matcher
-            ) as Record<string, unknown> | undefined;
+            let group = existing.find((g) =>
+              matcher ? g.matcher === matcher : !g.matcher,
+            );
 
             if (!group) {
               group = matcher ? { matcher, hooks: [] } : { hooks: [] };
               existing.push(group);
             }
-            const groupHooks = (group.hooks ?? []) as Array<Record<string, unknown>>;
+            const groupHooks = (group.hooks ?? []) as Array<
+              Record<string, unknown>
+            >;
             groupHooks.push(hookDef);
             group.hooks = groupHooks;
             hooksSection[h.event] = existing;
@@ -458,7 +672,10 @@ export function WorkspaceConfigImportModal({
         }
 
         if (permsToImport.length > 0) {
-          const permsSection = (settings.permissions ?? {}) as Record<string, string[]>;
+          const permsSection = (settings.permissions ?? {}) as Record<
+            string,
+            string[]
+          >;
           for (const p of permsToImport) {
             const arr = permsSection[p.type] ?? [];
             if (!arr.includes(p.rule)) arr.push(p.rule);
@@ -475,7 +692,9 @@ export function WorkspaceConfigImportModal({
         if (!checked.skills.has(skillKey(s))) continue;
         const filePath = `${currentConfig.projectPath}/.claude/skills/${s.name}.md`;
         // Use content directly if available (file import), otherwise fetch from filePath (workspace import)
-        const content = (s as SkillEntry & { content?: string }).content || await fetchFileContent(s.filePath);
+        const content =
+          (s as SkillEntry & { content?: string }).content ??
+          (await fetchFileContent(s.filePath));
         await patchFile(filePath, content, ConfigScope.Project);
       }
 
@@ -484,7 +703,9 @@ export function WorkspaceConfigImportModal({
         if (!checked.agents.has(agentKey(a))) continue;
         const filePath = `${currentConfig.projectPath}/.claude/agents/${a.name}.md`;
         // Use content directly if available (file import), otherwise fetch from filePath (workspace import)
-        const content = (a as AgentEntry & { content?: string }).content || await fetchFileContent(a.filePath);
+        const content =
+          (a as AgentEntry & { content?: string }).content ??
+          (await fetchFileContent(a.filePath));
         await patchFile(filePath, content, ConfigScope.Project);
       }
 
@@ -492,7 +713,9 @@ export function WorkspaceConfigImportModal({
       for (const r of sourceItems.rules) {
         if (!checked.rules.has(ruleKey(r))) continue;
         // For file imports, ext is already set; for workspace imports, check filePath
-        const ext = (r as RuleEntry & { ext?: 'md' | 'mdc' }).ext || (r.filePath.endsWith('.mdc') ? '.mdc' : '.md');
+        const ext =
+          (r as RuleEntry & { ext?: "md" | "mdc" }).ext ??
+          (r.filePath.endsWith(".mdc") ? ".mdc" : ".md");
         const filePath = `${currentConfig.projectPath}/.claude/rules/${r.name}${ext}`;
         await patchFile(filePath, r.content, ConfigScope.Project);
       }
@@ -507,25 +730,41 @@ export function WorkspaceConfigImportModal({
       // ── Plugins → POST /api/plugins (project-scoped install) ────────────
       for (const p of sourceItems.plugins) {
         if (!checked.plugins.has(pluginKey(p))) continue;
-        const res = await fetch('/api/plugins', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: PluginAction.Install, plugin: pluginKey(p), scope: PluginScope.Project }),
+        const res = await fetch("/api/plugins", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: PluginAction.Install,
+            plugin: pluginKey(p),
+            scope: PluginScope.Project,
+          }),
         });
         if (!res.ok) {
-          const body = await res.json().catch(() => ({})) as { error?: string };
-          throw new Error(body.error ?? `Plugin install failed: ${pluginKey(p)}`);
+          const body = (await res.json().catch(() => ({}))) as {
+            error?: string;
+          };
+          throw new Error(
+            body.error ?? `Plugin install failed: ${pluginKey(p)}`,
+          );
         }
         // Apply enabled state if it differs from default (true)
         if (p.enabled === false) {
-          const disableRes = await fetch('/api/plugins', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: PluginAction.Disable, plugin: pluginKey(p), scope: PluginScope.Project }),
+          const disableRes = await fetch("/api/plugins", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: PluginAction.Disable,
+              plugin: pluginKey(p),
+              scope: PluginScope.Project,
+            }),
           });
           if (!disableRes.ok) {
-            const body = await disableRes.json().catch(() => ({})) as { error?: string };
-            throw new Error(body.error ?? `Plugin disable failed: ${pluginKey(p)}`);
+            const body = (await disableRes.json().catch(() => ({}))) as {
+              error?: string;
+            };
+            throw new Error(
+              body.error ?? `Plugin disable failed: ${pluginKey(p)}`,
+            );
           }
         }
       }
@@ -534,7 +773,7 @@ export function WorkspaceConfigImportModal({
       onClose();
     } catch (err) {
       setImportError(err instanceof Error ? err.message : String(err));
-      setState('checklist');
+      setState("checklist");
     }
   }
 
@@ -545,9 +784,11 @@ export function WorkspaceConfigImportModal({
     const sel = checked[section].size;
     if (total === 0) return null;
     return (
-      <span className={`ml-auto text-[10px] font-medium px-1.5 py-0.5 rounded ${
-        sel > 0 ? 'bg-accent/20 text-accent' : 'bg-white/5 text-gray-500'
-      }`}>
+      <span
+        className={`ml-auto rounded px-1.5 py-0.5 text-[10px] font-medium ${
+          sel > 0 ? "bg-accent/20 text-accent" : "bg-white/5 text-gray-500"
+        }`}
+      >
         {sel}/{total}
       </span>
     );
@@ -562,14 +803,25 @@ export function WorkspaceConfigImportModal({
         itemKey={key}
         checked={checked.mcp.has(key)}
         existing={isExisting}
-        onToggle={() => toggleItem('mcp', key)}
+        onToggle={() => toggleItem("mcp", key)}
         title={s.name}
         subtitle={
-          s.type === 'stdio'
-            ? `${s.command}${s.args?.length ? ' ' + s.args.join(' ') : ''}`
+          s.type === McpServerType.Stdio
+            ? `${s.command}${s.args?.length ? " " + s.args.join(" ") : ""}`
             : s.url
         }
-        badge={{ label: s.type, color: s.type === 'stdio' ? 'purple' : s.type === 'http' ? 'cyan' : 'orange' }}
+        badge={(() => {
+          const label = s.type;
+          let color: "purple" | "cyan" | "orange";
+          if (s.type === McpServerType.Stdio) {
+            color = "purple";
+          } else if (s.type === McpServerType.Http) {
+            color = "cyan";
+          } else {
+            color = "orange";
+          }
+          return { label, color };
+        })()}
       />
     );
   }
@@ -583,10 +835,10 @@ export function WorkspaceConfigImportModal({
         itemKey={key}
         checked={checked.hooks.has(key)}
         existing={isExisting}
-        onToggle={() => toggleItem('hooks', key)}
-        title={`${h.event}${h.matcher ? ` [${h.matcher}]` : ''}`}
-        subtitle={h.command || h.prompt}
-        badge={{ label: h.type, color: 'blue' }}
+        onToggle={() => toggleItem("hooks", key)}
+        title={`${h.event}${h.matcher ? ` [${h.matcher}]` : ""}`}
+        subtitle={h.command ?? h.prompt}
+        badge={{ label: h.type, color: "blue" }}
       />
     );
   }
@@ -600,7 +852,7 @@ export function WorkspaceConfigImportModal({
         itemKey={key}
         checked={checked.skills.has(key)}
         existing={isExisting}
-        onToggle={() => toggleItem('skills', key)}
+        onToggle={() => toggleItem("skills", key)}
         title={s.name}
         subtitle={s.description}
       />
@@ -616,7 +868,7 @@ export function WorkspaceConfigImportModal({
         itemKey={key}
         checked={checked.agents.has(key)}
         existing={isExisting}
-        onToggle={() => toggleItem('agents', key)}
+        onToggle={() => toggleItem("agents", key)}
         title={a.name}
         subtitle={a.description}
       />
@@ -632,9 +884,13 @@ export function WorkspaceConfigImportModal({
         itemKey={key}
         checked={checked.rules.has(key)}
         existing={isExisting}
-        onToggle={() => toggleItem('rules', key)}
+        onToggle={() => toggleItem("rules", key)}
         title={r.name}
-        subtitle={r.paths?.length ? `paths: ${r.paths.join(', ')}` : `${r.lineCount} lines`}
+        subtitle={
+          r.paths?.length
+            ? `paths: ${r.paths.join(", ")}`
+            : `${r.lineCount} lines`
+        }
       />
     );
   }
@@ -648,7 +904,7 @@ export function WorkspaceConfigImportModal({
         itemKey={key}
         checked={checked.commands.has(key)}
         existing={isExisting}
-        onToggle={() => toggleItem('commands', key)}
+        onToggle={() => toggleItem("commands", key)}
         title={`/${c.name}`}
       />
     );
@@ -663,10 +919,10 @@ export function WorkspaceConfigImportModal({
         itemKey={key}
         checked={checked.plugins.has(key)}
         existing={isExisting}
-        onToggle={() => toggleItem('plugins', key)}
+        onToggle={() => toggleItem("plugins", key)}
         title={p.name}
-        subtitle={p.description || p.marketplace}
-        badge={{ label: p.marketplace, color: 'purple' }}
+        subtitle={p.description ?? p.marketplace}
+        badge={{ label: p.marketplace, color: "purple" }}
       />
     );
   }
@@ -680,38 +936,76 @@ export function WorkspaceConfigImportModal({
         itemKey={key}
         checked={checked.permissions.has(key)}
         existing={isExisting}
-        onToggle={() => toggleItem('permissions', key)}
+        onToggle={() => toggleItem("permissions", key)}
         title={p.rule}
-        badge={{ label: p.type, color: p.type === 'allow' ? 'green' : p.type === 'deny' ? 'red' : 'yellow' }}
+        badge={(() => {
+          const label = p.type;
+          let color: "green" | "red" | "yellow";
+          if (p.type === PermissionType.Allow) {
+            color = "green";
+          } else if (p.type === PermissionType.Deny) {
+            color = "red";
+          } else {
+            color = "yellow";
+          }
+          return { label, color };
+        })()}
       />
     );
   }
 
-  const SECTION_RENDERERS: Record<ImportSection, (items: SectionItems) => ReactNode> = {
-    plugins: (items) => items.plugins.length === 0
-      ? <EmptySection label="No project-scoped plugins" />
-      : items.plugins.map(renderPluginItem),
-    mcp: (items) => items.mcp.length === 0
-      ? <EmptySection label="No MCP servers" />
-      : items.mcp.map(renderMcpItem),
-    hooks: (items) => items.hooks.length === 0
-      ? <EmptySection label="No hooks" />
-      : items.hooks.map(renderHookItem),
-    skills: (items) => items.skills.length === 0
-      ? <EmptySection label="No skills" />
-      : items.skills.map(renderSkillItem),
-    agents: (items) => items.agents.length === 0
-      ? <EmptySection label="No agents" />
-      : items.agents.map(renderAgentItem),
-    rules: (items) => items.rules.length === 0
-      ? <EmptySection label="No rules" />
-      : items.rules.map(renderRuleItem),
-    commands: (items) => items.commands.length === 0
-      ? <EmptySection label="No commands" />
-      : items.commands.map(renderCommandItem),
-    permissions: (items) => items.permissions.length === 0
-      ? <EmptySection label="No permissions" />
-      : items.permissions.map(renderPermItem),
+  const SECTION_RENDERERS: Record<
+    ImportSection,
+    (items: SectionItems) => ReactNode
+  > = {
+    plugins: (items) =>
+      items.plugins.length === 0 ? (
+        <EmptySection label="No project-scoped plugins" />
+      ) : (
+        items.plugins.map(renderPluginItem)
+      ),
+    mcp: (items) =>
+      items.mcp.length === 0 ? (
+        <EmptySection label="No MCP servers" />
+      ) : (
+        items.mcp.map(renderMcpItem)
+      ),
+    hooks: (items) =>
+      items.hooks.length === 0 ? (
+        <EmptySection label="No hooks" />
+      ) : (
+        items.hooks.map(renderHookItem)
+      ),
+    skills: (items) =>
+      items.skills.length === 0 ? (
+        <EmptySection label="No skills" />
+      ) : (
+        items.skills.map(renderSkillItem)
+      ),
+    agents: (items) =>
+      items.agents.length === 0 ? (
+        <EmptySection label="No agents" />
+      ) : (
+        items.agents.map(renderAgentItem)
+      ),
+    rules: (items) =>
+      items.rules.length === 0 ? (
+        <EmptySection label="No rules" />
+      ) : (
+        items.rules.map(renderRuleItem)
+      ),
+    commands: (items) =>
+      items.commands.length === 0 ? (
+        <EmptySection label="No commands" />
+      ) : (
+        items.commands.map(renderCommandItem)
+      ),
+    permissions: (items) =>
+      items.permissions.length === 0 ? (
+        <EmptySection label="No permissions" />
+      ) : (
+        items.permissions.map(renderPermItem)
+      ),
   };
 
   const total = totalChecked();
@@ -722,18 +1016,22 @@ export function WorkspaceConfigImportModal({
       onClick={onClose}
     >
       <div
-        className="bg-card border border-border rounded-xl shadow-2xl flex flex-col"
-        style={{ width: '720px', maxWidth: 'calc(100vw - 32px)', maxHeight: 'calc(100vh - 64px)' }}
-        onClick={e => e.stopPropagation()}
+        className="flex flex-col rounded-xl border border-border bg-card shadow-2xl"
+        style={{
+          width: "720px",
+          maxWidth: "calc(100vw - 32px)",
+          maxHeight: "calc(100vh - 64px)",
+        }}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
+        <div className="flex flex-shrink-0 items-center justify-between border-b border-border px-6 py-4">
           <h3 className="text-base font-semibold text-gray-200">
             Import Configuration
           </h3>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-300 transition-colors text-xl leading-none"
+            className="text-xl leading-none text-gray-500 transition-colors hover:text-gray-300"
             aria-label="Close"
           >
             &times;
@@ -741,36 +1039,35 @@ export function WorkspaceConfigImportModal({
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           {/* State: pick-workspace */}
-          {state === 'pick-workspace' && (
-            <div className="flex-1 overflow-y-auto flex flex-col">
+          {state === "pick-workspace" && (
+            <div className="flex flex-1 flex-col overflow-y-auto">
               {/* Tabs */}
               <div className="flex border-b border-border px-6">
                 <button
-                  onClick={() => setImportSource('workspace')}
-                  className={`px-4 py-3 text-xs font-medium transition-colors relative ${
-                    importSource === 'workspace'
-                      ? 'text-accent'
-                      : 'text-gray-400 hover:text-gray-200'
+                  onClick={() => setImportSource("workspace")}
+                  className={`relative px-4 py-3 text-xs font-medium transition-colors ${
+                    importSource === "workspace"
+                      ? "text-accent"
+                      : "text-gray-400 hover:text-gray-200"
                   }`}
                 >
                   From Workspace
-                  {importSource === 'workspace' && (
+                  {importSource === "workspace" && (
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
                   )}
                 </button>
                 <button
-                  onClick={() => setImportSource('file')}
-                  className={`px-4 py-3 text-xs font-medium transition-colors relative ${
-                    importSource === 'file'
-                      ? 'text-accent'
-                      : 'text-gray-400 hover:text-gray-200'
+                  onClick={() => setImportSource("file")}
+                  className={`relative px-4 py-3 text-xs font-medium transition-colors ${
+                    importSource === "file"
+                      ? "text-accent"
+                      : "text-gray-400 hover:text-gray-200"
                   }`}
                 >
                   From File
-                  {importSource === 'file' && (
+                  {importSource === "file" && (
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
                   )}
                 </button>
@@ -778,29 +1075,31 @@ export function WorkspaceConfigImportModal({
 
               {/* Tab content */}
               <div className="flex-1 overflow-y-auto px-6 py-5">
-                {importSource === 'workspace' && (
+                {importSource === "workspace" && (
                   <>
-                    <p className="text-sm text-gray-400 mb-4">
+                    <p className="mb-4 text-sm text-gray-400">
                       Select a workspace to import configuration from.
                     </p>
                     {otherWorkspaces.length === 0 ? (
-                      <div className="text-sm text-gray-500 text-center py-8">
+                      <div className="py-8 text-center text-sm text-gray-500">
                         No other workspaces available.
                       </div>
                     ) : (
                       <div className="flex flex-col gap-2">
-                        {otherWorkspaces.map(ws => (
+                        {otherWorkspaces.map((ws) => (
                           <button
                             key={ws.path}
                             onClick={() => setSelectedWorkspace(ws)}
-                            className={`w-full text-left px-4 py-3 rounded-lg border transition-colors ${
+                            className={`w-full rounded-lg border px-4 py-3 text-left transition-colors ${
                               selectedWorkspace?.path === ws.path
-                                ? 'border-accent/60 bg-accent/10 text-gray-200'
-                                : 'border-border bg-bg text-gray-300 hover:border-accent/30 hover:bg-accent/5'
+                                ? "border-accent/60 bg-accent/10 text-gray-200"
+                                : "border-border bg-bg text-gray-300 hover:border-accent/30 hover:bg-accent/5"
                             }`}
                           >
-                            <div className="font-medium text-sm">{ws.name}</div>
-                            <div className="text-[11px] font-mono text-gray-500 mt-0.5 truncate">{ws.path}</div>
+                            <div className="text-sm font-medium">{ws.name}</div>
+                            <div className="mt-0.5 truncate font-mono text-[11px] text-gray-500">
+                              {ws.path}
+                            </div>
                           </button>
                         ))}
                       </div>
@@ -808,12 +1107,12 @@ export function WorkspaceConfigImportModal({
                   </>
                 )}
 
-                {importSource === 'file' && (
+                {importSource === "file" && (
                   <>
-                    <p className="text-sm text-gray-400 mb-4">
+                    <p className="mb-4 text-sm text-gray-400">
                       Select a .claude-export.json file to import.
                     </p>
-                    <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-border rounded-lg">
+                    <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border py-12">
                       <input
                         type="file"
                         accept=".json"
@@ -823,45 +1122,46 @@ export function WorkspaceConfigImportModal({
                             loadFromFile(file);
                           }
                         }}
-                        className="block w-full max-w-xs text-sm text-gray-400
-                          file:mr-4 file:py-2 file:px-4
-                          file:rounded file:border-0
-                          file:text-xs file:font-medium
-                          file:bg-accent/20 file:text-accent
-                          hover:file:bg-accent/30 file:transition-colors
-                          file:cursor-pointer cursor-pointer"
+                        className="block w-full max-w-xs cursor-pointer text-sm text-gray-400 file:mr-4 file:cursor-pointer file:rounded file:border-0 file:bg-accent/20 file:px-4 file:py-2 file:text-xs file:font-medium file:text-accent file:transition-colors hover:file:bg-accent/30"
                       />
-                      <p className="text-xs text-gray-500 mt-3">
+                      <p className="mt-3 text-xs text-gray-500">
                         Accepts .json export files
                       </p>
                     </div>
                   </>
                 )}
 
-                {loadError && <div className="mt-3 text-xs text-red-400">{loadError}</div>}
+                {loadError && (
+                  <div className="mt-3 text-xs text-red-400">{loadError}</div>
+                )}
               </div>
             </div>
           )}
 
           {/* State: checklist */}
-          {state === 'checklist' && (
-            <div className="flex-1 flex min-h-0">
+          {state === "checklist" && (
+            <div className="flex min-h-0 flex-1">
               {/* Section sidebar */}
-              <div className="w-44 flex-shrink-0 border-r border-border py-3 overflow-y-auto">
-                <div className="text-[10px] uppercase tracking-wider text-gray-600 px-4 mb-2">
-                  From: {importSource === 'file' ? importFileName : selectedWorkspace?.name}
+              <div className="w-44 flex-shrink-0 overflow-y-auto border-r border-border py-3">
+                <div className="mb-2 px-4 text-[10px] uppercase tracking-wider text-gray-600">
+                  From:{" "}
+                  {importSource === "file"
+                    ? importFileName
+                    : selectedWorkspace?.name}
                 </div>
-                {sections.map(s => (
+                {sections.map((s) => (
                   <button
                     key={s}
                     onClick={() => setActiveSection(s)}
-                    className={`w-full flex items-center gap-1.5 px-4 py-2 text-xs transition-colors ${
+                    className={`flex w-full items-center gap-1.5 px-4 py-2 text-xs transition-colors ${
                       activeSection === s
-                        ? 'text-accent bg-accent/10'
-                        : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
+                        ? "bg-accent/10 text-accent"
+                        : "text-gray-400 hover:bg-white/5 hover:text-gray-200"
                     }`}
                   >
-                    <span className="font-medium truncate">{SECTION_LABELS[s]}</span>
+                    <span className="truncate font-medium">
+                      {SECTION_LABELS[s]}
+                    </span>
                     {renderSectionBadge(s)}
                   </button>
                 ))}
@@ -870,39 +1170,70 @@ export function WorkspaceConfigImportModal({
               {/* Items list */}
               <div className="flex-1 overflow-y-auto px-4 py-3">
                 {importError && (
-                  <div className="mb-3 px-3 py-2 bg-red-500/10 border border-red-500/30 rounded text-red-400 text-xs">
+                  <div className="mb-3 rounded border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">
                     {importError}
                   </div>
                 )}
 
                 {/* Section select-all header */}
-                <div className="flex items-center justify-between mb-2 px-1">
+                <div className="mb-2 flex items-center justify-between px-1">
                   <span className="text-xs text-gray-500">
                     {SECTION_LABELS[activeSection]}
-                    {' — '}
+                    {" — "}
                     <span className="text-green-400">
-                      {sourceItems[activeSection].filter(item => !existingKeys[activeSection].has(getKey(activeSection, item))).length} new
+                      {
+                        sourceItems[activeSection].filter(
+                          (item) =>
+                            !existingKeys[activeSection].has(
+                              getKey(activeSection, item),
+                            ),
+                        ).length
+                      }{" "}
+                      new
                     </span>
                   </span>
-                  {sourceItems[activeSection].some(item => !existingKeys[activeSection].has(getKey(activeSection, item))) && (
+                  {sourceItems[activeSection].some(
+                    (item) =>
+                      !existingKeys[activeSection].has(
+                        getKey(activeSection, item),
+                      ),
+                  ) && (
                     <button
                       onClick={() => {
                         const newKeys = sourceItems[activeSection]
-                          .filter(item => !existingKeys[activeSection].has(getKey(activeSection, item)))
-                          .map(item => getKey(activeSection, item));
-                        const allChecked = newKeys.every(k => checked[activeSection].has(k));
-                        setChecked(prev => ({
+                          .filter(
+                            (item) =>
+                              !existingKeys[activeSection].has(
+                                getKey(activeSection, item),
+                              ),
+                          )
+                          .map((item) => getKey(activeSection, item));
+                        const allChecked = newKeys.every((k) =>
+                          checked[activeSection].has(k),
+                        );
+                        setChecked((prev) => ({
                           ...prev,
-                          [activeSection]: allChecked ? new Set() : new Set(newKeys),
+                          [activeSection]: allChecked
+                            ? new Set()
+                            : new Set(newKeys),
                         }));
                       }}
-                      className="text-[10px] text-gray-500 hover:text-accent transition-colors"
+                      className="text-[10px] text-gray-500 transition-colors hover:text-accent"
                     >
                       {sourceItems[activeSection]
-                        .filter(item => !existingKeys[activeSection].has(getKey(activeSection, item)))
-                        .every(item => checked[activeSection].has(getKey(activeSection, item)))
-                        ? 'Deselect all'
-                        : 'Select all'}
+                        .filter(
+                          (item) =>
+                            !existingKeys[activeSection].has(
+                              getKey(activeSection, item),
+                            ),
+                        )
+                        .every((item) =>
+                          checked[activeSection].has(
+                            getKey(activeSection, item),
+                          ),
+                        )
+                        ? "Deselect all"
+                        : "Select all"}
                     </button>
                   )}
                 </div>
@@ -915,64 +1246,67 @@ export function WorkspaceConfigImportModal({
           )}
 
           {/* State: importing */}
-          {state === 'importing' && (
-            <div className="flex-1 flex flex-col items-center justify-center py-12 gap-4">
-              <div className="w-8 h-8 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
-              <p className="text-sm text-gray-400">Importing configuration...</p>
+          {state === "importing" && (
+            <div className="flex flex-1 flex-col items-center justify-center gap-4 py-12">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent/30 border-t-accent" />
+              <p className="text-sm text-gray-400">
+                Importing configuration...
+              </p>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-border flex-shrink-0">
-          {state === 'pick-workspace' && (
+        <div className="flex flex-shrink-0 items-center justify-between border-t border-border px-6 py-4">
+          {state === "pick-workspace" && (
             <>
               <button
                 onClick={onClose}
-                className="px-4 py-1.5 text-xs font-medium rounded bg-gray-500/20 text-gray-400 hover:bg-gray-500/30 transition-colors"
+                className="rounded bg-gray-500/20 px-4 py-1.5 text-xs font-medium text-gray-400 transition-colors hover:bg-gray-500/30"
               >
                 Cancel
               </button>
-              {importSource === 'workspace' && (
+              {importSource === "workspace" && (
                 <button
-                  onClick={loadWorkspace}
+                  onClick={() => void loadWorkspace()}
                   disabled={!selectedWorkspace || loading}
-                  className="px-4 py-1.5 text-xs font-medium rounded bg-accent/20 text-accent hover:bg-accent/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="flex items-center gap-2 rounded bg-accent/20 px-4 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/30 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {loading && (
-                    <span className="w-3.5 h-3.5 border-2 border-accent/30 border-t-accent rounded-full animate-spin inline-block" />
+                    <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-accent/30 border-t-accent" />
                   )}
-                  {loading ? 'Loading...' : 'Load Workspace'}
+                  {loading ? "Loading..." : "Load Workspace"}
                 </button>
               )}
-              {importSource === 'file' && loading && (
+              {importSource === "file" && loading && (
                 <div className="flex items-center gap-2 text-xs text-gray-400">
-                  <span className="w-3.5 h-3.5 border-2 border-accent/30 border-t-accent rounded-full animate-spin inline-block" />
+                  <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-accent/30 border-t-accent" />
                   Loading file...
                 </div>
               )}
             </>
           )}
 
-          {state === 'checklist' && (
+          {state === "checklist" && (
             <>
               <button
                 onClick={onClose}
-                className="px-4 py-1.5 text-xs font-medium rounded bg-gray-500/20 text-gray-400 hover:bg-gray-500/30 transition-colors"
+                className="rounded bg-gray-500/20 px-4 py-1.5 text-xs font-medium text-gray-400 transition-colors hover:bg-gray-500/30"
               >
                 Cancel
               </button>
               <button
-                onClick={handleImport}
+                onClick={() => void handleImport()}
                 disabled={total === 0}
-                className="px-4 py-1.5 text-xs font-medium rounded bg-accent/20 text-accent hover:bg-accent/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="rounded bg-accent/20 px-4 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/30 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Import {total > 0 ? `${total} item${total !== 1 ? 's' : ''}` : ''}
+                Import{" "}
+                {total > 0 ? `${total} item${total !== 1 ? "s" : ""}` : ""}
               </button>
             </>
           )}
 
-          {state === 'importing' && <div className="w-full" />}
+          {state === "importing" && <div className="w-full" />}
         </div>
       </div>
     </div>
@@ -982,17 +1316,17 @@ export function WorkspaceConfigImportModal({
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
 const BADGE_COLOR_CLASSES: Record<string, string> = {
-  purple: 'bg-purple-500/20 text-purple-400',
-  cyan: 'bg-cyan-500/20 text-cyan-400',
-  orange: 'bg-orange-500/20 text-orange-400',
-  blue: 'bg-blue-500/20 text-blue-400',
-  green: 'bg-green-500/20 text-green-400',
-  red: 'bg-red-500/20 text-red-400',
-  yellow: 'bg-yellow-500/20 text-yellow-400',
+  purple: "bg-purple-500/20 text-purple-400",
+  cyan: "bg-cyan-500/20 text-cyan-400",
+  orange: "bg-orange-500/20 text-orange-400",
+  blue: "bg-blue-500/20 text-blue-400",
+  green: "bg-green-500/20 text-green-400",
+  red: "bg-red-500/20 text-red-400",
+  yellow: "bg-yellow-500/20 text-yellow-400",
 };
 
 function ImportRow({
-  itemKey,
+  itemKey: _itemKey,
   checked,
   existing,
   onToggle,
@@ -1010,33 +1344,53 @@ function ImportRow({
 }) {
   if (existing) {
     return (
-      <div className="flex items-center gap-3 px-3 py-2 rounded-lg border border-border bg-bg opacity-40">
-        <input type="checkbox" disabled checked={false} readOnly className="w-3.5 h-3.5 flex-shrink-0" />
-        <div className="flex-1 min-w-0">
-          <div className="text-xs font-medium text-gray-300 truncate">{title}</div>
-          {subtitle && <div className="text-[11px] font-mono text-gray-500 truncate mt-0.5">{subtitle}</div>}
+      <div className="flex items-center gap-3 rounded-lg border border-border bg-bg px-3 py-2 opacity-40">
+        <input
+          type="checkbox"
+          disabled
+          checked={false}
+          readOnly
+          className="h-3.5 w-3.5 flex-shrink-0"
+        />
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-xs font-medium text-gray-300">
+            {title}
+          </div>
+          {subtitle && (
+            <div className="mt-0.5 truncate font-mono text-[11px] text-gray-500">
+              {subtitle}
+            </div>
+          )}
         </div>
-        <span className="text-[10px] text-gray-600 italic flex-shrink-0">exists</span>
+        <span className="flex-shrink-0 text-[10px] italic text-gray-600">
+          exists
+        </span>
       </div>
     );
   }
 
   return (
-    <label
-      className="flex items-center gap-3 px-3 py-2 rounded-lg border border-border bg-bg cursor-pointer hover:border-accent/30 transition-colors"
-    >
+    <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-bg px-3 py-2 transition-colors hover:border-accent/30">
       <input
         type="checkbox"
         checked={checked}
         onChange={onToggle}
-        className="accent-[#6c5ce7] w-3.5 h-3.5 flex-shrink-0"
+        className="h-3.5 w-3.5 flex-shrink-0 accent-[#6c5ce7]"
       />
-      <div className="flex-1 min-w-0">
-        <div className="text-xs font-medium text-gray-200 truncate">{title}</div>
-        {subtitle && <div className="text-[11px] font-mono text-gray-500 truncate mt-0.5">{subtitle}</div>}
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-xs font-medium text-gray-200">
+          {title}
+        </div>
+        {subtitle && (
+          <div className="mt-0.5 truncate font-mono text-[11px] text-gray-500">
+            {subtitle}
+          </div>
+        )}
       </div>
       {badge && (
-        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium flex-shrink-0 ${BADGE_COLOR_CLASSES[badge.color] ?? 'bg-gray-500/20 text-gray-400'}`}>
+        <span
+          className={`flex-shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${BADGE_COLOR_CLASSES[badge.color] ?? "bg-gray-500/20 text-gray-400"}`}
+        >
           {badge.label}
         </span>
       )}
@@ -1045,22 +1399,28 @@ function ImportRow({
 }
 
 function EmptySection({ label }: { label: string }) {
-  return (
-    <div className="text-sm text-gray-500 text-center py-8">{label}</div>
-  );
+  return <div className="py-8 text-center text-sm text-gray-500">{label}</div>;
 }
 
 // ─── Key helper (needed for select-all) ─────────────────────────────────────
 
 function getKey(section: ImportSection, item: unknown): string {
   switch (section) {
-    case 'mcp': return mcpKey(item as McpServer);
-    case 'hooks': return hookKey(item as HookEntry);
-    case 'skills': return skillKey(item as SkillEntry);
-    case 'agents': return agentKey(item as AgentEntry);
-    case 'rules': return ruleKey(item as RuleEntry);
-    case 'commands': return commandKey(item as CommandEntry);
-    case 'permissions': return permKey(item as PermissionRule);
-    case 'plugins': return pluginKey(item as PluginEntry);
+    case "mcp":
+      return mcpKey(item as McpServer);
+    case "hooks":
+      return hookKey(item as HookEntry);
+    case "skills":
+      return skillKey(item as SkillEntry);
+    case "agents":
+      return agentKey(item as AgentEntry);
+    case "rules":
+      return ruleKey(item as RuleEntry);
+    case "commands":
+      return commandKey(item as CommandEntry);
+    case "permissions":
+      return permKey(item as PermissionRule);
+    case "plugins":
+      return pluginKey(item as PluginEntry);
   }
 }

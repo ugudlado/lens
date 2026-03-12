@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface PanelRowProps {
   trigger: React.ReactNode;
@@ -9,9 +9,16 @@ interface PanelRowProps {
   actions?: React.ReactNode;
 }
 
-export function PanelRow({ trigger, expanded, onToggle, children, label, actions }: PanelRowProps) {
+export function PanelRow({
+  trigger,
+  expanded,
+  onToggle,
+  children,
+  label,
+  actions,
+}: PanelRowProps) {
   return (
-    <div className="bg-card border border-border rounded-lg">
+    <div className="rounded-lg border border-border bg-card">
       <div className="flex items-center">
         <button
           type="button"
@@ -20,11 +27,11 @@ export function PanelRow({ trigger, expanded, onToggle, children, label, actions
           aria-disabled={!onToggle || undefined}
           aria-expanded={onToggle ? expanded : undefined}
           aria-label={label}
-          className={`flex-1 flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors rounded-lg ${!onToggle ? 'cursor-default' : ''}`}
+          className={`flex flex-1 items-center gap-3 rounded-lg px-4 py-3 transition-colors hover:bg-white/5 ${!onToggle ? "cursor-default" : ""}`}
         >
           {onToggle && (
             <svg
-              className={`w-4 h-4 text-gray-500 flex-shrink-0 transition-transform duration-150 ${expanded ? 'rotate-90' : ''}`}
+              className={`h-4 w-4 flex-shrink-0 text-gray-500 transition-transform duration-150 ${expanded ? "rotate-90" : ""}`}
               viewBox="0 0 16 16"
               fill="currentColor"
             >
@@ -34,9 +41,7 @@ export function PanelRow({ trigger, expanded, onToggle, children, label, actions
           {trigger}
         </button>
         {actions && (
-          <div className="px-2 flex items-center gap-1 relative">
-            {actions}
-          </div>
+          <div className="relative flex items-center gap-1 px-2">{actions}</div>
         )}
       </div>
       {expanded && children && (
