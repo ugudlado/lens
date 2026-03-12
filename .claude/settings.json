@@ -1,9 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash"
+      "Bash",
+      "Edit(./**)",
+      "Write(./**)",
+      "mcp__*",
+      "Skill",
+      "WebFetch",
+      "WebSearch"
     ]
   },
-  "enableAllProjectMcpServers": true,
-  "enabledPlugins": {}
+  "enableAllProjectMcpServers": true
 }
