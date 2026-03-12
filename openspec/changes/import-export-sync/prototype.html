@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lens — Import/Export Sync Prototype</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --card: #0f0f16;
+    --border: rgba(255,255,255,0.08);
+    --border-hover: rgba(108,92,231,0.3);
+    --accent: #6c5ce7;
+    --accent-10: rgba(108,92,231,0.1);
+    --accent-20: rgba(108,92,231,0.2);
+    --accent-30: rgba(108,92,231,0.3);
+    --text-primary: #e5e5ea;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+    --text-dim: #4b5563;
+    --green: #34d399;
+    --green-10: rgba(52,211,153,0.1);
+    --red: #f87171;
+    --red-10: rgba(248,113,113,0.1);
+    --purple-badge: rgba(168,85,247,0.2);
+    --purple-badge-text: #c084fc;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: 'DM Sans', -apple-system, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px;
+  }
+
+  /* ── Flow Navigation ── */
+  .flow-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 32px;
+    padding: 8px 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .flow-step {
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+  }
+  .flow-step:hover { color: var(--text-secondary); }
+  .flow-step.active {
+    color: var(--accent);
+    background: var(--accent-10);
+    border-color: var(--accent-20);
+  }
+  .flow-arrow {
+    color: var(--text-dim);
+    font-size: 11px;
+  }
+
+  /* ── Modal Shell ── */
+  .modal-backdrop {
+    width: 720px;
+    max-width: calc(100vw - 32px);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg);
+    box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 420px;
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .modal-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 20px;
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.15s;
+  }
+  .modal-close:hover { color: var(--text-secondary); }
+
+  .modal-body {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  /* ── Buttons ── */
+  .btn {
+    padding: 6px 16px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .btn-ghost {
+    background: rgba(107,114,128,0.2);
+    color: var(--text-secondary);
+  }
+  .btn-ghost:hover { background: rgba(107,114,128,0.3); }
+  .btn-accent {
+    background: var(--accent-20);
+    color: var(--accent);
+  }
+  .btn-accent:hover { background: var(--accent-30); }
+  .btn-accent:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* ── Section Sidebar ── */
+  .sidebar {
+    width: 176px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    padding: 12px 0;
+    overflow-y: auto;
+  }
+  .sidebar-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+    padding: 0 16px;
+    margin-bottom: 8px;
+  }
+  .sidebar-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+    font-family: inherit;
+  }
+  .sidebar-item:hover {
+    color: var(--text-primary);
+    background: rgba(255,255,255,0.03);
+  }
+  .sidebar-item.active {
+    color: var(--accent);
+    background: var(--accent-10);
+  }
+  .sidebar-badge {
+    margin-left: auto;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.04);
+    color: var(--text-muted);
+  }
+  .sidebar-badge.has-selection {
+    background: var(--accent-20);
+    color: var(--accent);
+  }
+
+  /* ── Items Area ── */
+  .items-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 16px;
+  }
+
+  .items-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    padding: 0 4px;
+  }
+  .items-header-label {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .items-header-label .new-count {
+    color: var(--green);
+  }
+  .items-header-action {
+    font-size: 10px;
+    color: var(--text-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    transition: color 0.15s;
+  }
+  .items-header-action:hover { color: var(--accent); }
+
+  /* ── Checklist Row ── */
+  .check-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .check-row:hover { border-color: var(--border-hover); }
+  .check-row.disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  .check-row.disabled:hover { border-color: var(--border); }
+
+  .check-row input[type="checkbox"] {
+    accent-color: var(--accent);
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+
+  .check-row .item-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .check-row .item-title {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .check-row .item-subtitle {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+  }
+
+  .item-badge {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+  .badge-purple { background: var(--purple-badge); color: var(--purple-badge-text); }
+  .badge-green { background: var(--green-10); color: var(--green); }
+  .badge-exists {
+    font-size: 10px;
+    color: var(--text-dim);
+    font-style: italic;
+    flex-shrink: 0;
+  }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+  }
+  .tab {
+    padding: 12px 16px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    position: relative;
+    transition: color 0.15s;
+  }
+  .tab:hover { color: var(--text-primary); }
+  .tab.active { color: var(--accent); }
+  .tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--accent);
+  }
+
+  /* ── File Upload Zone ── */
+  .upload-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    margin: 20px 24px;
+    transition: border-color 0.2s;
+  }
+  .upload-zone:hover { border-color: var(--accent-30); }
+  .upload-zone .upload-icon {
+    font-size: 28px;
+    margin-bottom: 12px;
+    opacity: 0.4;
+  }
+  .upload-btn {
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    background: var(--accent-20);
+    color: var(--accent);
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+  .upload-btn:hover { background: var(--accent-30); }
+  .upload-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 12px;
+  }
+
+  /* ── Workspace List ── */
+  .ws-list {
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .ws-list p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+  }
+  .ws-card {
+    width: 100%;
+    text-align: left;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .ws-card:hover {
+    border-color: var(--border-hover);
+    background: rgba(108,92,231,0.03);
+  }
+  .ws-card.selected {
+    border-color: rgba(108,92,231,0.5);
+    background: var(--accent-10);
+  }
+  .ws-card .ws-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+  .ws-card .ws-path {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  /* ── Dashboard header mock ── */
+  .dash-header {
+    width: 720px;
+    max-width: calc(100vw - 32px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 20px;
+  }
+  .dash-header .dash-info {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .dash-header .dash-info span { color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; }
+  .dash-btns {
+    display: flex;
+    gap: 8px;
+  }
+  .dash-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+  }
+  .dash-btn-import {
+    background: var(--accent-20);
+    color: var(--accent);
+  }
+  .dash-btn-import:hover { background: var(--accent-30); }
+  .dash-btn-export {
+    background: var(--accent-20);
+    color: var(--accent);
+  }
+  .dash-btn-export:hover { background: var(--accent-30); }
+
+  /* ── Annotations ── */
+  .annotation {
+    position: relative;
+    margin-bottom: 24px;
+  }
+  .annotation-tag {
+    display: inline-block;
+    padding: 3px 8px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-radius: 4px;
+    margin-bottom: 10px;
+  }
+  .tag-new {
+    background: var(--green-10);
+    color: var(--green);
+  }
+  .tag-changed {
+    background: rgba(251,191,36,0.12);
+    color: #fbbf24;
+  }
+  .tag-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    line-height: 1.5;
+  }
+
+  .hidden { display: none !important; }
+
+  /* ── Spinner ── */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--accent-30);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    display: inline-block;
+  }
+
+  .section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 40px 0 16px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    width: 720px;
+    max-width: calc(100vw - 32px);
+  }
+  .section-title:first-of-type { margin-top: 0; }
+</style>
+</head>
+<body>
+
+<!-- Flow Navigation -->
+<div class="flow-nav">
+  <button class="flow-step active" onclick="showStep('dashboard')">Dashboard</button>
+  <span class="flow-arrow">→</span>
+  <button class="flow-step" onclick="showStep('export')">Export</button>
+  <span class="flow-arrow">→</span>
+  <button class="flow-step" onclick="showStep('import-pick')">Import Source</button>
+  <span class="flow-arrow">→</span>
+  <button class="flow-step" onclick="showStep('import-checklist')">Import Checklist</button>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- STEP 1: DASHBOARD HEADER                                 -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div id="step-dashboard" class="annotation">
+  <span class="annotation-tag tag-changed">Changed</span>
+  <div class="tag-label">
+    Import button now always visible — no longer gated on <code>otherWorkspaces.length &gt; 0</code>.
+    Users with a single workspace can access "From File" import.
+  </div>
+
+  <div class="dash-header">
+    <div class="dash-info">
+      Project: <span>/Users/dev/my-project</span>
+    </div>
+    <div class="dash-btns">
+      <button class="dash-btn dash-btn-import" onclick="showStep('import-pick')">
+        <span>↓</span> Import Config
+      </button>
+      <button class="dash-btn dash-btn-export" onclick="showStep('export')">
+        ↑ Export Config
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- STEP 2: EXPORT MODAL (with Plugins)                      -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div id="step-export" class="annotation hidden">
+  <span class="annotation-tag tag-new">New</span>
+  <div class="tag-label">
+    Plugins section added to export checklist. Shows project-scoped plugins with marketplace badge.
+  </div>
+
+  <div class="modal-backdrop">
+    <div class="modal-header">
+      <h3>Export Configuration</h3>
+      <button class="modal-close" onclick="showStep('dashboard')">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="sidebar">
+        <button class="sidebar-item" onclick="showExportSection('mcp', this)">
+          <span>MCP Servers</span>
+          <span class="sidebar-badge has-selection">3/3</span>
+        </button>
+        <button class="sidebar-item" onclick="showExportSection('hooks', this)">
+          <span>Hooks</span>
+          <span class="sidebar-badge has-selection">2/2</span>
+        </button>
+        <button class="sidebar-item" onclick="showExportSection('skills', this)">
+          <span>Skills</span>
+          <span class="sidebar-badge has-selection">1/1</span>
+        </button>
+        <button class="sidebar-item" onclick="showExportSection('agents', this)">
+          <span>Agents</span>
+          <span class="sidebar-badge">0/0</span>
+        </button>
+        <button class="sidebar-item" onclick="showExportSection('rules', this)">
+          <span>Rules</span>
+          <span class="sidebar-badge has-selection">2/2</span>
+        </button>
+        <button class="sidebar-item" onclick="showExportSection('commands', this)">
+          <span>Commands</span>
+          <span class="sidebar-badge has-selection">1/1</span>
+        </button>
+        <button class="sidebar-item" onclick="showExportSection('permissions', this)">
+          <span>Permissions</span>
+          <span class="sidebar-badge has-selection">3/3</span>
+        </button>
+        <button class="sidebar-item active" onclick="showExportSection('plugins', this)">
+          <span>Plugins</span>
+          <span class="sidebar-badge has-selection">2/2</span>
+        </button>
+      </div>
+
+      <div class="items-area">
+        <!-- Export sections -->
+        <div id="export-mcp" class="export-section hidden">
+          <div class="items-header">
+            <span class="items-header-label">MCP Servers</span>
+            <button class="items-header-action">Deselect All</button>
+          </div>
+          <label class="check-row"><input type="checkbox" checked><div class="item-info"><div class="item-title">context7</div><div class="item-subtitle">npx -y @anthropic/context7-mcp</div></div><span class="item-badge badge-purple">stdio</span></label>
+          <label class="check-row"><input type="checkbox" checked><div class="item-info"><div class="item-title">github-api</div><div class="item-subtitle">npx -y @modelcontextprotocol/server-github</div></div><span class="item-badge badge-purple">stdio</span></label>
+          <label class="check-row"><input type="checkbox" checked><div class="item-info"><div class="item-title">memory</div><div class="item-subtitle">npx -y @anthropic/memory-mcp</div></div><span class="item-badge badge-purple">stdio</span></label>
+        </div>
+
+        <div id="export-hooks" class="export-section hidden">
+          <div class="items-header">
+            <span class="items-header-label">Hooks</span>
+            <button class="items-header-action">Deselect All</button>
+          </div>
+          <label class="check-row"><input type="checkbox" checked><div class="item-info"><div class="item-title">PreToolUse [Bash]</div><div class="item-subtitle">check-dangerous-commands.sh</div></div><span class="item-badge" style="background:rgba(96,165,250,0.2);color:#93c5fd;">command</span></label>
+          <label class="check-row"><input type="checkbox" checked><div class="item-info"><div class="item-title">Stop</div><div class="item-subtitle">Verify no TODO comments remain</div></div><span class="item-badge" style="background:rgba(96,165,250,0.2);color:#93c5fd;">prompt</span></label>
+        </div>
+
+        <div id="export-skills" class="export-section hidden">
+          <div class="items-header">
+            <span class="items-header-label">Skills</span>
+            <button class="items-header-action">Deselect All</button>
+          </div>
+          <label class="check-row"><input type="checkbox" checked><div class="item-info"><div class="item-title">commit</div><div class="item-subtitle">Guided commit workflow</div></div></label>
+        </div>
+
+        <div id="export-agents" class="export-section hidden">
+          <div class="items-header">
+            <span class="items-header-label">Agents</span>
+          </div>
+          <div style="text-align:center;padding:32px;color:var(--text-muted);font-size:13px;">No project-scoped agents</div>
+        </div>
+
+        <div id="export-rules" class="export-section hidden">
+          <div class="items-header">
+            <span class="items-header-label">Rules</span>
+            <button class="items-header-action">Deselect All</button>
+          </div>
+          <label class="check-row"><input type="checkbox" checked><div class="item-info"><div class="item-title">code-style</div></div></label>
+          <label class="check-row"><input type="checkbox" checked><div class="item-info"><div class="item-title">testing-guidelines</div></div></label>
+        </div>
+
+        <div id="export-commands" class="export-section hidden">
+          <div class="items-header">
+            <span class="items-header-label">Commands</span>
+            <button class="items-header-action">Deselect All</button>
+          </div>
+          <label class="check-row"><input type="checkbox" checked><div class="item-info"><div class="item-title">/deploy</div></div></label>
+        </div>
+
+        <div id="export-permissions" class="export-section hidden">
+          <div class="items-header">
+            <span class="items-header-label">Permissions</span>
+            <button class="items-header-action">Deselect All</button>
+          </div>
+          <label class="check-row"><input type="checkbox" checked><div class="item-info"><div class="item-title">Bash(npm *)</div></div><span class="item-badge badge-green">allow</span></label>
+          <label class="check-row"><input type="checkbox" checked><div class="item-info"><div class="item-title">Bash(rm -rf *)</div></div><span class="item-badge" style="background:var(--red-10);color:var(--red);">deny</span></label>
+          <label class="check-row"><input type="checkbox" checked><div class="item-info"><div class="item-title">Write(src/**)</div></div><span class="item-badge badge-green">allow</span></label>
+        </div>
+
+        <div id="export-plugins" class="export-section">
+          <div class="items-header">
+            <span class="items-header-label">Plugins</span>
+            <button class="items-header-action">Deselect All</button>
+          </div>
+          <label class="check-row">
+            <input type="checkbox" checked>
+            <div class="item-info">
+              <div class="item-title">context7</div>
+              <div class="item-subtitle">context7@official</div>
+            </div>
+            <span class="item-badge badge-purple">official</span>
+          </label>
+          <label class="check-row">
+            <input type="checkbox" checked>
+            <div class="item-info">
+              <div class="item-title">claude-mem</div>
+              <div class="item-subtitle">claude-mem@official</div>
+            </div>
+            <span class="item-badge badge-purple">official</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="showStep('dashboard')">Cancel</button>
+      <button class="btn btn-accent" onclick="showStep('import-pick')">Export 14 items</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- STEP 3: IMPORT MODAL — Source Picker                     -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div id="step-import-pick" class="annotation hidden">
+  <span class="annotation-tag tag-changed">Changed</span>
+  <div class="tag-label">
+    Modal title updated to "Import Configuration". Both tabs accessible.
+    "From File" tab shown active to demonstrate the JSON import flow.
+  </div>
+
+  <div class="modal-backdrop">
+    <div class="modal-header">
+      <h3>Import Configuration</h3>
+      <button class="modal-close" onclick="showStep('dashboard')">&times;</button>
+    </div>
+
+    <div style="display:flex;flex-direction:column;flex:1;">
+      <div class="tabs">
+        <button class="tab" onclick="showImportTab('workspace', this)">From Workspace</button>
+        <button class="tab active" onclick="showImportTab('file', this)">From File</button>
+      </div>
+
+      <div id="import-tab-workspace" class="hidden" style="flex:1;overflow-y:auto;">
+        <div class="ws-list">
+          <p>Select a workspace to import configuration from.</p>
+          <button class="ws-card">
+            <div class="ws-name">api-gateway</div>
+            <div class="ws-path">/Users/dev/api-gateway</div>
+          </button>
+          <button class="ws-card">
+            <div class="ws-name">shared-infra</div>
+            <div class="ws-path">/Users/dev/shared-infra</div>
+          </button>
+        </div>
+      </div>
+
+      <div id="import-tab-file" style="flex:1;overflow-y:auto;">
+        <div class="upload-zone" onclick="showStep('import-checklist')">
+          <div class="upload-icon">📄</div>
+          <button class="upload-btn">Choose .claude-export.json</button>
+          <div class="upload-hint">Accepts .claude-export.json files exported from Lens</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="showStep('dashboard')">Cancel</button>
+      <div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- STEP 4: IMPORT MODAL — Checklist (from file)             -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div id="step-import-checklist" class="annotation hidden">
+  <span class="annotation-tag tag-new">New</span>
+  <div class="tag-label">
+    Plugins parsed from JSON file appear in the import checklist. Existing items shown as greyed out with "exists" label.
+    Sidebar shows the filename as the source. New items are pre-checked; existing items are unchecked and disabled.
+  </div>
+
+  <div class="modal-backdrop">
+    <div class="modal-header">
+      <h3>Import Configuration</h3>
+      <button class="modal-close" onclick="showStep('dashboard')">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="sidebar">
+        <div class="sidebar-label">From: my-project.claude-export.json</div>
+        <button class="sidebar-item" onclick="showImportSection('i-mcp', this)">
+          <span>MCP Servers</span>
+          <span class="sidebar-badge has-selection">1/3</span>
+        </button>
+        <button class="sidebar-item" onclick="showImportSection('i-hooks', this)">
+          <span>Hooks</span>
+          <span class="sidebar-badge has-selection">2/2</span>
+        </button>
+        <button class="sidebar-item" onclick="showImportSection('i-skills', this)">
+          <span>Skills</span>
+          <span class="sidebar-badge has-selection">1/1</span>
+        </button>
+        <button class="sidebar-item" onclick="showImportSection('i-rules', this)">
+          <span>Rules</span>
+          <span class="sidebar-badge">0/2</span>
+        </button>
+        <button class="sidebar-item" onclick="showImportSection('i-commands', this)">
+          <span>Commands</span>
+          <span class="sidebar-badge has-selection">1/1</span>
+        </button>
+        <button class="sidebar-item" onclick="showImportSection('i-permissions', this)">
+          <span>Permissions</span>
+          <span class="sidebar-badge has-selection">1/3</span>
+        </button>
+        <button class="sidebar-item active" onclick="showImportSection('i-plugins', this)">
+          <span>Plugins</span>
+          <span class="sidebar-badge has-selection">1/2</span>
+        </button>
+      </div>
+
+      <div class="items-area">
+        <div id="i-mcp" class="import-section hidden">
+          <div class="items-header">
+            <span class="items-header-label">MCP Servers — <span class="new-count">1 new</span></span>
+            <button class="items-header-action">Select all</button>
+          </div>
+          <label class="check-row"><input type="checkbox" checked><div class="item-info"><div class="item-title">github-api</div><div class="item-subtitle">npx -y @modelcontextprotocol/server-github</div></div><span class="item-badge badge-purple">stdio</span></label>
+          <div class="check-row disabled"><input type="checkbox" disabled><div class="item-info"><div class="item-title" style="color:var(--text-secondary);">context7</div><div class="item-subtitle">npx -y @anthropic/context7-mcp</div></div><span class="badge-exists">exists</span></div>
+          <div class="check-row disabled"><input type="checkbox" disabled><div class="item-info"><div class="item-title" style="color:var(--text-secondary);">memory</div><div class="item-subtitle">npx -y @anthropic/memory-mcp</div></div><span class="badge-exists">exists</span></div>
+        </div>
+
+        <div id="i-hooks" class="import-section hidden">
+          <div class="items-header">
+            <span class="items-header-label">Hooks — <span class="new-count">2 new</span></span>
+            <button class="items-header-action">Deselect all</button>
+          </div>
+          <label class="check-row"><input type="checkbox" checked><div class="item-info"><div class="item-title">PreToolUse [Bash]</div><div class="item-subtitle">check-dangerous-commands.sh</div></div><span class="item-badge" style="background:rgba(96,165,250,0.2);color:#93c5fd;">command</span></label>
+          <label class="check-row"><input type="checkbox" checked><div class="item-info"><div class="item-title">Stop</div><div class="item-subtitle">Verify no TODO comments remain</div></div><span class="item-badge" style="background:rgba(96,165,250,0.2);color:#93c5fd;">prompt</span></label>
+        </div>
+
+        <div id="i-skills" class="import-section hidden">
+          <div class="items-header">
+            <span class="items-header-label">Skills — <span class="new-count">1 new</span></span>
+            <button class="items-header-action">Deselect all</button>
+          </div>
+          <label class="check-row"><input type="checkbox" checked><div class="item-info"><div class="item-title">commit</div><div class="item-subtitle">Guided commit workflow</div></div></label>
+        </div>
+
+        <div id="i-rules" class="import-section hidden">
+          <div class="items-header">
+            <span class="items-header-label">Rules — <span class="new-count">0 new</span></span>
+          </div>
+          <div class="check-row disabled"><input type="checkbox" disabled><div class="item-info"><div class="item-title" style="color:var(--text-secondary);">code-style</div></div><span class="badge-exists">exists</span></div>
+          <div class="check-row disabled"><input type="checkbox" disabled><div class="item-info"><div class="item-title" style="color:var(--text-secondary);">testing-guidelines</div></div><span class="badge-exists">exists</span></div>
+        </div>
+
+        <div id="i-commands" class="import-section hidden">
+          <div class="items-header">
+            <span class="items-header-label">Commands — <span class="new-count">1 new</span></span>
+            <button class="items-header-action">Deselect all</button>
+          </div>
+          <label class="check-row"><input type="checkbox" checked><div class="item-info"><div class="item-title">/deploy</div></div></label>
+        </div>
+
+        <div id="i-permissions" class="import-section hidden">
+          <div class="items-header">
+            <span class="items-header-label">Permissions — <span class="new-count">1 new</span></span>
+            <button class="items-header-action">Select all</button>
+          </div>
+          <label class="check-row"><input type="checkbox" checked><div class="item-info"><div class="item-title">Write(src/**)</div></div><span class="item-badge badge-green">allow</span></label>
+          <div class="check-row disabled"><input type="checkbox" disabled><div class="item-info"><div class="item-title" style="color:var(--text-secondary);">Bash(npm *)</div></div><span class="badge-exists">exists</span></div>
+          <div class="check-row disabled"><input type="checkbox" disabled><div class="item-info"><div class="item-title" style="color:var(--text-secondary);">Bash(rm -rf *)</div></div><span class="badge-exists">exists</span></div>
+        </div>
+
+        <div id="i-plugins" class="import-section">
+          <div class="items-header">
+            <span class="items-header-label">Plugins — <span class="new-count">1 new</span></span>
+            <button class="items-header-action">Select all</button>
+          </div>
+          <label class="check-row">
+            <input type="checkbox" checked>
+            <div class="item-info">
+              <div class="item-title">claude-mem</div>
+              <div class="item-subtitle">claude-mem@official</div>
+            </div>
+            <span class="item-badge badge-purple">official</span>
+          </label>
+          <div class="check-row disabled">
+            <input type="checkbox" disabled>
+            <div class="item-info">
+              <div class="item-title" style="color:var(--text-secondary);">context7</div>
+              <div class="item-subtitle">context7@official</div>
+            </div>
+            <span class="badge-exists">exists</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="showStep('dashboard')">Cancel</button>
+      <button class="btn btn-accent">Import 7 items</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Flow step navigation
+  function showStep(id) {
+    document.querySelectorAll('[id^="step-"]').forEach(el => el.classList.add('hidden'));
+    document.getElementById('step-' + id).classList.remove('hidden');
+
+    document.querySelectorAll('.flow-step').forEach(s => s.classList.remove('active'));
+    const stepMap = { 'dashboard': 0, 'export': 1, 'import-pick': 2, 'import-checklist': 3 };
+    document.querySelectorAll('.flow-step')[stepMap[id]].classList.add('active');
+  }
+
+  // Export section toggle
+  function showExportSection(id, btn) {
+    document.querySelectorAll('.export-section').forEach(el => el.classList.add('hidden'));
+    document.getElementById('export-' + id).classList.remove('hidden');
+    btn.closest('.sidebar').querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  // Import section toggle
+  function showImportSection(id, btn) {
+    document.querySelectorAll('.import-section').forEach(el => el.classList.add('hidden'));
+    document.getElementById(id).classList.remove('hidden');
+    btn.closest('.sidebar').querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  // Import tab toggle
+  function showImportTab(tab, btn) {
+    document.getElementById('import-tab-workspace').classList.toggle('hidden', tab !== 'workspace');
+    document.getElementById('import-tab-file').classList.toggle('hidden', tab !== 'file');
+    btn.closest('.tabs').querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+  }
+</script>
+
+</body>
+</html>
