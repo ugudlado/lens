@@ -7,13 +7,21 @@
 **Deliverable**: TypeScript interfaces for export format
 **Details**:
 - `ExportData` (root type with version, timestamp, sections)
-- `ExportSections` (container for section data)
-- Section types: `McpServerExport`, `HookExport`, `SkillExport`, `AgentExport`, `RuleExport`, `CommandExport`, `PermissionExport`, `SettingsExport`, `ClaudeMdExport`
+- `ExportSections` (container for section data with optional fields)
+- Section types: `McpServerExport`, `HookExport`, `SkillExport`, `AgentExport`, `RuleExport`, `CommandExport`, `PermissionExport`, `ClaudeMdExport`
 - Export all for use in server + UI
+- **CRITICAL**: Make all section fields in `ExportSections` optional (`mcpServers?: ...`, `hooks?: ...`, etc.)
+- **CRITICAL**: Remove `SettingsExport` entirely (no settings blob export)
+- **IMPORTANT**: Verify `HookExport.type` includes all valid types: `'command' | 'prompt' | 'agent'`
+- **IMPORTANT**: Verify `PermissionExport.type` includes all valid types: `'allow' | 'deny' | 'ask'`
 
 **Acceptance Criteria**:
 - ✓ All types compile with TypeScript strict mode
 - ✓ Types accurately represent JSON structure from spec
+- ✓ ExportSections has no required fields (all optional)
+- ✓ SettingsExport removed from interface
+- ✓ HookExport.type includes 'agent' type
+- ✓ PermissionExport.type includes 'ask' type
 - ✓ Imported by server and UI with no issues
 
 ---
@@ -24,11 +32,17 @@
 **Details**:
 - Query param: `sections` (comma-separated section names, optional)
 - Query param: `project` (project path override, optional)
-- Call `scan()` to get current ConfigSnapshot
+- Call `scanConfig(projectPath)` to get current ConfigSnapshot (correct function signature)
 - Filter to project-scoped items only
 - For file-based sections (skills, agents, rules, commands, CLAUDE.md), read file content
 - Build `ExportData` object with version, timestamp, sections
 - Return as application/json
+- **CRITICAL SECURITY**: Add explicit path validation before calling `scanConfig`:
+  - Use `resolve(projectOverride)` to get absolute path
+  - Use `realpathSync(homedir())` to get home directory
+  - Check: `isAllowed = abs.startsWith(realHome + '/') || abs === realHome`
+  - Return 403 with `{ error: 'Path not allowed' }` if validation fails
+  - Match pattern from `update.ts:25-30` exactly
 
 **Acceptance Criteria**:
 - ✓ Endpoint responds to GET /api/export
@@ -36,8 +50,10 @@
 - ✓ Filters to project scope (ConfigScope.Project only)
 - ✓ Handles missing sections (returns empty arrays)
 - ✓ Handles file read errors gracefully (empty content or skip)
-- ✓ Validates project path (must be within home directory)
+- ✓ Path validation works correctly (rejects paths outside home dir)
+- ✓ Returns 403 for disallowed paths
 - ✓ Returns 500 with error message on failure
+- ✓ Uses `scanConfig(projectPath)` with correct signature
 
 ---
 
@@ -68,20 +84,29 @@
 - Main panel with checklist of items in active section
 - Select-all button per section
 - All items pre-checked by default
-- Fetch GET /api/export with selected sections
+- Fetch GET /api/export with selected sections (only request sections if at least one item checked)
+- **CLIENT-SIDE ITEM FILTERING (CRITICAL)**: After fetching, prune JSON to remove unchecked items:
+  - Filter `exportData.sections.mcp` to keep only checked items
+  - Filter `exportData.sections.hooks` to keep only checked items
+  - Repeat for all sections with checked items
+  - Only unchecked items are excluded from final download
 - Trigger browser download of `.claude-export.json`
 - Handle errors (show message, return to checklist)
+- Download anchor DOM pattern: append to document.body before click, remove after
 
 **Acceptance Criteria**:
 - ✓ Modal renders with section tabs
 - ✓ Item counts display correctly
 - ✓ Select/deselect works (checkboxes update state)
 - ✓ Select-all per section works
+- ✓ Only sections with at least one checked item are sent to server
+- ✓ Unchecked items are filtered from downloaded JSON (client-side pruning works)
 - ✓ Clicking "Export" fetches API and downloads file
-- ✓ Downloaded file is valid JSON
+- ✓ Downloaded file is valid JSON with only selected items
 - ✓ Modal closes after successful export
 - ✓ Error messages display on failure
 - ✓ Styling matches Dashboard buttons
+- ✓ Download works in multiple browsers (anchor appended to DOM)
 
 ---
 
@@ -114,12 +139,22 @@
 - Add state: `importSource: 'workspace' | 'file'`
 - Create FilePicker sub-component:
   - File input (accept .json)
-  - Parse JSON and validate version field
+  - Parse JSON and validate version field (must equal 1)
   - On success, populate sourceItems from file data
-  - Transition to checklist state
+  - Call parent callback `onFileLoaded(data)` to let parent handle state transition (callback pattern, NOT orphaned setState)
   - Handle parse errors gracefully
 - Update import logic to work with both sources
 - Same checklist/import flow for file as workspace
+- **SKILLS DIRECTORY STRUCTURE (CRITICAL)**: Import skills to `{projectPath}/.claude/skills/{name}/SKILL.md`
+  - Create directory structure on import (via patchFile → mkdir recursive)
+  - Do NOT write flat `~/.claude/skills/{name}.md` files
+  - Verify skills appear in scanner results after rescan
+- **CLAUDE.md SLOT-BASED IMPORT (IMPORTANT)**: Compute target path from logical slot, not source filePath
+  - `slot === 'root'` → write to `{projectPath}/CLAUDE.md`
+  - `slot === '.claude/CLAUDE.md'` → write to `{projectPath}/.claude/CLAUDE.md`
+  - Ignore exported `filePath` (it's for reference only)
+- **DEFENSIVE TYPE HANDLING**: Guard optional section fields with `?? []`
+  - e.g., `(data.sections.mcp ?? []).forEach(...)`
 
 **Acceptance Criteria**:
 - ✓ Tabs appear at top of modal
@@ -130,6 +165,10 @@
 - ✓ Invalid JSON shows error message
 - ✓ Missing version field shows error
 - ✓ Import flow from file works (writes to project scope)
+- ✓ Imported skills appear in correct directory (`~/.claude/skills/{name}/SKILL.md`)
+- ✓ Imported agents appear in correct directory (`~/.claude/agents/{name}.md`)
+- ✓ Imported CLAUDE.md files go to correct slot-based paths
+- ✓ After import + rescan, all items discovered correctly
 - ✓ All existing workspace import functionality still works
 
 ---
@@ -279,18 +318,27 @@
 ---
 
 ### Task 4.3: Commit & Verify
-**Deliverable**: Clean commit history
+**Deliverable**: Clean commit history and built distribution artifacts
 **Details**:
 - Commit schema types (Task 1.1)
 - Commit export route (Task 1.2 + 1.3)
 - Commit UI components (Task 2.1 + 2.2 + 2.3)
 - Each commit has clear message
+- **CRITICAL (per CLAUDE.md)**: Run `pnpm build` after all code changes
+- **CRITICAL**: Add distribution artifacts to git:
+  - `apps/server/dist/`
+  - `apps/ui/dist/`
+  - `packages/schema/dist/`
+- Create final commit: `"build: rebuild distribution artifacts after export feature"`
 - No uncommitted changes
 
 **Acceptance Criteria**:
 - ✓ Git history is clean
 - ✓ All changes committed
 - ✓ No build/type-check failures
+- ✓ `pnpm build` completes without errors
+- ✓ Distribution artifacts are updated in dist/ directories
+- ✓ All dist artifacts are committed (required for zero-build-step plugin install)
 
 ---
 
