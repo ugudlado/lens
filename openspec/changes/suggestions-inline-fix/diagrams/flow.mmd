@@ -1,0 +1,35 @@
+sequenceDiagram
+    autonumber
+    participant User
+    participant SuggestionCard as SuggestionCard<br/>(SuggestionsBox.tsx)
+    participant Dashboard as Dashboard.tsx<br/>(urgent banner)
+    participant API as POST /api/suggestions/:id/fix
+    participant FixHandlers as fix-handlers.ts
+    participant FS as Filesystem
+    participant Chokidar as watcher.ts<br/>(chokidar)
+    participant SSE as GET /api/events<br/>(SSE stream)
+    participant App as App.tsx<br/>(EventSource)
+
+    User->>SuggestionCard: clicks "Fix Now"
+    SuggestionCard->>SuggestionCard: state: idle → loading (spinner)
+    SuggestionCard->>API: POST /api/suggestions/health-no-claude-md/fix?project=/path
+    API->>API: validate project path<br/>(must start with homedir())
+    API->>FixHandlers: lookup handler by id
+    alt handler not found
+        FixHandlers-->>API: undefined
+        API-->>SuggestionCard: 400 { success: false, error: "Unknown suggestion ID" }
+        SuggestionCard->>SuggestionCard: state: loading → error (retry shown)
+    else handler found
+        FixHandlers->>FS: write file(s)<br/>(CLAUDE.md / settings.json / AGENTS.md)
+        FS-->>FixHandlers: ok
+        FixHandlers-->>API: void (success)
+        API-->>SuggestionCard: 200 { success: true }
+        SuggestionCard->>SuggestionCard: state: loading → dismissed
+        FS-->>Chokidar: file change event
+        Chokidar->>Chokidar: debouncedNotify(projectPath) 300ms
+        Chokidar->>SSE: notify all listeners
+        SSE->>App: SSE event "config-changed"
+        App->>App: onRescan() → refetch /api/config + /api/suggestions
+    end
+
+    Note over User,Dashboard: Same flow applies when fix is triggered<br/>from the urgent-suggestion banner in Dashboard.tsx
