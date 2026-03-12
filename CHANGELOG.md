@@ -4,21 +4,42 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-03-13
+
+### Added
+
+- Settings export/import with per-key visibility control
+- Settings key export to schema
+- Plugins to export/import functionality
+
+### Changed
+
+- Modernized UI components and removed deprecated panels
+- Updated UI constants and main entry point
+
+### Fixed
+
+! Fixed duplicate agents and skills from multiple sources by source priority
+! Fixed plugin enabled state and scope preservation in export/import
+! Fixed export file schema validation before import
+! Fixed export filename to use project name and timestamp
+! Resolved ESLint errors across server and UI
+
 ## [1.2.0] - 2026-03-12
 
 ### Added
 
-+ Configuration suggestions engine with 10 built-in rules across 3 categories (best-practice, health, contextual)
-+ SuggestionsBox UI component showing actionable configuration recommendations
-+ Plugin update progress feedback with real-time CLI output logging
-+ Updates banner displaying all plugins needing updates
-+ OpenSpec integration for spec-first development workflow
+- Configuration suggestions engine with 10 built-in rules across 3 categories (best-practice, health, contextual)
+- SuggestionsBox UI component showing actionable configuration recommendations
+- Plugin update progress feedback with real-time CLI output logging
+- Updates banner displaying all plugins needing updates
+- OpenSpec integration for spec-first development workflow
 
 ### Changed
 
-* Improved plugin deduplication to show only latest version
-* Enhanced plugin update UX with per-plugin output tracking and spinner feedback
-* Improved OpenSpec template formatting
+- Improved plugin deduplication to show only latest version
+- Enhanced plugin update UX with per-plugin output tracking and spinner feedback
+- Improved OpenSpec template formatting
 
 ### Fixed
 
@@ -41,16 +62,16 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-+ SessionStart hook to auto-start Lens server on session init
-+ Plugin scanning to identify orphaned plugins from known marketplaces
-+ Vitest test framework with comprehensive scanner test coverage
+- SessionStart hook to auto-start Lens server on session init
+- Plugin scanning to identify orphaned plugins from known marketplaces
+- Vitest test framework with comprehensive scanner test coverage
 
 ### Changed
 
-* Simplified /open command to rely on SessionStart hook
-* Watcher now watches specific ~/.claude subdirectories to prevent file descriptor exhaustion
-* Removed workspace cycling (cmd+shift+L), always show remove button
-* Removed git repo validation when adding workspace
+- Simplified /open command to rely on SessionStart hook
+- Watcher now watches specific ~/.claude subdirectories to prevent file descriptor exhaustion
+- Removed workspace cycling (cmd+shift+L), always show remove button
+- Removed git repo validation when adding workspace
 
 ### Fixed
 
@@ -66,16 +87,16 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-+ Lens web dashboard for scanning, browsing, and editing all 13 Claude Code configuration surfaces
-+ Scanner modules for CLAUDE.md, settings, permissions, MCP servers, hooks, skills, agents, rules, commands, plugins, models, memory, and sandbox
-+ Scope-level support across managed, global, project, and local levels
-+ SSE-based live config reload via chokidar file watcher
-+ REST API for reading and writing config (`GET /api/config`, `PATCH /api/update`)
-+ React 19 + Vite 6 frontend with Tailwind dark theme
-+ Hono 4 HTTP backend on Node.js
-+ `/open` slash command to launch Lens in the browser
-+ Plugin marketplace integration and installation support
-+ ARCHITECTURE.md technical reference documentation
+- Lens web dashboard for scanning, browsing, and editing all 13 Claude Code configuration surfaces
+- Scanner modules for CLAUDE.md, settings, permissions, MCP servers, hooks, skills, agents, rules, commands, plugins, models, memory, and sandbox
+- Scope-level support across managed, global, project, and local levels
+- SSE-based live config reload via chokidar file watcher
+- REST API for reading and writing config (`GET /api/config`, `PATCH /api/update`)
+- React 19 + Vite 6 frontend with Tailwind dark theme
+- Hono 4 HTTP backend on Node.js
+- `/open` slash command to launch Lens in the browser
+- Plugin marketplace integration and installation support
+- ARCHITECTURE.md technical reference documentation
 
 ### Fixed
 
