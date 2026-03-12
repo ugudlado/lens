@@ -9,6 +9,7 @@ import { homedir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import configRoutes from './routes/config.js';
+import exportRoutes from './routes/export.js';
 import globalWritesRoutes from './routes/global-writes.js';
 import pluginRoutes from './routes/plugins.js';
 import suggestionsRoutes from './routes/suggestions.js';
@@ -21,6 +22,7 @@ app.use('*', cors());
 
 app.route('/api/config', configRoutes);
 app.route('/api/update', updateRoutes);
+app.route('/api/export', exportRoutes);
 app.route('/api/plugins', pluginRoutes);
 app.route('/api/workspaces', workspaceRoutes);
 app.route('/api/global-writes', globalWritesRoutes);

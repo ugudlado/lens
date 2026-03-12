@@ -391,3 +391,60 @@ export interface SuggestionsResponse {
     scannedAt: string;
 }
 export type SuggestionRule = (config: ConfigSnapshot) => Suggestion[];
+export interface McpServerExport {
+    name: string;
+    type: 'stdio' | 'http' | 'sse';
+    command?: string;
+    args?: string[];
+    url?: string;
+    env?: Record<string, string>;
+}
+export interface HookExport {
+    event: string;
+    type: 'command' | 'prompt' | 'agent';
+    command?: string;
+    prompt?: string;
+    matcher?: string;
+    timeout?: number;
+}
+export interface SkillExport {
+    name: string;
+    content: string;
+}
+export interface AgentExport {
+    name: string;
+    content: string;
+}
+export interface RuleExport {
+    name: string;
+    content: string;
+    ext: 'md' | 'mdc';
+}
+export interface CommandExport {
+    name: string;
+    content: string;
+}
+export interface PermissionExport {
+    type: 'allow' | 'deny' | 'ask';
+    rule: string;
+}
+export interface ClaudeMdExport {
+    slot: 'root' | '.claude/CLAUDE.md';
+    content: string;
+}
+export interface ExportSections {
+    mcpServers?: McpServerExport[];
+    hooks?: HookExport[];
+    skills?: SkillExport[];
+    agents?: AgentExport[];
+    rules?: RuleExport[];
+    commands?: CommandExport[];
+    permissions?: PermissionExport[];
+    claudeMd?: ClaudeMdExport[];
+}
+export interface ExportData {
+    version: number;
+    exportedAt: string;
+    projectPath: string;
+    sections: ExportSections;
+}
