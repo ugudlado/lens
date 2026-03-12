@@ -26,7 +26,7 @@
 
 ---
 
-### Task 1.2: Create Export Route (GET /api/export)
+### Task 1.2: [x] Create Export Route (GET /api/export)
 **File**: `apps/server/src/routes/export.ts` (new)
 **Deliverable**: Hono route handler for config export
 **Details**:
@@ -57,7 +57,7 @@
 
 ---
 
-### Task 1.3: Mount Export Route in Server Index
+### Task 1.3: [x] Mount Export Route in Server Index
 **File**: `apps/server/src/index.ts`
 **Deliverable**: Integration of export route
 **Details**:
@@ -74,7 +74,7 @@
 
 ## Phase 2: UI Components (Export Modal & Import Enhancement)
 
-### Task 2.1: Create ExportConfigModal Component
+### Task 2.1: [x] Create ExportConfigModal Component
 **File**: `apps/ui/src/components/ExportConfigModal.tsx` (new)
 **Deliverable**: Modal for selecting and exporting config
 **Details**:
@@ -110,7 +110,7 @@
 
 ---
 
-### Task 2.2: Update Dashboard Component for Export Button
+### Task 2.2: [x] Update Dashboard Component for Export Button
 **File**: `apps/ui/src/components/Dashboard.tsx`
 **Deliverable**: Add export button and state
 **Details**:
@@ -131,7 +131,7 @@
 
 ---
 
-### Task 2.3: Add File Import Tab to WorkspaceConfigImportModal
+### Task 2.3: [x] Add File Import Tab to WorkspaceConfigImportModal
 **File**: `apps/ui/src/components/WorkspaceConfigImportModal.tsx`
 **Deliverable**: File upload interface for import
 **Details**:
@@ -175,7 +175,7 @@
 
 ## Phase 3: Integration & Testing
 
-### Task 3.1: Type-Check All Changes
+### Task 3.1: [x] Type-Check All Changes
 **File**: N/A (validation step)
 **Deliverable**: Clean TypeScript compilation
 **Details**:
@@ -189,7 +189,7 @@
 
 ---
 
-### Task 3.2: Manual Testing — Export Workflow
+### Task 3.2: [~] Manual Testing — Export Workflow
 **Deliverable**: Verified export functionality
 **Details**:
 - Open Dashboard with a project that has config
@@ -215,7 +215,7 @@
 
 ---
 
-### Task 3.3: Manual Testing — Import from File Workflow
+### Task 3.3: [~] Manual Testing — Import from File Workflow
 **Deliverable**: Verified import functionality
 **Details**:
 - Obtain a .claude-export.json file (from task 3.2)
@@ -243,7 +243,7 @@
 
 ---
 
-### Task 3.4: Test Error Cases
+### Task 3.4: [~] Test Error Cases
 **Deliverable**: Verified error handling
 **Details**:
 - Try to export from project with no config (should succeed with empty sections)
@@ -261,7 +261,7 @@
 
 ---
 
-### Task 3.5: Cross-Project Export/Import Test
+### Task 3.5: [~] Cross-Project Export/Import Test
 **Deliverable**: End-to-end verification
 **Details**:
 - Project A: Create export with all sections
@@ -283,7 +283,7 @@
 
 ## Phase 4: Refinement & Documentation
 
-### Task 4.1: Code Review & Cleanup
+### Task 4.1: [x] Code Review & Cleanup
 **Deliverable**: Production-ready code
 **Details**:
 - Review ExportConfigModal for styling/UX consistency
@@ -300,7 +300,7 @@
 
 ---
 
-### Task 4.2: Update CLAUDE.md with Export Feature
+### Task 4.2: [x] Update CLAUDE.md with Export Feature
 **File**: `CLAUDE.md`
 **Deliverable**: Documentation for export/import
 **Details**:
@@ -317,7 +317,7 @@
 
 ---
 
-### Task 4.3: Commit & Verify
+### Task 4.3: [x] Commit & Verify
 **Deliverable**: Clean commit history and built distribution artifacts
 **Details**:
 - Commit schema types (Task 1.1)

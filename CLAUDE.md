@@ -76,6 +76,23 @@ This is **Lens** — a web dashboard that scans, displays, and edits all 13 Clau
 - **Error responses**: `c.json({ error: "message" }, statusCode)` in API routes
 - **Committed dist artifacts** — `apps/server/dist/`, `apps/ui/dist/`, and `packages/schema/dist/` are intentionally committed (allowlisted in `.gitignore`). Required for zero-build-step plugin install. Do not delete or gitignore them. Run `pnpm build` after source changes and commit the updated dist.
 
+## Export / Import Feature
+
+Lens supports exporting and importing project-level config via a JSON bundle.
+
+**Export** (`GET /api/export`): Returns an `ExportData` JSON object with all project-scoped config sections. Optional `?sections=mcp,hooks,...` query param to limit sections. Optional `?project=/path` to override the project path (validated against home directory).
+
+**Export file format** (version 1):
+```json
+{ "version": 1, "exportedAt": "ISO timestamp", "projectPath": "/path", "sections": { "mcpServers": [...], "hooks": [...], "skills": [...], "agents": [...], "rules": [...], "commands": [...], "permissions": [...], "claudeMd": [...] } }
+```
+
+**Scope**: Export only reads project-scoped items. Import always writes to project scope only.
+
+**Security**: Name fields from imported JSON are validated — reject names containing `/`, `\`, or `..` before constructing filesystem paths.
+
+**UI**: Dashboard header has "↑ Export Config" button → `ExportConfigModal`. Import modal has "From Workspace" / "From File" tabs.
+
 ## Agent Restrictions
 
 When running as a spawned agent:
