@@ -135,7 +135,8 @@ export function ExportConfigModal({ config, onClose }: ExportConfigModalProps) {
     }
 
     try {
-      const res = await fetch(`/api/export?sections=${requestedSections.join(',')}`);
+      const params = new URLSearchParams({ sections: requestedSections.join(','), project: config.projectPath });
+      const res = await fetch(`/api/export?${params}`);
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({ error: 'Export failed' }));
         throw new Error(errBody.error || `HTTP ${res.status}`);
