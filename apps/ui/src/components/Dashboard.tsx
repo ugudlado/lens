@@ -3,6 +3,7 @@ import { NavSection, ConfigScope } from "@lens/schema";
 import type { ConfigSnapshot, Workspace, Suggestion } from "@lens/schema";
 import { WorkspaceConfigImportModal } from "./WorkspaceConfigImportModal.js";
 import { ExportConfigModal } from "./ExportConfigModal.js";
+import { SuggestionsBox } from "./SuggestionsBox.js";
 
 interface DashboardProps {
   config: ConfigSnapshot;
@@ -375,6 +376,7 @@ export function Dashboard({
 }: DashboardProps) {
   const [showImport, setShowImport] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const hasSuggestions = suggestions && suggestions.length > 0;
 
@@ -413,8 +415,8 @@ export function Dashboard({
               </span>
               {hasSuggestions && suggestions && (
                 <button
-                  onClick={() => {}}
-                  className="flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] text-amber-400/80 transition-colors hover:bg-amber-500/15"
+                  onClick={() => setShowSuggestions((v) => !v)}
+                  className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] transition-colors ${showSuggestions ? "border-amber-500/50 bg-amber-500/20 text-amber-400" : "border-amber-500/30 bg-amber-500/10 text-amber-400/80 hover:bg-amber-500/15"}`}
                 >
                   ✦ {suggestions.length} suggestion
                   {suggestions.length !== 1 ? "s" : ""}
@@ -439,6 +441,17 @@ export function Dashboard({
             </button>
           </div>
         </div>
+        {showSuggestions && suggestions && (
+          <div className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+            <SuggestionsBox
+              suggestions={suggestions}
+              onNavigate={(section) => {
+                onNavigate(section);
+                setShowSuggestions(false);
+              }}
+            />
+          </div>
+        )}
       </div>
 
       {/* Config surfaces - compact list layout */}

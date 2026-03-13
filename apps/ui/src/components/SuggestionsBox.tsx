@@ -99,7 +99,7 @@ function CategoryGroup({
   suggestions: Suggestion[];
   onNavigate: (section: NavSection) => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
 
   return (
     <div>
