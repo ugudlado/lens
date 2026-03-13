@@ -100,22 +100,44 @@ function SuggestionCard({
   }
 
   return (
-    <div className="flex items-center gap-2 rounded border border-border bg-card px-2.5 py-1.5 text-xs transition-all hover:border-accent/50 hover:bg-card/80">
-      <span
-        className={`flex-shrink-0 ${isWarning ? "text-amber-400" : "text-blue-400"
-          }`}
-      >
-        {isWarning ? "\u26A0" : "\u2139"}
-      </span>
-      <span className="text-gray-200">{suggestion.title}</span>
-      <span className="text-gray-500">—</span>
-      <span className="text-gray-400">{suggestion.description}</span>
-      <button
-        onClick={() => onNavigate(suggestion.navSection)}
-        className="ml-auto flex-shrink-0 text-accent transition-colors hover:text-accent-hover"
-      >
-        {sectionLabel} &rarr;
-      </button>
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-2 rounded border border-border bg-card px-2.5 py-1.5 text-xs transition-all hover:border-accent/50 hover:bg-card/80">
+        <span
+          className={`flex-shrink-0 ${isWarning ? "text-amber-400" : "text-blue-400"}`}
+        >
+          {isWarning ? "\u26A0" : "\u2139"}
+        </span>
+        <span className="text-gray-200">{suggestion.title}</span>
+        <span className="text-gray-500">—</span>
+        <span className="truncate text-gray-400">{suggestion.description}</span>
+        <div className="ml-auto flex flex-shrink-0 items-center gap-2">
+          {suggestion.fix && (
+            <button
+              onClick={() => void handleFix()}
+              disabled={fixState === "loading"}
+              className="flex items-center gap-1 rounded bg-accent/20 px-1.5 py-0.5 text-accent transition-colors hover:bg-accent/30 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {fixState === "loading" ? (
+                <>
+                  <span className="inline-block h-2.5 w-2.5 animate-spin rounded-full border border-accent border-t-transparent" />
+                  Fixing…
+                </>
+              ) : (
+                suggestion.fix.label
+              )}
+            </button>
+          )}
+          <button
+            onClick={() => onNavigate(suggestion.navSection)}
+            className="flex-shrink-0 text-accent transition-colors hover:text-accent-hover"
+          >
+            {sectionLabel} &rarr;
+          </button>
+        </div>
+      </div>
+      {fixState === "error" && fixError && (
+        <p className="pl-2 text-xs text-red-400">{fixError}</p>
+      )}
     </div>
   );
 }
@@ -163,8 +185,14 @@ function CategoryGroup({
       </button>
       {expanded && (
         <div className="mb-4 ml-5 space-y-1">
-          {suggestions.map((s) => (
-            <SuggestionCard key={s.id} suggestion={s} onNavigate={onNavigate} />
+          {visible.map((s) => (
+            <SuggestionCard
+              key={s.id}
+              suggestion={s}
+              onNavigate={onNavigate}
+              activeProject={activeProject}
+              onDismiss={onDismiss}
+            />
           ))}
         </div>
       )}
@@ -232,6 +260,9 @@ export function SuggestionsBox({
             category={cat}
             suggestions={categorySuggestions}
             onNavigate={onNavigate}
+            activeProject={activeProject}
+            dismissed={dismissed}
+            onDismiss={handleDismiss}
           />
         );
       })}

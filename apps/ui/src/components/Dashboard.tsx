@@ -308,10 +308,11 @@ function ConfigCard({
   return (
     <button
       onClick={() => onNavigate(card.section)}
-      className={`group flex w-full flex-col gap-2 rounded border border-l-2 bg-white/[0.02] px-4 py-3 text-left transition-all ${isConfigured
+      className={`group flex w-full flex-col gap-2 rounded border border-l-2 bg-white/[0.02] px-4 py-3 text-left transition-all ${
+        isConfigured
           ? `border-white/5 ${accentBorder} ${hoverBorder} hover:bg-white/[0.04]`
           : "border-dashed border-white/10 hover:border-white/20 hover:bg-white/[0.03]"
-        }`}
+      }`}
     >
       {/* Top row: label + count */}
       <div className="flex items-center justify-between">
@@ -448,6 +449,7 @@ export function Dashboard({
                 onNavigate(section);
                 setShowSuggestions(false);
               }}
+              activeProject={activeProject}
             />
           </div>
         )}
@@ -508,12 +510,6 @@ export function Dashboard({
           );
         })}
       </div>
-
-      <SuggestionsBox
-        suggestions={suggestions ?? null}
-        onNavigate={onNavigate}
-        activeProject={activeProject}
-      />
     </div>
   );
 }
