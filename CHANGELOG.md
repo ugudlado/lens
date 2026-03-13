@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-03-14
+
+### Added
+
+- Expandable suggestions box with navigation between configuration recommendations
+- Always-on editing mode with separate global-edits toggle for safer workflow
+- EditingContext for centralized global editing state management
+- Panel add buttons moved to headers for better discoverability
+- Version number displayed in sidebar
+
+### Changed
+
+- UI styling and component refinements across dashboard and panels
+- Compiled assets updated
+
+### Fixed
+
+! Memory scanner always returns memory directory path to keep add button enabled
+
 ## [1.3.0] - 2026-03-13
 
 ### Added
