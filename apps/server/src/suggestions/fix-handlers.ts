@@ -67,12 +67,12 @@ async function fixCreateMemory(projectPath: string): Promise<void> {
   // matching the same derivation as the memory scanner
   const projectDirName = projectPath.replace(/\//g, "-");
   const memoryDir = join(GLOBAL_DIR, "projects", projectDirName, "memory");
-  const target = join(memoryDir, "AGENTS.md");
+  const target = join(memoryDir, "MEMORY.md");
   if (await fileExists(target)) return;
   await mkdir(memoryDir, { recursive: true });
   await writeFile(
     target,
-    `# Agent Memory\n\n<!-- Add persistent context for Claude here -->\n`,
+    `# Memory\n\n<!-- Add persistent context for Claude here -->\n`,
   );
 }
 
