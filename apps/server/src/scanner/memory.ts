@@ -26,5 +26,5 @@ export async function scanMemory(projectPath: string): Promise<MemorySurface> {
     /* no memory directory */
   }
 
-  return { memoryDir: files.length > 0 ? memoryDir : null, files };
+  return { memoryDir, files };
 }
