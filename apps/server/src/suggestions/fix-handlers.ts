@@ -1,5 +1,8 @@
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { homedir } from "node:os";
+
+const GLOBAL_DIR = join(homedir(), ".claude");
 
 type FixHandler = (projectPath: string) => Promise<void>;
 
@@ -60,7 +63,10 @@ async function fixEnableSandbox(projectPath: string): Promise<void> {
 }
 
 async function fixCreateMemory(projectPath: string): Promise<void> {
-  const memoryDir = join(projectPath, ".claude", "memory");
+  // Scanner reads memory from ~/.claude/projects/<encoded-path>/memory/
+  // matching the same derivation as the memory scanner
+  const projectDirName = projectPath.replace(/\//g, "-");
+  const memoryDir = join(GLOBAL_DIR, "projects", projectDirName, "memory");
   const target = join(memoryDir, "AGENTS.md");
   if (await fileExists(target)) return;
   await mkdir(memoryDir, { recursive: true });
