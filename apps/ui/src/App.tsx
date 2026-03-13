@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { NavSection } from "@lens/schema";
 import type { ConfigSnapshot, Workspace, Suggestion } from "@lens/schema";
 import { APP_NAME } from "./constants.js";
+import { EditingContext } from "./context/EditingContext.js";
 import { useUniversalSearch } from "./hooks/useUniversalSearch.js";
 import { SearchPalette } from "./components/SearchPalette.js";
 import { HeaderSearch } from "./components/HeaderSearch.js";
@@ -302,14 +303,7 @@ export default function App() {
       case NavSection.Permissions:
         return <PermissionsPanel config={config} onRescan={rescan} />;
       case NavSection.Mcp:
-        return (
-          <McpPanel
-            config={config}
-            onRescan={rescan}
-            workspaces={workspaces}
-            activeProject={activeProject ?? ""}
-          />
-        );
+        return <McpPanel config={config} onRescan={rescan} />;
       case NavSection.Hooks:
         return <HooksPanel config={config} onRescan={rescan} />;
       case NavSection.Skills:
@@ -330,71 +324,83 @@ export default function App() {
   }
 
   return (
-    <div className="flex min-h-screen bg-bg text-white">
-      <Sidebar
-        active={section}
-        onNavigate={navigate}
-        config={config}
-        workspaces={workspaces}
-        activeProject={activeProject}
-        onSelectWorkspace={handleSelectWorkspace}
-        onAddWorkspace={handleAddWorkspace}
-        onRemoveWorkspace={(name) => void handleRemoveWorkspace(name)}
-      />
-      <main className="flex flex-1 flex-col overflow-auto">
-        <div className="flex items-center gap-4 px-6 pb-2 pt-4">
-          <HeaderSearch
-            search={search}
-            onNavigate={handleNavigateToResult}
-            onOpenPalette={(initialQuery) => {
-              setPaletteInitialQuery(initialQuery ?? "");
-              setPaletteOpen(true);
-            }}
-          />
-          <button
-            onClick={() => void toggleGlobalWrites()}
-            disabled={togglingGlobal}
-            title={
-              allowGlobalWrites
-                ? "Global config: editable — click to make read-only"
-                : "Global config: read-only — click to enable editing"
-            }
-            className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 transition-colors disabled:opacity-50 ${allowGlobalWrites ? "bg-amber-500/10" : ""}`}
+    <EditingContext.Provider value={true}>
+      <div className="flex min-h-screen bg-bg text-white">
+        <Sidebar
+          active={section}
+          onNavigate={navigate}
+          config={config}
+          workspaces={workspaces}
+          activeProject={activeProject}
+          onSelectWorkspace={handleSelectWorkspace}
+          onAddWorkspace={handleAddWorkspace}
+          onRemoveWorkspace={(name) => void handleRemoveWorkspace(name)}
+        />
+        <main className="flex flex-1 flex-col overflow-auto">
+          <div
+            className={`flex items-center gap-4 px-6 pb-2 pt-4 ${allowGlobalWrites ? "border-b-2 border-amber-500/40" : ""}`}
           >
-            <span
-              className={`text-xs font-medium transition-colors ${allowGlobalWrites ? "text-amber-400" : "text-gray-500"}`}
-            >
-              {allowGlobalWrites ? "Global writes ON" : "Global writes OFF"}
-            </span>
-            {/* Track */}
-            <span
-              className={`relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border transition-colors duration-200 ${
+            <HeaderSearch
+              search={search}
+              onNavigate={handleNavigateToResult}
+              onOpenPalette={(initialQuery) => {
+                setPaletteInitialQuery(initialQuery ?? "");
+                setPaletteOpen(true);
+              }}
+            />
+            <div
+              className={`flex items-center gap-2 rounded px-2 py-0.5 transition-colors ${
                 allowGlobalWrites
-                  ? "border-amber-400/50 bg-amber-500/70"
-                  : "border-white/10 bg-white/10"
+                  ? "border border-amber-500/20 bg-amber-500/10"
+                  : ""
               }`}
             >
-              {/* Thumb */}
-              <span
-                className={`pointer-events-none inline-block h-3.5 w-3.5 self-center rounded-full bg-white shadow transition-transform duration-200 ${
-                  allowGlobalWrites ? "translate-x-4" : "translate-x-0.5"
-                }`}
-              />
-            </span>
-          </button>
-        </div>
-        <div className="flex-1 p-6">{renderContent()}</div>
-      </main>
-      <SearchPalette
-        open={paletteOpen}
-        initialQuery={paletteInitialQuery}
-        onClose={() => setPaletteOpen(false)}
-        onNavigate={handleNavigateToResult}
-        search={search}
-        workspaces={workspaces}
-        activeProject={activeProject}
-        onSelectWorkspace={handleSelectWorkspace}
-      />
-    </div>
+              <button
+                onClick={() => void toggleGlobalWrites()}
+                disabled={togglingGlobal}
+                title={
+                  allowGlobalWrites
+                    ? "Editing enabled — click to disable"
+                    : "Editing disabled — click to enable"
+                }
+                className="flex items-center gap-2 disabled:opacity-50"
+              >
+                <span
+                  className={`text-xs transition-colors ${allowGlobalWrites ? "font-semibold text-amber-400" : "text-slate-400"}`}
+                >
+                  Global edits
+                </span>
+                {/* Track */}
+                <span
+                  className={`relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border transition-colors duration-200 ${
+                    allowGlobalWrites
+                      ? "border-amber-400/50 bg-amber-500/70"
+                      : "border-white/10 bg-white/10"
+                  }`}
+                >
+                  {/* Thumb */}
+                  <span
+                    className={`pointer-events-none inline-block h-3.5 w-3.5 self-center rounded-full bg-white shadow transition-transform duration-200 ${
+                      allowGlobalWrites ? "translate-x-4" : "translate-x-0.5"
+                    }`}
+                  />
+                </span>
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 p-6">{renderContent()}</div>
+        </main>
+        <SearchPalette
+          open={paletteOpen}
+          initialQuery={paletteInitialQuery}
+          onClose={() => setPaletteOpen(false)}
+          onNavigate={handleNavigateToResult}
+          search={search}
+          workspaces={workspaces}
+          activeProject={activeProject}
+          onSelectWorkspace={handleSelectWorkspace}
+        />
+      </div>
+    </EditingContext.Provider>
   );
 }

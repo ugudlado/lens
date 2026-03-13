@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ConfigScope, PluginAction } from "@lens/schema";
-import type { ConfigSnapshot, McpServer, Workspace } from "@lens/schema";
+import { useEditing } from "../context/EditingContext.js";
+import type { ConfigSnapshot, McpServer } from "@lens/schema";
 import { ScopeIndicator } from "./ScopeIndicator.js";
 import { RawJsonView } from "./RawJsonView.js";
 import { useConfigUpdate } from "../hooks/useConfigUpdate.js";
@@ -8,7 +9,6 @@ import { usePluginAction } from "../hooks/usePluginAction.js";
 import { SearchBar } from "./SearchBar.js";
 import { ScopeMoveButton } from "./ScopeMoveButton.js";
 import { ConfirmDialog } from "./ConfirmDialog.js";
-import { WorkspaceConfigImportModal } from "./WorkspaceConfigImportModal.js";
 import { TYPE_BADGE_STYLES } from "../constants/badgeStyles.js";
 import {
   PanelShell,
@@ -21,8 +21,6 @@ import {
 interface Props {
   config: ConfigSnapshot;
   onRescan: () => void;
-  workspaces?: Workspace[];
-  activeProject?: string;
 }
 
 type View = "effective" | "json";
@@ -298,13 +296,9 @@ function AddServerForm({
   );
 }
 
-export function McpPanel({
-  config,
-  onRescan,
-  workspaces = [],
-  activeProject = "",
-}: Props) {
+export function McpPanel({ config, onRescan }: Props) {
   const { servers } = config.mcp;
+  const editingMode = useEditing();
   const [view, setView] = useState<View>("effective");
   const [jumpTarget, setJumpTarget] = useState<JumpTarget | null>(null);
   const { update, saving, error } = useConfigUpdate(onRescan);
@@ -315,7 +309,6 @@ export function McpPanel({
     clearError: clearPluginError,
   } = usePluginAction(onRescan);
   const [search, setSearch] = useState("");
-  const [showImportModal, setShowImportModal] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   function toggleRow(i: number) {
@@ -326,8 +319,6 @@ export function McpPanel({
       return next;
     });
   }
-
-  const otherWorkspaces = workspaces.filter((w) => w.path !== activeProject);
 
   function jumpToFile(name: string, filePath: string) {
     setJumpTarget({ filePath, key: name });
@@ -477,20 +468,11 @@ export function McpPanel({
       title="MCP Servers"
       subtitle={`${servers.length} server${servers.length !== 1 ? "s" : ""} configured${mcpFiles.length > 0 ? ` across ${mcpFiles.length} file${mcpFiles.length !== 1 ? "s" : ""}` : ""}`}
       actions={
-        <div className="flex items-center gap-2">
-          {otherWorkspaces.length > 0 && (
-            <button
-              onClick={() => setShowImportModal(true)}
-              className="whitespace-nowrap rounded-lg bg-cyan-500/10 px-3 py-1.5 text-xs font-medium text-cyan-400 transition-colors hover:bg-cyan-500/20"
-              title="Import MCP servers from another workspace"
-            >
-              &#8595; Import
-            </button>
-          )}
+        editingMode ? (
           <AddButton onClick={() => setShowAddForm(!showAddForm)}>
             + Add Server
           </AddButton>
-        </div>
+        ) : undefined
       }
       view={view}
       onViewChange={(v) => {
@@ -498,22 +480,18 @@ export function McpPanel({
         if (v !== "json") setJumpTarget(null);
       }}
       viewOptions={[
-        { value: "effective", label: "Effective" },
-        { value: "json", label: "Files" },
+        {
+          value: "effective",
+          label: "Effective",
+          title: "Merged view of all active config across scopes",
+        },
+        {
+          value: "json",
+          label: "Files",
+          title: "Per-file breakdown showing which scope defines each value",
+        },
       ]}
     >
-      {showImportModal && (
-        <WorkspaceConfigImportModal
-          workspaces={workspaces}
-          activeProject={activeProject}
-          currentConfig={config}
-          initialSection="mcp"
-          sections={["mcp"]}
-          onRescan={onRescan}
-          onClose={() => setShowImportModal(false)}
-        />
-      )}
-
       {(error ?? pluginError) && (
         <div className="mb-4 flex items-center justify-between rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-400">
           <span>{error ?? pluginError}</span>
@@ -687,6 +665,7 @@ function McpServerCard({
     : server.name;
 
   const canEdit = !isPlugin && !isAvailable && server.editable;
+  const editingMode = useEditing();
 
   const [editing, setEditing] = useState(false);
   const [editCommand, setEditCommand] = useState("");
@@ -802,62 +781,69 @@ function McpServerCard({
               </span>
               <ScopeIndicator scope={server.scope} />
               {isPlugin && server.pluginName && (
-                <span className="rounded bg-purple-500/20 px-2 py-0.5 text-xs font-medium text-purple-400">
+                <span className="rounded bg-orange-500/15 px-2 py-0.5 text-xs font-medium text-orange-400">
                   plugin:{server.pluginName}
                 </span>
               )}
             </>
           }
           actions={
-            <>
-              {canEdit && !editing && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    startEdit();
-                  }}
-                  className="rounded bg-gray-500/10 px-2 py-0.5 text-xs text-gray-400 transition-colors hover:bg-accent/20 hover:text-accent"
-                  title="Edit server"
-                >
-                  Edit
-                </button>
-              )}
-              {!isPlugin && scopeMoveOptions && scopeMoveOptions.length > 0 && (
-                <ScopeMoveButton options={scopeMoveOptions} saving={saving} />
-              )}
-              {server.scope !== ConfigScope.Managed && !isPlugin && (
-                <span onClick={(e) => e.stopPropagation()}>
-                  <DeleteButton
-                    onClick={() => setConfirmDelete(true)}
+            editingMode ? (
+              <>
+                {canEdit && !editing && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      startEdit();
+                    }}
+                    className="rounded bg-gray-500/10 px-2 py-0.5 text-xs text-gray-400 transition-colors hover:bg-accent/20 hover:text-accent"
+                    title="Edit server"
+                  >
+                    Edit
+                  </button>
+                )}
+                {!isPlugin &&
+                  scopeMoveOptions &&
+                  scopeMoveOptions.length > 0 && (
+                    <ScopeMoveButton
+                      options={scopeMoveOptions}
+                      saving={saving}
+                    />
+                  )}
+                {server.scope !== ConfigScope.Managed && !isPlugin && (
+                  <span onClick={(e) => e.stopPropagation()}>
+                    <DeleteButton
+                      onClick={() => setConfirmDelete(true)}
+                      disabled={saving}
+                      title="Delete server"
+                    />
+                  </span>
+                )}
+                {server.scope !== ConfigScope.Managed && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isAvailable && onInstallPlugin) {
+                        onInstallPlugin();
+                      } else {
+                        void onToggle(server);
+                      }
+                    }}
                     disabled={saving}
-                    title="Delete server"
-                  />
-                </span>
-              )}
-              {server.scope !== ConfigScope.Managed && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (isAvailable && onInstallPlugin) {
-                      onInstallPlugin();
-                    } else {
-                      void onToggle(server);
-                    }
-                  }}
-                  disabled={saving}
-                  className={`relative h-5 w-10 rounded-full transition-colors disabled:opacity-50 ${server.enabled ? "bg-green-500/40" : "bg-gray-600/40"}`}
-                  title={(() => {
-                    if (isAvailable) return "Install plugin";
-                    if (server.enabled) return "Disable server";
-                    return "Enable server";
-                  })()}
-                >
-                  <span
-                    className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${server.enabled ? "left-5" : "left-0.5"}`}
-                  />
-                </button>
-              )}
-            </>
+                    className={`relative h-5 w-10 rounded-full transition-colors disabled:opacity-50 ${server.enabled ? "bg-green-500/40" : "bg-gray-600/40"}`}
+                    title={(() => {
+                      if (isAvailable) return "Install plugin";
+                      if (server.enabled) return "Disable server";
+                      return "Enable server";
+                    })()}
+                  >
+                    <span
+                      className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${server.enabled ? "left-5" : "left-0.5"}`}
+                    />
+                  </button>
+                )}
+              </>
+            ) : undefined
           }
         >
           <div className="border-t border-border px-4 py-4">
