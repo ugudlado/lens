@@ -6674,7 +6674,7 @@ init_cjs_shim();
 
 // src/scanner/utils.ts
 init_cjs_shim();
-import { readFile, access } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { join as join2, resolve } from "node:path";
 import { homedir } from "node:os";
 import { platform } from "node:process";
@@ -6727,10 +6727,10 @@ var PluginScope;
   PluginScope2["Project"] = "project";
 })(PluginScope || (PluginScope = {}));
 var AgentMemory;
-(function(AgentMemory3) {
-  AgentMemory3["User"] = "user";
-  AgentMemory3["Project"] = "project";
-  AgentMemory3["Local"] = "local";
+(function(AgentMemory2) {
+  AgentMemory2["User"] = "user";
+  AgentMemory2["Project"] = "project";
+  AgentMemory2["Local"] = "local";
 })(AgentMemory || (AgentMemory = {}));
 var PluginAction;
 (function(PluginAction2) {
@@ -6814,7 +6814,9 @@ var SuggestionSeverity;
 // src/scanner/utils.ts
 function detectProjectRoot() {
   try {
-    return execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf-8" }).trim();
+    return execFileSync("git", ["rev-parse", "--show-toplevel"], {
+      encoding: "utf-8"
+    }).trim();
   } catch {
     return process.cwd();
   }
@@ -6856,10 +6858,19 @@ async function readJsonOrNull(path2) {
 }
 function settingsLocations(projectPath) {
   return [
-    { path: join2(MANAGED_DIR, "managed-settings.json"), scope: ConfigScope.Managed },
+    {
+      path: join2(MANAGED_DIR, "managed-settings.json"),
+      scope: ConfigScope.Managed
+    },
     { path: join2(GLOBAL_DIR, "settings.json"), scope: ConfigScope.Global },
-    { path: join2(projectPath, ".claude", "settings.json"), scope: ConfigScope.Project },
-    { path: join2(projectPath, ".claude", "settings.local.json"), scope: ConfigScope.Local }
+    {
+      path: join2(projectPath, ".claude", "settings.json"),
+      scope: ConfigScope.Project
+    },
+    {
+      path: join2(projectPath, ".claude", "settings.local.json"),
+      scope: ConfigScope.Local
+    }
   ];
 }
 
@@ -6883,7 +6894,13 @@ async function scanClaudeMd(projectPath) {
   async function tryAdd(filePath, scope, isLocal) {
     const content = await readFileOrNull(filePath);
     if (content !== null) {
-      files.push({ scope, filePath, content, isLocal, lineCount: content.split("\n").length });
+      files.push({
+        scope,
+        filePath,
+        content,
+        isLocal,
+        lineCount: content.split("\n").length
+      });
       loadOrder.push(filePath);
     }
   }
@@ -6900,7 +6917,12 @@ async function scanSettings(projectPath) {
     files.push({ scope, filePath: path2, editable: isEditable(scope), raw: raw2 });
     for (const [key, value] of Object.entries(raw2)) {
       if (["permissions", "hooks", "sandbox"].includes(key)) continue;
-      effective[key] = { value, scope, filePath: path2, editable: isEditable(scope) };
+      effective[key] = {
+        value,
+        scope,
+        filePath: path2,
+        editable: isEditable(scope)
+      };
     }
   }
   return { files, effective };
@@ -6916,7 +6938,11 @@ async function scanPermissions(projectPath) {
     if (!raw2) continue;
     const perms = raw2.permissions;
     if (!perms) continue;
-    for (const type of [PermissionType.Allow, PermissionType.Ask, PermissionType.Deny]) {
+    for (const type of [
+      PermissionType.Allow,
+      PermissionType.Ask,
+      PermissionType.Deny
+    ]) {
       const list = perms[type];
       if (Array.isArray(list)) {
         for (const rule of list) {
@@ -6927,7 +6953,12 @@ async function scanPermissions(projectPath) {
       }
     }
     if (typeof perms.defaultMode === "string") {
-      defaultMode = { value: perms.defaultMode, scope, filePath: path2, editable: isEditable(scope) };
+      defaultMode = {
+        value: perms.defaultMode,
+        scope,
+        filePath: path2,
+        editable: isEditable(scope)
+      };
     }
   }
   return { rules, defaultMode };
@@ -6942,15 +6973,29 @@ async function scanMcp(projectPath) {
   const home = homedir2();
   const projectMcp = await readJsonOrNull(join4(projectPath, ".mcp.json"));
   if (projectMcp?.mcpServers) {
-    addServers(projectMcp.mcpServers, ConfigScope.Project, join4(projectPath, ".mcp.json"));
+    addServers(
+      projectMcp.mcpServers,
+      ConfigScope.Project,
+      join4(projectPath, ".mcp.json")
+    );
   }
   const dotClaudeJson = await readJsonOrNull(join4(home, ".claude.json"));
   if (dotClaudeJson?.mcpServers) {
-    addServers(dotClaudeJson.mcpServers, ConfigScope.Global, join4(home, ".claude.json"));
+    addServers(
+      dotClaudeJson.mcpServers,
+      ConfigScope.Global,
+      join4(home, ".claude.json")
+    );
   }
-  const managedMcp = await readJsonOrNull(join4(MANAGED_DIR, "managed-mcp.json"));
+  const managedMcp = await readJsonOrNull(
+    join4(MANAGED_DIR, "managed-mcp.json")
+  );
   if (managedMcp?.mcpServers) {
-    addServers(managedMcp.mcpServers, ConfigScope.Managed, join4(MANAGED_DIR, "managed-mcp.json"));
+    addServers(
+      managedMcp.mcpServers,
+      ConfigScope.Managed,
+      join4(MANAGED_DIR, "managed-mcp.json")
+    );
   }
   return { servers };
   function addServers(mcpServers, scope, filePath) {
@@ -7077,10 +7122,12 @@ async function readGitSha(dir, length = 0) {
     let sha;
     if (head.startsWith("ref: ")) {
       const ref = head.slice(5);
-      const raw2 = await readFile2(join6(dir, ".git", ref), "utf8").catch(() => null);
-      sha = raw2?.trim() || void 0;
+      const raw2 = await readFile2(join6(dir, ".git", ref), "utf8").catch(
+        () => null
+      );
+      sha = raw2?.trim() ?? void 0;
     } else {
-      sha = head || void 0;
+      sha = head ?? void 0;
     }
     if (sha && length > 0) return sha.slice(0, length);
     return sha;
@@ -7089,7 +7136,9 @@ async function readGitSha(dir, length = 0) {
   }
 }
 async function readPluginJsonVersion(pluginPath) {
-  const json = await readJsonOrNull(join6(pluginPath, ".claude-plugin", "plugin.json"));
+  const json = await readJsonOrNull(
+    join6(pluginPath, ".claude-plugin", "plugin.json")
+  );
   if (json && typeof json === "object") {
     return json.version;
   }
@@ -7101,7 +7150,7 @@ function extractFrontmatterDescription(content) {
   if (end === -1) return void 0;
   const frontmatter = content.slice(3, end);
   const match3 = frontmatter.match(/^description:\s*['"]?(.*?)['"]?\s*$/m);
-  return match3?.[1]?.trim() || void 0;
+  return match3?.[1]?.trim() ?? void 0;
 }
 async function listSkills(dir) {
   try {
@@ -7224,24 +7273,36 @@ async function scanPlugins(projectPath) {
   const plugins = [];
   const marketplaces = [];
   const knownMarketplaces = /* @__PURE__ */ new Set();
-  const knownRaw = await readJsonOrNull(join6(GLOBAL_DIR, "plugins", "known_marketplaces.json"));
+  const knownRaw = await readJsonOrNull(
+    join6(GLOBAL_DIR, "plugins", "known_marketplaces.json")
+  );
   if (knownRaw && typeof knownRaw === "object") {
     for (const key of Object.keys(knownRaw)) knownMarketplaces.add(key);
   }
   const enabledPlugins = /* @__PURE__ */ new Map();
-  const globalSettings = await readJsonOrNull(join6(GLOBAL_DIR, "settings.json"));
+  const globalSettings = await readJsonOrNull(
+    join6(GLOBAL_DIR, "settings.json")
+  );
   if (globalSettings && typeof globalSettings.enabledPlugins === "object" && globalSettings.enabledPlugins) {
-    for (const [k, v] of Object.entries(globalSettings.enabledPlugins)) {
+    for (const [k, v] of Object.entries(
+      globalSettings.enabledPlugins
+    )) {
       enabledPlugins.set(k, v);
     }
   }
-  const projectSettings = await readJsonOrNull(join6(projectPath, ".claude", "settings.json"));
+  const projectSettings = await readJsonOrNull(
+    join6(projectPath, ".claude", "settings.json")
+  );
   if (projectSettings && typeof projectSettings.enabledPlugins === "object" && projectSettings.enabledPlugins) {
-    for (const [k, v] of Object.entries(projectSettings.enabledPlugins)) {
+    for (const [k, v] of Object.entries(
+      projectSettings.enabledPlugins
+    )) {
       enabledPlugins.set(k, v);
     }
   }
-  const installed = await readJsonOrNull(join6(GLOBAL_DIR, "plugins", "installed_plugins.json"));
+  const installed = await readJsonOrNull(
+    join6(GLOBAL_DIR, "plugins", "installed_plugins.json")
+  );
   if (installed && typeof installed === "object") {
     const raw2 = installed;
     const pluginsObj = raw2.version === 2 && raw2.plugins && typeof raw2.plugins === "object" ? raw2.plugins : raw2;
@@ -7264,7 +7325,8 @@ async function scanPlugins(projectPath) {
         if (isOrphaned && namesWithKnownMarketplace.has(pluginName)) continue;
         const scopeStr = v.scope || PluginScope.User;
         const scope = scopeStr === PluginScope.Project ? PluginScope.Project : PluginScope.User;
-        if (scope === PluginScope.Project && v.projectPath && v.projectPath !== projectPath) continue;
+        if (scope === PluginScope.Project && v.projectPath && v.projectPath !== projectPath)
+          continue;
         const installPath = v.installPath || "";
         const [contents, description, gitSha, files] = await Promise.all([
           scanPluginContents(installPath),
@@ -7289,15 +7351,22 @@ async function scanPlugins(projectPath) {
       }
     }
   }
-  const known = await readJsonOrNull(join6(GLOBAL_DIR, "plugins", "known_marketplaces.json"));
+  const known = await readJsonOrNull(
+    join6(GLOBAL_DIR, "plugins", "known_marketplaces.json")
+  );
   if (known && typeof known === "object") {
     for (const [name, val] of Object.entries(known)) {
       const v = val;
-      marketplaces.push({ name, url: v.repo || v.url || "" });
+      marketplaces.push({
+        name,
+        url: v.repo || v.url || ""
+      });
     }
   }
   const available = [];
-  const installedNames = new Set(plugins.map((p) => `${p.name}@${p.marketplace}`));
+  const installedNames = new Set(
+    plugins.map((p) => `${p.name}@${p.marketplace}`)
+  );
   const latestVersionMap = /* @__PURE__ */ new Map();
   if (known && typeof known === "object") {
     for (const [mpName, val] of Object.entries(known)) {
@@ -7313,9 +7382,12 @@ async function scanPlugins(projectPath) {
           const s = await stat(pluginPath);
           if (!s.isDirectory()) continue;
           const isInstalled = installedNames.has(`${entry}@${mpName}`);
-          const installedPlugin = plugins.find((p) => p.name === entry && p.marketplace === mpName);
+          const installedPlugin = plugins.find(
+            (p) => p.name === entry && p.marketplace === mpName
+          );
           const pluginJsonVersion = await readPluginJsonVersion(pluginPath);
-          if (pluginJsonVersion) latestVersionMap.set(`${entry}@${mpName}`, pluginJsonVersion);
+          if (pluginJsonVersion)
+            latestVersionMap.set(`${entry}@${mpName}`, pluginJsonVersion);
           const desc = await extractReadmeDescription(pluginPath);
           available.push({
             name: entry,
@@ -7336,13 +7408,17 @@ async function scanPlugins(projectPath) {
           const s = await stat(pluginPath);
           if (!s.isDirectory()) continue;
           const isInstalled = installedNames.has(`${entry}@${mpName}`);
-          const installedPlugin = plugins.find((p) => p.name === entry && p.marketplace === mpName);
+          const installedPlugin = plugins.find(
+            (p) => p.name === entry && p.marketplace === mpName
+          );
           let desc;
-          const pluginJson = await readJsonOrNull(join6(pluginPath, ".claude-plugin", "plugin.json"));
+          const pluginJson = await readJsonOrNull(
+            join6(pluginPath, ".claude-plugin", "plugin.json")
+          );
           if (pluginJson && typeof pluginJson === "object") {
             desc = pluginJson.description;
           }
-          if (!desc) desc = await extractReadmeDescription(pluginPath);
+          desc ??= await extractReadmeDescription(pluginPath);
           available.push({
             name: entry,
             marketplace: mpName,
@@ -7355,15 +7431,20 @@ async function scanPlugins(projectPath) {
       } catch {
       }
       try {
-        const rootPluginJson = await readJsonOrNull(join6(installLocation, ".claude-plugin", "plugin.json"));
+        const rootPluginJson = await readJsonOrNull(
+          join6(installLocation, ".claude-plugin", "plugin.json")
+        );
         if (rootPluginJson && typeof rootPluginJson === "object") {
           const pj = rootPluginJson;
           const pluginName = pj.name || mpName;
           const isInstalled = installedNames.has(`${pluginName}@${mpName}`);
-          const installedPlugin = plugins.find((p) => p.name === pluginName && p.marketplace === mpName);
+          const installedPlugin = plugins.find(
+            (p) => p.name === pluginName && p.marketplace === mpName
+          );
           const desc = pj.description || await extractReadmeDescription(installLocation);
           const pluginJsonVersion = pj.version;
-          if (pluginJsonVersion) latestVersionMap.set(`${pluginName}@${mpName}`, pluginJsonVersion);
+          if (pluginJsonVersion)
+            latestVersionMap.set(`${pluginName}@${mpName}`, pluginJsonVersion);
           available.push({
             name: pluginName,
             marketplace: mpName,
@@ -7381,7 +7462,7 @@ async function scanPlugins(projectPath) {
     const latest = latestVersionMap.get(key);
     if (latest) {
       plugin.latestVersion = latest;
-      const installedRef = plugin.gitSha || plugin.version;
+      const installedRef = plugin.gitSha ?? plugin.version;
       if (!installedRef || installedRef === "unknown") {
         plugin.updateAvailable = false;
       } else {
@@ -7411,12 +7492,33 @@ import { join as join7 } from "node:path";
 import { readdir as readdir3 } from "node:fs/promises";
 async function scanSkills(projectPath, pluginPaths = []) {
   const skills = [];
-  await discoverSkills(join7(projectPath, ".claude", "skills"), ConfigScope.Project, EntrySource.Project);
-  await discoverSkills(join7(GLOBAL_DIR, "skills"), ConfigScope.Global, EntrySource.Global);
+  await discoverSkills(
+    join7(projectPath, ".claude", "skills"),
+    ConfigScope.Project,
+    EntrySource.Project
+  );
+  await discoverSkills(
+    join7(GLOBAL_DIR, "skills"),
+    ConfigScope.Global,
+    EntrySource.Global
+  );
   for (const plugin of pluginPaths) {
-    await discoverSkills(join7(plugin.installPath, "skills"), ConfigScope.Global, EntrySource.Plugin, plugin.name);
+    await discoverSkills(
+      join7(plugin.installPath, "skills"),
+      ConfigScope.Global,
+      EntrySource.Plugin,
+      plugin.name
+    );
   }
-  return { skills };
+  const sourceRank = (source) => source === EntrySource.Project ? 0 : source === EntrySource.Global ? 1 : 2;
+  const seen = /* @__PURE__ */ new Map();
+  for (const skill of skills) {
+    const existing = seen.get(skill.name);
+    if (!existing || sourceRank(skill.source) < sourceRank(existing.source)) {
+      seen.set(skill.name, skill);
+    }
+  }
+  return { skills: [...seen.values()] };
   async function discoverSkills(dir, scope, source, pluginName) {
     try {
       const entries = await readdir3(dir, { withFileTypes: true });
@@ -7451,12 +7553,33 @@ import { join as join8 } from "node:path";
 import { readdir as readdir4 } from "node:fs/promises";
 async function scanAgents(projectPath, pluginPaths = []) {
   const agents = [];
-  await discoverAgents(join8(projectPath, ".claude", "agents"), ConfigScope.Project, EntrySource.Project);
-  await discoverAgents(join8(GLOBAL_DIR, "agents"), ConfigScope.Global, EntrySource.Global);
+  await discoverAgents(
+    join8(projectPath, ".claude", "agents"),
+    ConfigScope.Project,
+    EntrySource.Project
+  );
+  await discoverAgents(
+    join8(GLOBAL_DIR, "agents"),
+    ConfigScope.Global,
+    EntrySource.Global
+  );
   for (const plugin of pluginPaths) {
-    await discoverAgents(join8(plugin.installPath, "agents"), ConfigScope.Global, EntrySource.Plugin, plugin.name);
+    await discoverAgents(
+      join8(plugin.installPath, "agents"),
+      ConfigScope.Global,
+      EntrySource.Plugin,
+      plugin.name
+    );
   }
-  return { agents };
+  const sourceRank = (source) => source === EntrySource.Project ? 0 : source === EntrySource.Global ? 1 : 2;
+  const seen = /* @__PURE__ */ new Map();
+  for (const agent of agents) {
+    const existing = seen.get(agent.name);
+    if (!existing || sourceRank(agent.source) < sourceRank(existing.source)) {
+      seen.set(agent.name, agent);
+    }
+  }
+  return { agents: [...seen.values()] };
   async function discoverAgents(dir, scope, source, pluginName) {
     try {
       const entries = await readdir4(dir);
@@ -13310,7 +13433,10 @@ glob.glob = glob;
 var import_gray_matter3 = __toESM(require_gray_matter(), 1);
 async function scanRules(projectPath) {
   const rules = [];
-  await discoverRules(join9(projectPath, ".claude", "rules"), ConfigScope.Project);
+  await discoverRules(
+    join9(projectPath, ".claude", "rules"),
+    ConfigScope.Project
+  );
   await discoverRules(join9(GLOBAL_DIR, "rules"), ConfigScope.Global);
   return { rules };
   async function discoverRules(dir, scope) {
@@ -13320,7 +13446,7 @@ async function scanRules(projectPath) {
         const content = await readFileOrNull(filePath);
         if (!content) continue;
         const { data, content: body } = (0, import_gray_matter3.default)(content);
-        const name = filePath.split("/").pop()?.replace(/\.mdc?$/, "") || "unknown";
+        const name = filePath.split("/").pop()?.replace(/\.mdc?$/, "") ?? "unknown";
         rules.push({
           name,
           scope,
@@ -13342,10 +13468,23 @@ import { readdir as readdir6 } from "node:fs/promises";
 async function scanCommands(projectPath, skills, pluginPaths = []) {
   const commands = [];
   const skillNames = new Set(skills.skills.map((s) => s.name));
-  await discoverCommands(join10(projectPath, ".claude", "commands"), ConfigScope.Project, EntrySource.Project);
-  await discoverCommands(join10(GLOBAL_DIR, "commands"), ConfigScope.Global, EntrySource.Global);
+  await discoverCommands(
+    join10(projectPath, ".claude", "commands"),
+    ConfigScope.Project,
+    EntrySource.Project
+  );
+  await discoverCommands(
+    join10(GLOBAL_DIR, "commands"),
+    ConfigScope.Global,
+    EntrySource.Global
+  );
   for (const plugin of pluginPaths) {
-    await discoverCommands(join10(plugin.installPath, "commands"), ConfigScope.Global, EntrySource.Plugin, plugin.name);
+    await discoverCommands(
+      join10(plugin.installPath, "commands"),
+      ConfigScope.Global,
+      EntrySource.Plugin,
+      plugin.name
+    );
   }
   return { commands };
   async function discoverCommands(dir, scope, source, pluginName) {
@@ -13357,7 +13496,15 @@ async function scanCommands(projectPath, skills, pluginPaths = []) {
         const content = await readFileOrNull(filePath);
         if (!content) continue;
         const name = file.replace(".md", "");
-        commands.push({ name, scope, filePath, source, pluginName, content, supersededBySkill: skillNames.has(name) });
+        commands.push({
+          name,
+          scope,
+          filePath,
+          source,
+          pluginName,
+          content,
+          supersededBySkill: skillNames.has(name)
+        });
       }
     } catch {
     }
@@ -13381,15 +13528,21 @@ async function scanModels(effectiveSettings) {
     configSource: "ANTHROPIC_API_KEY"
   });
   try {
-    const baseUrl = process.env.OLLAMA_BASE_URL || "http://localhost:11434";
-    const res = await fetch(`${baseUrl}/api/tags`, { signal: AbortSignal.timeout(3e3) });
+    const baseUrl = process.env.OLLAMA_BASE_URL ?? "http://localhost:11434";
+    const res = await fetch(`${baseUrl}/api/tags`, {
+      signal: AbortSignal.timeout(3e3)
+    });
     if (res.ok) {
       const data = await res.json();
       providers.push({
         name: "Ollama",
         type: ModelProviderType.Ollama,
         available: true,
-        models: (data.models || []).map((m) => ({ id: m.name, label: m.name, detail: m.details?.family })),
+        models: (data.models ?? []).map((m) => ({
+          id: m.name,
+          label: m.name,
+          detail: m.details?.family
+        })),
         configSource: baseUrl
       });
     } else {
@@ -13401,7 +13554,7 @@ async function scanModels(effectiveSettings) {
       type: ModelProviderType.Ollama,
       available: false,
       models: [],
-      configSource: process.env.OLLAMA_BASE_URL || "http://localhost:11434"
+      configSource: process.env.OLLAMA_BASE_URL ?? "http://localhost:11434"
     });
   }
   providers.push({
@@ -13437,11 +13590,16 @@ async function scanMemory(projectPath) {
       const filePath = join11(memoryDir, file);
       const content = await readFileOrNull(filePath);
       if (!content) continue;
-      files.push({ name: file, filePath, content, lineCount: content.split("\n").length });
+      files.push({
+        name: file,
+        filePath,
+        content,
+        lineCount: content.split("\n").length
+      });
     }
   } catch {
   }
-  return { memoryDir: files.length > 0 ? memoryDir : null, files };
+  return { memoryDir, files };
 }
 
 // src/scanner/sandbox.ts
@@ -13456,21 +13614,46 @@ function extractSandbox(settings) {
     const sandbox = file.raw.sandbox;
     if (!sandbox) continue;
     if (typeof sandbox.enabled === "boolean") {
-      enabled = { value: sandbox.enabled, scope: file.scope, filePath: file.filePath, editable: file.editable };
+      enabled = {
+        value: sandbox.enabled,
+        scope: file.scope,
+        filePath: file.filePath,
+        editable: file.editable
+      };
     }
     if (typeof sandbox.autoAllowBashIfSandboxed === "boolean") {
-      autoAllowBash = { value: sandbox.autoAllowBashIfSandboxed, scope: file.scope, filePath: file.filePath, editable: file.editable };
+      autoAllowBash = {
+        value: sandbox.autoAllowBashIfSandboxed,
+        scope: file.scope,
+        filePath: file.filePath,
+        editable: file.editable
+      };
     }
     const network = sandbox.network;
     if (network) {
       if (Array.isArray(network.allowedDomains)) {
-        allowedDomains = { value: network.allowedDomains, scope: file.scope, filePath: file.filePath, editable: file.editable };
+        allowedDomains = {
+          value: network.allowedDomains,
+          scope: file.scope,
+          filePath: file.filePath,
+          editable: file.editable
+        };
       }
       if (Array.isArray(network.allowUnixSockets)) {
-        allowUnixSockets = { value: network.allowUnixSockets, scope: file.scope, filePath: file.filePath, editable: file.editable };
+        allowUnixSockets = {
+          value: network.allowUnixSockets,
+          scope: file.scope,
+          filePath: file.filePath,
+          editable: file.editable
+        };
       }
       if (typeof network.allowLocalBinding === "boolean") {
-        allowLocalBinding = { value: network.allowLocalBinding, scope: file.scope, filePath: file.filePath, editable: file.editable };
+        allowLocalBinding = {
+          value: network.allowLocalBinding,
+          scope: file.scope,
+          filePath: file.filePath,
+          editable: file.editable
+        };
       }
     }
   }
@@ -13546,7 +13729,10 @@ async function scanAvailablePluginMcps(installedNames) {
         const versions2 = await readdir8(pluginDir);
         if (versions2.length === 0) continue;
         const versionStats = await Promise.all(
-          versions2.map(async (v) => ({ v, mtime: (await stat2(join12(pluginDir, v)).catch(() => null))?.mtimeMs ?? 0 }))
+          versions2.map(async (v) => ({
+            v,
+            mtime: (await stat2(join12(pluginDir, v)).catch(() => null))?.mtimeMs ?? 0
+          }))
         );
         const latestVersion = versionStats.sort((a3, b) => b.mtime - a3.mtime)[0].v;
         const versionDir = join12(pluginDir, latestVersion);
@@ -13555,7 +13741,13 @@ async function scanAvailablePluginMcps(installedNames) {
         const filePath = join12(versionDir, ".mcp.json");
         const mcpJson = await readJsonOrNull(filePath);
         if (!mcpJson || typeof mcpJson !== "object") continue;
-        const entries = parseMcpJson(mcpJson, pluginName, filePath, false, false);
+        const entries = parseMcpJson(
+          mcpJson,
+          pluginName,
+          filePath,
+          false,
+          false
+        );
         servers.push(...entries);
       }
     }
@@ -13571,17 +13763,28 @@ async function scanKeybindings() {
   const filePath = join13(GLOBAL_DIR, "keybindings.json");
   const raw2 = await readJsonOrNull(filePath);
   if (!raw2 || !Array.isArray(raw2)) return { filePath, entries: [] };
-  const entries = raw2.map((e) => ({
-    key: typeof e.key === "string" ? e.key : "",
-    command: typeof e.command === "string" ? e.command : "",
-    when: typeof e.when === "string" ? e.when : void 0
-  }));
+  const entries = raw2.map(
+    (e) => ({
+      key: typeof e.key === "string" ? e.key : "",
+      command: typeof e.command === "string" ? e.command : "",
+      when: typeof e.when === "string" ? e.when : void 0
+    })
+  );
   return { filePath, entries };
 }
 
 // src/scanner/index.ts
 async function scanConfig(projectPath) {
-  const [plugins, claudeMd, settings, permissions, mcp, rules, memory, keybindings] = await Promise.all([
+  const [
+    plugins,
+    claudeMd,
+    settings,
+    permissions,
+    mcp,
+    rules,
+    memory,
+    keybindings
+  ] = await Promise.all([
     scanPlugins(projectPath),
     scanClaudeMd(projectPath),
     scanSettings(projectPath),
@@ -13593,7 +13796,11 @@ async function scanConfig(projectPath) {
   ]);
   const pluginPathsMap = /* @__PURE__ */ new Map();
   for (const p of plugins.plugins) {
-    pluginPathsMap.set(p.name, { name: p.name, installPath: p.installPath, enabled: p.enabled });
+    pluginPathsMap.set(p.name, {
+      name: p.name,
+      installPath: p.installPath,
+      enabled: p.enabled
+    });
   }
   const pluginPaths = [...pluginPathsMap.values()];
   const pluginMcpServers = await scanPluginMcpServers(pluginPaths);
@@ -13637,7 +13844,7 @@ async function scanConfig(projectPath) {
 // src/routes/config.ts
 var app = new Hono2();
 async function handleScan(c) {
-  const projectPath = c.req.query("project") || detectProjectRoot();
+  const projectPath = c.req.query("project") ?? detectProjectRoot();
   const snapshot = await scanConfig(projectPath);
   return c.json(snapshot);
 }
@@ -13653,7 +13860,7 @@ import { resolve as resolve2 } from "node:path";
 import { homedir as homedir3 } from "node:os";
 var app2 = new Hono2();
 app2.get("/", async (c) => {
-  const sectionsParam = c.req.query("sections") || "";
+  const sectionsParam = c.req.query("sections") ?? "";
   const projectOverride = c.req.query("project");
   try {
     let projectPath;
@@ -13674,7 +13881,17 @@ app2.get("/", async (c) => {
       projectPath = process.cwd();
     }
     const config = await scanConfig(projectPath);
-    const VALID_SECTIONS = /* @__PURE__ */ new Set(["mcp", "hooks", "skills", "agents", "rules", "commands", "permissions", "claudeMd", "plugins"]);
+    const VALID_SECTIONS = /* @__PURE__ */ new Set([
+      "mcp",
+      "hooks",
+      "skills",
+      "agents",
+      "rules",
+      "commands",
+      "permissions",
+      "plugins",
+      "settings"
+    ]);
     const requestedSections = sectionsParam ? sectionsParam.split(",").map((s) => s.trim()).filter((s) => VALID_SECTIONS.has(s)) : [...VALID_SECTIONS];
     const sections = {};
     if (requestedSections.includes("mcp")) {
@@ -13722,12 +13939,10 @@ app2.get("/", async (c) => {
       );
     }
     if (requestedSections.includes("rules")) {
-      sections.rules = await Promise.all(
-        config.rules.rules.filter((r) => r.scope === ConfigScope.Project).map(async (r) => {
-          const ext2 = r.filePath.endsWith(".mdc") ? "mdc" : "md";
-          return { name: r.name, content: r.content, ext: ext2 };
-        })
-      );
+      sections.rules = config.rules.rules.filter((r) => r.scope === ConfigScope.Project).map((r) => {
+        const ext2 = r.filePath.endsWith(".mdc") ? "mdc" : "md";
+        return { name: r.name, content: r.content, ext: ext2 };
+      });
     }
     if (requestedSections.includes("commands")) {
       sections.commands = config.commands.commands.filter((c2) => c2.scope === ConfigScope.Project).map((c2) => ({ name: c2.name, content: c2.content }));
@@ -13735,14 +13950,22 @@ app2.get("/", async (c) => {
     if (requestedSections.includes("permissions")) {
       sections.permissions = config.permissions.rules.filter((p) => p.scope === ConfigScope.Project).map((p) => ({ type: p.type, rule: p.rule }));
     }
-    if (requestedSections.includes("claudeMd")) {
-      sections.claudeMd = config.claudeMd.files.filter((f) => f.scope === ConfigScope.Project).map((f) => ({
-        slot: f.filePath.includes("/.claude/CLAUDE.md") ? ".claude/CLAUDE.md" : "root",
-        content: f.content
-      }));
+    if (requestedSections.includes("settings")) {
+      const projectSettingsFile = config.settings.files.find(
+        (f) => f.scope === ConfigScope.Project
+      );
+      if (projectSettingsFile) {
+        sections.settings = Object.entries(projectSettingsFile.raw).map(
+          ([key, value]) => ({ key, value })
+        );
+      }
     }
     if (requestedSections.includes("plugins")) {
-      sections.plugins = config.plugins.plugins.filter((p) => p.scope === PluginScope.Project).map((p) => ({ name: p.name, marketplace: p.marketplace, enabled: p.enabled }));
+      sections.plugins = config.plugins.plugins.filter((p) => p.scope === PluginScope.Project).map((p) => ({
+        name: p.name,
+        marketplace: p.marketplace,
+        enabled: p.enabled
+      }));
     }
     const exportData = {
       version: 1,
@@ -13767,7 +13990,10 @@ app3.get("/", (c) => c.json({ allowGlobalWrites: getAllowGlobalWrites() }));
 app3.patch("/", async (c) => {
   const body = await c.req.json();
   if (typeof body.enabled !== "boolean") {
-    return c.json({ error: "Invalid body: expected { enabled: boolean }" }, 400);
+    return c.json(
+      { error: "Invalid body: expected { enabled: boolean }" },
+      400
+    );
   }
   setAllowGlobalWrites(body.enabled);
   return c.json({ allowGlobalWrites: getAllowGlobalWrites() });
@@ -13802,7 +14028,13 @@ function spawnClaude(args, cwd) {
     child.on("close", (code) => {
       clearTimeout(timer);
       if (code === 0) resolve7({ stdout, stderr });
-      else reject(Object.assign(new Error(`claude exited with code ${code}`), { stdout, stderr }));
+      else
+        reject(
+          Object.assign(new Error(`claude exited with code ${code}`), {
+            stdout,
+            stderr
+          })
+        );
     });
     child.on("error", (err) => {
       clearTimeout(timer);
@@ -13819,7 +14051,7 @@ async function setPluginEnabled(settingsPath, pluginKey, enabled) {
     content = "{}";
   }
   const json = JSON.parse(content);
-  if (!json.enabledPlugins) json.enabledPlugins = {};
+  json.enabledPlugins ??= {};
   json.enabledPlugins[pluginKey] = enabled;
   await writeFile(settingsPath, JSON.stringify(json, null, 2) + "\n");
 }
@@ -13832,7 +14064,10 @@ async function togglePlugin(pluginKey, enabled, projectPath) {
     const projJson = JSON.parse(projContent);
     if (projJson.enabledPlugins && pluginKey in projJson.enabledPlugins) {
       projJson.enabledPlugins[pluginKey] = enabled;
-      await writeFile(projectSettingsPath, JSON.stringify(projJson, null, 2) + "\n");
+      await writeFile(
+        projectSettingsPath,
+        JSON.stringify(projJson, null, 2) + "\n"
+      );
     }
   } catch {
   }
@@ -13842,35 +14077,61 @@ app4.post("/", async (c) => {
   const body = await c.req.json();
   const { action, plugin, scope } = body;
   if (!action || !plugin) {
-    return c.json({ success: false, error: "Missing action or plugin" }, 400);
+    return c.json(
+      { success: false, error: "Missing action or plugin" },
+      400
+    );
   }
-  const validActions = [PluginAction.Enable, PluginAction.Disable, PluginAction.Install, PluginAction.Uninstall, PluginAction.Update, PluginAction.MarketplaceAdd, PluginAction.MarketplaceRemove];
+  const validActions = [
+    PluginAction.Enable,
+    PluginAction.Disable,
+    PluginAction.Install,
+    PluginAction.Uninstall,
+    PluginAction.Update,
+    PluginAction.MarketplaceAdd,
+    PluginAction.MarketplaceRemove
+  ];
   if (!validActions.includes(action)) {
-    return c.json({ success: false, error: `Invalid action: ${action}` }, 400);
+    return c.json(
+      { success: false, error: `Invalid action: ${action}` },
+      400
+    );
   }
   if (action === PluginAction.Enable || action === PluginAction.Disable) {
     try {
       const projectPath = detectProjectRoot();
       await togglePlugin(plugin, action === PluginAction.Enable, projectPath);
-      return c.json({ success: true, output: `Plugin ${action}d successfully` });
-    } catch (err) {
       return c.json({
-        success: false,
-        error: err instanceof Error ? err.message : "Unknown error"
-      }, 500);
+        success: true,
+        output: `Plugin ${action}d successfully`
+      });
+    } catch (err) {
+      return c.json(
+        {
+          success: false,
+          error: err instanceof Error ? err.message : "Unknown error"
+        },
+        500
+      );
     }
   }
   if (action === PluginAction.MarketplaceAdd || action === PluginAction.MarketplaceRemove) {
     try {
       const subcommand = action === PluginAction.MarketplaceAdd ? "add" : "remove";
-      const { stdout, stderr } = await spawnClaude(["plugin", "marketplace", subcommand, plugin], detectProjectRoot());
+      const { stdout, stderr } = await spawnClaude(
+        ["plugin", "marketplace", subcommand, plugin],
+        detectProjectRoot()
+      );
       const output = (stdout + stderr).trim();
       return c.json({ success: true, output });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
       const execErr = err;
-      const output = ((execErr.stdout || "") + (execErr.stderr || "")).trim();
-      return c.json({ success: false, error: msg, output: output || void 0 }, 500);
+      const output = ((execErr.stdout ?? "") + (execErr.stderr ?? "")).trim();
+      return c.json(
+        { success: false, error: msg, output: output || void 0 },
+        500
+      );
     }
   }
   try {
@@ -13884,12 +14145,15 @@ app4.post("/", async (c) => {
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
     const execErr = err;
-    const output = ((execErr.stdout || "") + (execErr.stderr || "")).trim();
-    return c.json({
-      success: false,
-      error: msg,
-      output: output || void 0
-    }, 500);
+    const output = ((execErr.stdout ?? "") + (execErr.stderr ?? "")).trim();
+    return c.json(
+      {
+        success: false,
+        error: msg,
+        output: output || void 0
+      },
+      500
+    );
   }
 });
 var plugins_default = app4;
@@ -13909,51 +14173,61 @@ var healthRules = [
       (f) => f.scope === ConfigScope.Project || f.scope === ConfigScope.Local
     );
     if (hasProjectClaude) return [];
-    return [{
-      id: "health-no-claude-md",
-      category: SuggestionCategory.Health,
-      severity: SuggestionSeverity.Warning,
-      navSection: NavSection.ClaudeMd,
-      title: "No project CLAUDE.md found",
-      description: "Add a CLAUDE.md to your project to give Claude context about your codebase, conventions, and workflow."
-    }];
+    return [
+      {
+        id: "health-no-claude-md",
+        category: SuggestionCategory.Health,
+        severity: SuggestionSeverity.Warning,
+        navSection: NavSection.ClaudeMd,
+        title: "No project CLAUDE.md found",
+        description: "Add a CLAUDE.md to your project to give Claude context about your codebase, conventions, and workflow."
+      }
+    ];
   },
   // Rule 2: No hooks configured
   (config) => {
     if (config.hooks.hooks.length > 0) return [];
-    return [{
-      id: "health-no-hooks",
-      category: SuggestionCategory.Health,
-      severity: SuggestionSeverity.Warning,
-      navSection: NavSection.Hooks,
-      title: "No hooks configured",
-      description: "Hooks let you run scripts or prompts on Claude Code events. Add hooks to control tool behavior, enforce policies, or automate tasks."
-    }];
+    return [
+      {
+        id: "health-no-hooks",
+        category: SuggestionCategory.Health,
+        severity: SuggestionSeverity.Warning,
+        navSection: NavSection.Hooks,
+        title: "No hooks configured",
+        description: "Hooks let you run scripts or prompts on Claude Code events. Add hooks to control tool behavior, enforce policies, or automate tasks."
+      }
+    ];
   },
   // Rule 3: No permission rules
   (config) => {
     if (config.permissions.rules.length > 0) return [];
-    return [{
-      id: "health-no-permissions",
-      category: SuggestionCategory.Health,
-      severity: SuggestionSeverity.Warning,
-      navSection: NavSection.Permissions,
-      title: "No permission rules defined",
-      description: "Permission rules control which tools Claude can use without asking. Define allow/deny rules to customize Claude's access."
-    }];
+    return [
+      {
+        id: "health-no-permissions",
+        category: SuggestionCategory.Health,
+        severity: SuggestionSeverity.Warning,
+        navSection: NavSection.Permissions,
+        title: "No permission rules defined",
+        description: "Permission rules control which tools Claude can use without asking. Define allow/deny rules to customize Claude's access."
+      }
+    ];
   },
   // Rule 4: No MCP servers
   (config) => {
-    const enabledServers = config.mcp.servers.filter((s) => s.enabled && s.pluginInstalled !== false);
+    const enabledServers = config.mcp.servers.filter(
+      (s) => s.enabled && s.pluginInstalled !== false
+    );
     if (enabledServers.length > 0) return [];
-    return [{
-      id: "health-no-mcp",
-      category: SuggestionCategory.Health,
-      severity: SuggestionSeverity.Warning,
-      navSection: NavSection.Mcp,
-      title: "No MCP servers configured",
-      description: "MCP servers extend Claude with tools like databases, APIs, and external services. Configure at least one to unlock more capabilities."
-    }];
+    return [
+      {
+        id: "health-no-mcp",
+        category: SuggestionCategory.Health,
+        severity: SuggestionSeverity.Warning,
+        navSection: NavSection.Mcp,
+        title: "No MCP servers configured",
+        description: "MCP servers extend Claude with tools like databases, APIs, and external services. Configure at least one to unlock more capabilities."
+      }
+    ];
   }
 ];
 
@@ -13962,41 +14236,49 @@ init_cjs_shim();
 var bestPracticeRules = [
   // Rule 1: No project-level settings file
   (config) => {
-    const hasProjectSettings = config.settings.files.some((f) => f.scope === ConfigScope.Project || f.scope === ConfigScope.Local);
+    const hasProjectSettings = config.settings.files.some(
+      (f) => f.scope === ConfigScope.Project || f.scope === ConfigScope.Local
+    );
     if (hasProjectSettings) return [];
-    return [{
-      id: "bp-no-project-settings",
-      category: SuggestionCategory.BestPractice,
-      severity: SuggestionSeverity.Info,
-      navSection: NavSection.Settings,
-      title: "No project settings file",
-      description: "A project-level settings.json ensures consistent Claude behavior for all contributors. Add one to share settings across your team."
-    }];
+    return [
+      {
+        id: "bp-no-project-settings",
+        category: SuggestionCategory.BestPractice,
+        severity: SuggestionSeverity.Info,
+        navSection: NavSection.Settings,
+        title: "No project settings file",
+        description: "A project-level settings.json ensures consistent Claude behavior for all contributors. Add one to share settings across your team."
+      }
+    ];
   },
   // Rule 2: Sandbox not configured (enabled === null means never touched)
   // IMPORTANT: Only fires when null (not configured). Does NOT fire when explicitly false.
   (config) => {
     if (config.sandbox.enabled !== null) return [];
-    return [{
-      id: "bp-sandbox-disabled",
-      category: SuggestionCategory.BestPractice,
-      severity: SuggestionSeverity.Info,
-      navSection: NavSection.Sandbox,
-      title: "Sandbox not configured",
-      description: "The sandbox restricts file and network access during Claude's tool use. Enable it for safer execution, especially when using MCP servers."
-    }];
+    return [
+      {
+        id: "bp-sandbox-disabled",
+        category: SuggestionCategory.BestPractice,
+        severity: SuggestionSeverity.Info,
+        navSection: NavSection.Sandbox,
+        title: "Sandbox not configured",
+        description: "The sandbox restricts file and network access during Claude's tool use. Enable it for safer execution, especially when using MCP servers."
+      }
+    ];
   },
   // Rule 3: No memory files
   (config) => {
     if (config.memory.files.length > 0) return [];
-    return [{
-      id: "bp-no-memory",
-      category: SuggestionCategory.BestPractice,
-      severity: SuggestionSeverity.Info,
-      navSection: NavSection.Memory,
-      title: "No memory files found",
-      description: "Memory files let Claude persist context across sessions. Create a memory directory to help Claude remember project-specific information."
-    }];
+    return [
+      {
+        id: "bp-no-memory",
+        category: SuggestionCategory.BestPractice,
+        severity: SuggestionSeverity.Info,
+        navSection: NavSection.Memory,
+        title: "No memory files found",
+        description: "Memory files let Claude persist context across sessions. Create a memory directory to help Claude remember project-specific information."
+      }
+    ];
   }
 ];
 
@@ -14006,31 +14288,37 @@ var contextualRules = [
   // Rule 1: Has MCP servers but no hooks
   // Note: suppressed by aggregator when health-no-hooks is also active
   (config) => {
-    const hasEnabledMcp = config.mcp.servers.some((s) => s.enabled && s.pluginInstalled !== false);
+    const hasEnabledMcp = config.mcp.servers.some(
+      (s) => s.enabled && s.pluginInstalled !== false
+    );
     const hasHooks = config.hooks.hooks.length > 0;
     if (!hasEnabledMcp || hasHooks) return [];
-    return [{
-      id: "ctx-mcp-no-hooks",
-      category: SuggestionCategory.Contextual,
-      severity: SuggestionSeverity.Info,
-      navSection: NavSection.Hooks,
-      title: "MCP servers configured but no hooks",
-      description: "You have MCP servers configured. Consider adding pre-tool hooks to validate or log MCP tool calls for better visibility and control."
-    }];
+    return [
+      {
+        id: "ctx-mcp-no-hooks",
+        category: SuggestionCategory.Contextual,
+        severity: SuggestionSeverity.Info,
+        navSection: NavSection.Hooks,
+        title: "MCP servers configured but no hooks",
+        description: "You have MCP servers configured. Consider adding pre-tool hooks to validate or log MCP tool calls for better visibility and control."
+      }
+    ];
   },
   // Rule 2: Has legacy commands but no skills (skills supersede commands)
   (config) => {
     const hasCommands = config.commands.commands.length > 0;
     const hasSkills = config.skills.skills.filter((s) => !s.pluginName).length > 0;
     if (!hasCommands || hasSkills) return [];
-    return [{
-      id: "ctx-commands-no-skills",
-      category: SuggestionCategory.Contextual,
-      severity: SuggestionSeverity.Info,
-      navSection: NavSection.Skills,
-      title: "Legacy commands without skills",
-      description: "You have commands configured. Skills are the modern replacement \u2014 they support tools, models, and hooks. Consider migrating your commands to skills."
-    }];
+    return [
+      {
+        id: "ctx-commands-no-skills",
+        category: SuggestionCategory.Contextual,
+        severity: SuggestionSeverity.Info,
+        navSection: NavSection.Skills,
+        title: "Legacy commands without skills",
+        description: "You have commands configured. Skills are the modern replacement \u2014 they support tools, models, and hooks. Consider migrating your commands to skills."
+      }
+    ];
   },
   // Rule 3: Has plugins but no project settings
   (config) => {
@@ -14039,14 +14327,16 @@ var contextualRules = [
       (f) => f.scope === ConfigScope.Project || f.scope === ConfigScope.Local
     );
     if (!hasPlugins || hasProjectSettings) return [];
-    return [{
-      id: "ctx-plugins-no-settings",
-      category: SuggestionCategory.Contextual,
-      severity: SuggestionSeverity.Info,
-      navSection: NavSection.Settings,
-      title: "Plugins installed but no project settings",
-      description: "You have plugins but no project-level settings file. Add one to configure plugin behavior consistently for your project."
-    }];
+    return [
+      {
+        id: "ctx-plugins-no-settings",
+        category: SuggestionCategory.Contextual,
+        severity: SuggestionSeverity.Info,
+        navSection: NavSection.Settings,
+        title: "Plugins installed but no project settings",
+        description: "You have plugins but no project-level settings file. Add one to configure plugin behavior consistently for your project."
+      }
+    ];
   }
 ];
 
@@ -14088,7 +14378,7 @@ function getSuggestions(config) {
 // src/routes/suggestions.ts
 var app5 = new Hono2();
 app5.get("/", async (c) => {
-  const projectPath = c.req.query("project") || detectProjectRoot();
+  const projectPath = c.req.query("project") ?? detectProjectRoot();
   try {
     const config = await scanConfig(projectPath);
     const suggestions = getSuggestions(config);
@@ -14112,10 +14402,16 @@ app6.patch("/", async (c) => {
   const { filePath, key, value, scope } = body;
   const deleteKey = body.delete === true;
   if (scope === ConfigScope.Managed) {
-    return c.json({ success: false, error: "Cannot edit managed settings" }, 403);
+    return c.json(
+      { success: false, error: "Cannot edit managed settings" },
+      403
+    );
   }
   if (typeof filePath !== "string" || filePath.trim() === "") {
-    return c.json({ success: false, error: "Invalid filePath" }, 400);
+    return c.json(
+      { success: false, error: "Invalid filePath" },
+      400
+    );
   }
   const abs = resolve3(filePath);
   let realHome;
@@ -14126,13 +14422,22 @@ app6.patch("/", async (c) => {
   }
   const isAllowed = abs.startsWith(realHome + "/") || abs === realHome;
   if (!isAllowed) {
-    return c.json({ success: false, error: "Path not allowed" }, 403);
+    return c.json(
+      { success: false, error: "Path not allowed" },
+      403
+    );
   }
   const globalDir = resolve3(GLOBAL_DIR);
   const globalDotClaudeJson = resolve3(homedir5(), ".claude.json");
   const isGlobal = abs.startsWith(globalDir + "/") || abs === globalDir || abs === globalDotClaudeJson;
   if (isGlobal && !getAllowGlobalWrites()) {
-    return c.json({ success: false, error: "Global config is read-only. Enable global writes via the toggle in the top-right corner." }, 403);
+    return c.json(
+      {
+        success: false,
+        error: "Global config is read-only. Enable global writes via the toggle in the top-right corner."
+      },
+      403
+    );
   }
   try {
     if (abs.endsWith(".json")) {
@@ -14148,7 +14453,7 @@ app6.patch("/", async (c) => {
         const keys = key.split(".");
         let target = json;
         for (let i = 0; i < keys.length - 1; i++) {
-          if (!target[keys[i]]) target[keys[i]] = {};
+          target[keys[i]] ??= {};
           target = target[keys[i]];
         }
         if (deleteKey) {
@@ -14167,14 +14472,20 @@ app6.patch("/", async (c) => {
       await mkdir2(dirname2(abs), { recursive: true });
       await writeFile2(abs, String(value));
     } else {
-      return c.json({ success: false, error: "Unsupported file type" }, 400);
+      return c.json(
+        { success: false, error: "Unsupported file type" },
+        400
+      );
     }
     return c.json({ success: true });
   } catch (err) {
-    return c.json({
-      success: false,
-      error: err instanceof Error ? err.message : "Unknown error"
-    }, 500);
+    return c.json(
+      {
+        success: false,
+        error: err instanceof Error ? err.message : "Unknown error"
+      },
+      500
+    );
   }
 });
 var update_default = app6;
@@ -15893,7 +16204,10 @@ function onConfigChange(listener) {
   };
 }
 function notify(projectPath) {
-  const event = { time: (/* @__PURE__ */ new Date()).toISOString(), projectPath };
+  const event = {
+    time: (/* @__PURE__ */ new Date()).toISOString(),
+    projectPath
+  };
   for (const listener of listeners) {
     listener(event);
   }
@@ -15951,7 +16265,7 @@ function startWatcher(projectRoots) {
 }
 function restartWatcher(projectRoots) {
   if (currentWatcher) {
-    currentWatcher.close();
+    void currentWatcher.close();
     currentWatcher = null;
   }
   startWatcher(projectRoots);
@@ -15976,11 +16290,13 @@ async function ensureSeeded() {
   let workspaces = await readRegistry();
   if (workspaces.length === 0) {
     const root = detectProjectRoot();
-    workspaces = [{
-      path: root,
-      name: basename3(root),
-      addedAt: (/* @__PURE__ */ new Date()).toISOString()
-    }];
+    workspaces = [
+      {
+        path: root,
+        name: basename3(root),
+        addedAt: (/* @__PURE__ */ new Date()).toISOString()
+      }
+    ];
     await writeRegistry(workspaces);
   }
   return workspaces;
@@ -16003,7 +16319,7 @@ app7.post("/", async (c) => {
   if (workspaces.some((w) => w.path === inputPath)) {
     return c.json({ error: "Workspace already registered" }, 409);
   }
-  const name = body.name || basename3(inputPath);
+  const name = body.name ?? basename3(inputPath);
   const workspace = {
     path: inputPath,
     name,
@@ -16082,13 +16398,19 @@ app8.delete("/api/file", async (c) => {
   const abs = resolve6(filePath);
   const home = homedir8();
   if (!abs.startsWith(home + "/") && !abs.startsWith(home + "\\")) {
-    return c.json({ error: "Path not allowed \u2014 must be within home directory" }, 403);
+    return c.json(
+      { error: "Path not allowed \u2014 must be within home directory" },
+      403
+    );
   }
   try {
     await rm(abs, { force: true });
     return c.json({ success: true });
   } catch (err) {
-    return c.json({ error: err instanceof Error ? err.message : "Unknown error" }, 500);
+    return c.json(
+      { error: err instanceof Error ? err.message : "Unknown error" },
+      500
+    );
   }
 });
 app8.get("/api/health", (c) => c.json({ status: "ok" }));
