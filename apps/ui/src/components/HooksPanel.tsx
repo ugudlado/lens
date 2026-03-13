@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { HookEvent, HookType, HookSource, ConfigScope } from "@lens/schema";
+import { useEditing } from "../context/EditingContext.js";
 import type { ConfigSnapshot, HookEntry } from "@lens/schema";
 import { ScopeIndicator } from "./ScopeIndicator.js";
 import { RawJsonView } from "./RawJsonView.js";
@@ -104,6 +105,7 @@ interface EditingHook {
 
 export function HooksPanel({ config, onRescan }: Props) {
   const { hooks, disableAllHooks } = config.hooks;
+  const editingMode = useEditing();
   const [expanded, setExpanded] = useState<Set<string>>(() => {
     const firstGroup = groupByEvent(hooks);
     const firstKey = firstGroup.keys().next().value;
@@ -466,14 +468,16 @@ export function HooksPanel({ config, onRescan }: Props) {
           {allGroupKeys.length > 0 && (
             <button
               onClick={toggleExpandAll}
-              className="text-xs text-gray-400 transition-colors hover:text-gray-200"
+              className="rounded border border-border px-2.5 py-1.5 text-xs text-gray-400 transition-colors hover:border-border/80 hover:text-gray-200"
             >
               {allExpanded ? "Collapse All" : "Expand All"}
             </button>
           )}
-          <AddButton onClick={() => setShowAddForm(!showAddForm)}>
-            + Add Hook
-          </AddButton>
+          {editingMode && (
+            <AddButton onClick={() => setShowAddForm(!showAddForm)}>
+              + Add Hook
+            </AddButton>
+          )}
         </div>
       }
       view={viewTab}
@@ -482,8 +486,16 @@ export function HooksPanel({ config, onRescan }: Props) {
         if (v !== "json") setJumpTarget(null);
       }}
       viewOptions={[
-        { value: "effective", label: "Effective" },
-        { value: "json", label: "Files" },
+        {
+          value: "effective",
+          label: "Effective",
+          title: "Merged view of all active config across scopes",
+        },
+        {
+          value: "json",
+          label: "Files",
+          title: "Per-file breakdown showing which scope defines each value",
+        },
       ]}
     >
       {viewTab === "json" ? (
@@ -497,20 +509,7 @@ export function HooksPanel({ config, onRescan }: Props) {
         </div>
       ) : (
         <>
-          <SearchBar
-            value={search}
-            onChange={setSearch}
-            placeholder="Search hooks..."
-            itemCount={hooks.length}
-            filteredCount={filteredHooks.length}
-          />
-
-          {error && (
-            <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-400">
-              {error}
-            </div>
-          )}
-
+          {/* Hooks enabled toggle - prominent status row */}
           <div className="mb-4 flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
             <button
               onClick={() => void toggleDisableAll()}
@@ -535,16 +534,22 @@ export function HooksPanel({ config, onRescan }: Props) {
             )}
           </div>
 
-          {/* Add Hook Button / Form */}
-          {!showAddForm ? (
-            <AddButton
-              variant="block"
-              onClick={() => setShowAddForm(true)}
-              disabled={editableSettingsFiles.length === 0}
-            >
-              + Add Hook
-            </AddButton>
-          ) : (
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder="Search hooks..."
+            itemCount={hooks.length}
+            filteredCount={filteredHooks.length}
+          />
+
+          {error && (
+            <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-400">
+              {error}
+            </div>
+          )}
+
+          {/* Add Hook Form */}
+          {showAddForm && (
             <div className="mb-4 space-y-3 rounded-lg border border-border bg-card p-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-200">
@@ -753,16 +758,18 @@ export function HooksPanel({ config, onRescan }: Props) {
                           <div className="mb-2 flex flex-wrap items-center gap-2">
                             <ScopeIndicator scope={hook.scope} />
                             <span
-                              className={`rounded px-2 py-0.5 text-xs font-medium ${srcBadge.bg} ${srcBadge.text}`}
+                              className={`rounded px-2 py-0.5 text-[10px] font-medium ${srcBadge.bg} ${srcBadge.text}`}
                             >
                               {hook.source}
                               {hook.pluginName ? `:${hook.pluginName}` : ""}
                             </span>
-                            <span
-                              className={`rounded px-2 py-0.5 text-xs font-medium ${typeBadge.bg} ${typeBadge.text}`}
-                            >
-                              {hook.type}
-                            </span>
+                            {hook.type !== HookType.Command && (
+                              <span
+                                className={`rounded px-2 py-0.5 text-[10px] font-medium ${typeBadge.bg} ${typeBadge.text}`}
+                              >
+                                {hook.type}
+                              </span>
+                            )}
                             {hook.matcher && !isEditing && (
                               <span className="text-xs text-gray-500">
                                 matcher:{" "}
@@ -771,7 +778,7 @@ export function HooksPanel({ config, onRescan }: Props) {
                                 </code>
                               </span>
                             )}
-                            {canRemoveHook(hook) && (
+                            {canRemoveHook(hook) && editingMode && (
                               <div className="ml-auto flex items-center gap-1">
                                 {!isEditing &&
                                   (() => {
@@ -900,13 +907,23 @@ export function HooksPanel({ config, onRescan }: Props) {
                           ) : (
                             <>
                               {hook.command && (
-                                <div className="overflow-x-auto rounded bg-bg px-2 py-1 font-mono text-sm text-gray-300">
-                                  {hook.command}
+                                <div className="max-w-full rounded bg-bg">
+                                  <pre
+                                    className="overflow-hidden text-ellipsis whitespace-nowrap px-2 py-1 font-mono text-sm text-gray-300"
+                                    title={hook.command}
+                                  >
+                                    {hook.command}
+                                  </pre>
                                 </div>
                               )}
                               {hook.prompt && (
-                                <div className="mt-1 overflow-x-auto rounded bg-bg px-2 py-1 text-sm text-gray-300">
-                                  {hook.prompt}
+                                <div className="mt-1 max-w-full rounded bg-bg">
+                                  <div
+                                    className="whitespace-pre-wrap px-2 py-1 text-sm text-gray-300"
+                                    title={hook.prompt}
+                                  >
+                                    {hook.prompt}
+                                  </div>
                                 </div>
                               )}
                             </>

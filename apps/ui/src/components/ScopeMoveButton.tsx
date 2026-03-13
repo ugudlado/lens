@@ -4,10 +4,10 @@ import { ScopeIndicator } from "./ScopeIndicator.js";
 
 // Dot color per scope — mirrors SCOPE_BADGE_STYLES
 const SCOPE_DOT: Record<ConfigScope, string> = {
-  [ConfigScope.Managed]: "text-gray-500",
-  [ConfigScope.Global]: "text-blue-400",
-  [ConfigScope.Project]: "text-green-400",
-  [ConfigScope.Local]: "text-yellow-400",
+  [ConfigScope.Managed]: "text-rose-400",
+  [ConfigScope.Global]: "text-sky-400",
+  [ConfigScope.Project]: "text-teal-400",
+  [ConfigScope.Local]: "text-amber-400",
 };
 
 export interface ScopeMoveOption {

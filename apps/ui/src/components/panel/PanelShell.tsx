@@ -7,7 +7,7 @@ interface PanelShellProps {
   actions?: React.ReactNode;
   view?: string;
   onViewChange?: (v: string) => void;
-  viewOptions?: Array<{ value: string; label: string }>;
+  viewOptions?: Array<{ value: string; label: string; title?: string }>;
   children: React.ReactNode;
 }
 

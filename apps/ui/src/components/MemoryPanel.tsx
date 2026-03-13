@@ -91,11 +91,11 @@ export function MemoryPanel({ config, onRescan }: Props) {
       actions={
         memoryDir ? (
           <AddButton variant="header" onClick={() => setShowNewForm((v) => !v)}>
-            + New File
+            + Add File
           </AddButton>
         ) : (
           <AddButton variant="header" onClick={() => {}} disabled>
-            + New File
+            + Add File
           </AddButton>
         )
       }
@@ -105,8 +105,16 @@ export function MemoryPanel({ config, onRescan }: Props) {
         if (v === "effective") setJumpTarget(null);
       }}
       viewOptions={[
-        { value: "effective", label: "Effective" },
-        { value: "json", label: "Files" },
+        {
+          value: "effective",
+          label: "Effective",
+          title: "Merged view of all active config across scopes",
+        },
+        {
+          value: "json",
+          label: "Files",
+          title: "Per-file breakdown showing which scope defines each value",
+        },
       ]}
     >
       {memoryDir && (

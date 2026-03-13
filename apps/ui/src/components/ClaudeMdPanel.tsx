@@ -128,8 +128,16 @@ export function ClaudeMdPanel({ config, onRescan }: Props) {
         if (v === "effective") setJumpTarget(null);
       }}
       viewOptions={[
-        { value: "effective", label: "Effective" },
-        { value: "json", label: "Files" },
+        {
+          value: "effective",
+          label: "Effective",
+          title: "Merged view of all active config across scopes",
+        },
+        {
+          value: "json",
+          label: "Files",
+          title: "Per-file breakdown showing which scope defines each value",
+        },
       ]}
     >
       <p className="mb-6 text-xs text-gray-600">

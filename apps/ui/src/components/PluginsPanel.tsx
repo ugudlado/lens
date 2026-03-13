@@ -211,7 +211,7 @@ export function PluginsPanel({ config, onRescan }: Props) {
             </span>
           )}
           {totalAgents > 0 && (
-            <span className="rounded bg-purple-500/15 px-2 py-0.5 text-xs font-medium text-purple-400">
+            <span className="rounded bg-orange-500/15 px-2 py-0.5 text-xs font-medium text-orange-400">
               {totalAgents} agents
             </span>
           )}
@@ -221,7 +221,7 @@ export function PluginsPanel({ config, onRescan }: Props) {
             </span>
           )}
           {totalMcps > 0 && (
-            <span className="rounded bg-blue-500/15 px-2 py-0.5 text-xs font-medium text-blue-400">
+            <span className="rounded bg-sky-500/15 px-2 py-0.5 text-xs font-medium text-sky-400">
               {totalMcps} MCPs
             </span>
           )}
@@ -692,7 +692,7 @@ function InstalledPluginRow({
                   );
                 })}
               {mcpServers.length > 0 && (
-                <span className="rounded bg-blue-500/15 px-2 py-0.5 text-xs font-medium text-blue-400">
+                <span className="rounded bg-sky-500/15 px-2 py-0.5 text-xs font-medium text-sky-400">
                   {mcpServers.length} {mcpServers.length === 1 ? "MCP" : "MCPs"}
                 </span>
               )}
@@ -914,7 +914,7 @@ function InstalledPluginRow({
           {/* MCP Servers */}
           {mcpServers.length > 0 && (
             <div>
-              <span className="text-xs font-medium uppercase tracking-wide text-blue-400">
+              <span className="text-xs font-medium uppercase tracking-wide text-sky-400">
                 MCP Servers ({mcpServers.length})
               </span>
               <div className="mt-1 flex flex-col gap-1.5">
@@ -932,7 +932,7 @@ function InstalledPluginRow({
                       <span
                         className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${server.enabled ? "bg-green-400" : "bg-gray-600"}`}
                       />
-                      <span className="flex-shrink-0 rounded bg-blue-500/15 px-2 py-0.5 font-mono text-xs text-blue-400">
+                      <span className="flex-shrink-0 rounded bg-sky-500/15 px-2 py-0.5 font-mono text-xs text-sky-400">
                         {displayName}
                       </span>
                       <span
@@ -1065,7 +1065,7 @@ function AvailablePluginRow({
         <span className="h-2 w-2 flex-shrink-0 rounded-full bg-gray-600" />
         <span className="text-sm text-gray-400">{plugin.name}</span>
         {plugin.external && (
-          <span className="rounded bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-blue-400">
+          <span className="rounded bg-sky-500/10 px-2 py-0.5 text-xs font-medium text-sky-400">
             External
           </span>
         )}
@@ -1079,7 +1079,7 @@ function AvailablePluginRow({
           <button
             onClick={() => onInstall(PluginScope.User)}
             disabled={acting}
-            className="rounded bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-blue-400 transition-colors hover:bg-blue-500/20 disabled:opacity-50"
+            className="rounded bg-sky-500/10 px-2 py-0.5 text-xs font-medium text-sky-400 transition-colors hover:bg-blue-500/20 disabled:opacity-50"
             title="Install for current user (global)"
           >
             User
@@ -1124,7 +1124,7 @@ function FileIcon({ filename }: { filename: string }) {
   let icon = "F";
 
   if (ext === "md" || ext === "mdc") {
-    color = "text-blue-500";
+    color = "text-sky-500";
     icon = "M";
   } else if (ext === "json") {
     color = "text-yellow-500";

@@ -9,10 +9,10 @@ interface Props {
 }
 
 const SCOPE_COLORS: Record<string, string> = {
-  global: "text-blue-400",
-  project: "text-green-400",
-  local: "text-yellow-400",
-  managed: "text-gray-500",
+  global: "text-sky-400",
+  project: "text-teal-400",
+  local: "text-amber-400",
+  managed: "text-rose-400",
   "n/a": "text-gray-600",
 };
 
@@ -56,7 +56,7 @@ export function HeaderSearch({ search, onNavigate, onOpenPalette }: Props) {
     <div ref={containerRef} className="relative max-w-sm flex-1">
       <div className="relative">
         <svg
-          className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-600"
+          className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-500"
           viewBox="0 0 20 20"
           fill="currentColor"
         >
@@ -78,12 +78,12 @@ export function HeaderSearch({ search, onNavigate, onOpenPalette }: Props) {
           }}
           onKeyDown={handleKeyDown}
           placeholder="Search… (⌘K)"
-          className="w-full rounded-lg border border-white/10 bg-white/5 py-1.5 pl-8 pr-3 text-sm text-gray-300 transition-colors placeholder:text-gray-600 focus:border-accent/50 focus:outline-none"
+          className="w-full rounded-lg border border-white/10 bg-white/5 py-1.5 pl-8 pr-3 text-sm text-gray-300 transition-colors placeholder:text-gray-500 focus:border-accent/50 focus:outline-none"
         />
       </div>
 
       {open && query.trim() && (
-        <div className="absolute left-0 right-0 top-full z-40 mt-1 overflow-hidden rounded-lg border border-white/10 bg-[#0f0f1a] shadow-2xl">
+        <div className="absolute left-0 right-0 top-full z-40 mt-1 overflow-hidden rounded-lg border border-border bg-card shadow-2xl">
           {results.length === 0 ? (
             <p className="px-3 py-2.5 text-xs text-gray-600">No results</p>
           ) : (

@@ -258,7 +258,7 @@ export function ExportConfigModal({ config, onClose }: ExportConfigModalProps) {
       onClick={onClose}
     >
       <div
-        className="flex flex-col rounded-xl border border-white/10 bg-[#0a0a0f] shadow-2xl"
+        className="flex flex-col rounded-xl border border-white/10 bg-bg shadow-2xl"
         style={{
           width: "720px",
           maxWidth: "calc(100vw - 32px)",
@@ -295,7 +295,7 @@ export function ExportConfigModal({ config, onClose }: ExportConfigModalProps) {
                       onClick={() => setActiveSection(s)}
                       className={`flex w-full items-center gap-1.5 px-4 py-2 text-xs transition-colors ${
                         activeSection === s
-                          ? "bg-[#6c5ce7]/10 text-[#6c5ce7]"
+                          ? "bg-accent/10 text-accent"
                           : "text-gray-400 hover:bg-white/5 hover:text-gray-200"
                       }`}
                     >
@@ -306,7 +306,7 @@ export function ExportConfigModal({ config, onClose }: ExportConfigModalProps) {
                         <span
                           className={`ml-auto rounded px-1.5 py-0.5 text-[10px] font-medium ${
                             sel > 0
-                              ? "bg-[#6c5ce7]/20 text-[#6c5ce7]"
+                              ? "bg-accent/20 text-accent"
                               : "bg-white/5 text-gray-500"
                           }`}
                         >
@@ -334,7 +334,7 @@ export function ExportConfigModal({ config, onClose }: ExportConfigModalProps) {
                   {sectionItemsMap[activeSection].length > 0 && (
                     <button
                       onClick={() => toggleAllInSection(activeSection)}
-                      className="text-[10px] text-gray-500 transition-colors hover:text-[#6c5ce7]"
+                      className="text-[10px] text-gray-500 transition-colors hover:text-accent"
                     >
                       {sectionItemsMap[activeSection].every((item) =>
                         checked[activeSection].has(item.key),
@@ -356,13 +356,13 @@ export function ExportConfigModal({ config, onClose }: ExportConfigModalProps) {
                     sectionItemsMap[activeSection].map((item) => (
                       <label
                         key={item.key}
-                        className="flex cursor-pointer items-center gap-3 rounded-lg border border-white/10 bg-[#0a0a0f] px-3 py-2 transition-colors hover:border-[#6c5ce7]/30"
+                        className="flex cursor-pointer items-center gap-3 rounded-lg border border-white/10 bg-bg px-3 py-2 transition-colors hover:border-accent/30"
                       >
                         <input
                           type="checkbox"
                           checked={checked[activeSection].has(item.key)}
                           onChange={() => toggleItem(activeSection, item.key)}
-                          className="h-3.5 w-3.5 flex-shrink-0 accent-[#6c5ce7]"
+                          className="h-3.5 w-3.5 flex-shrink-0 accent-accent"
                         />
                         <div className="min-w-0 flex-1">
                           <div className="truncate text-xs font-medium text-gray-200">
@@ -384,7 +384,7 @@ export function ExportConfigModal({ config, onClose }: ExportConfigModalProps) {
 
           {modalState === "exporting" && (
             <div className="flex flex-1 flex-col items-center justify-center gap-4 py-12">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#6c5ce7]/30 border-t-[#6c5ce7]" />
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent/30 border-t-accent" />
               <p className="text-sm text-gray-400">
                 Exporting configuration...
               </p>
@@ -404,7 +404,7 @@ export function ExportConfigModal({ config, onClose }: ExportConfigModalProps) {
           <button
             onClick={() => void handleExport()}
             disabled={total === 0 || modalState === "exporting"}
-            className="rounded bg-[#6c5ce7]/20 px-4 py-1.5 text-xs font-medium text-[#6c5ce7] transition-colors hover:bg-[#6c5ce7]/30 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded bg-accent/20 px-4 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/30 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Export {total > 0 ? `${total} item${total !== 1 ? "s" : ""}` : ""}
           </button>

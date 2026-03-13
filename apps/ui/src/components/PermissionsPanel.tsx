@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ConfigScope, PermissionType } from "@lens/schema";
+import { useEditing } from "../context/EditingContext.js";
 import type { ConfigSnapshot, PermissionRule } from "@lens/schema";
 import { ScopeIndicator } from "./ScopeIndicator";
 import { RawJsonView } from "./RawJsonView";
@@ -49,6 +50,7 @@ function truncatePath(path: string, maxLen = 60) {
 
 export function PermissionsPanel({ config, onRescan }: Props) {
   const { rules, defaultMode } = config.permissions;
+  const editingMode = useEditing();
   const { update, saving, error } = useConfigUpdate(onRescan);
   const [newRule, setNewRule] = useState<Record<string, string>>({
     allow: "",
@@ -240,8 +242,16 @@ export function PermissionsPanel({ config, onRescan }: Props) {
         setEditingRule(null);
       }}
       viewOptions={[
-        { value: "effective", label: "Effective" },
-        { value: "json", label: "Files" },
+        {
+          value: "effective",
+          label: "Effective",
+          title: "Merged view of all active config across scopes",
+        },
+        {
+          value: "json",
+          label: "Files",
+          title: "Per-file breakdown showing which scope defines each value",
+        },
       ]}
     >
       {defaultMode && (
@@ -376,64 +386,67 @@ export function PermissionsPanel({ config, onRescan }: Props) {
                             >
                               {truncatePath(rule.filePath)} ↗
                             </button>
-                            {rule.scope !== ConfigScope.Managed && (
-                              <>
-                                <ScopeMoveButton
-                                  options={getScopeOptions(rule)}
-                                  saving={saving}
-                                />
-                                <button
-                                  onClick={() =>
-                                    setEditingRule({
-                                      rule,
-                                      index: fileIndex,
-                                      newText: rule.rule,
-                                    })
-                                  }
-                                  disabled={saving}
-                                  className="px-1 text-sm text-gray-600 transition-colors hover:text-accent disabled:opacity-50"
-                                  title="Edit rule"
-                                >
-                                  ✎
-                                </button>
-                                <DeleteButton
-                                  onClick={() => void removeRule(rule)}
-                                  disabled={saving}
-                                  title="Remove rule"
-                                />
-                              </>
-                            )}
+                            {rule.scope !== ConfigScope.Managed &&
+                              editingMode && (
+                                <>
+                                  <ScopeMoveButton
+                                    options={getScopeOptions(rule)}
+                                    saving={saving}
+                                  />
+                                  <button
+                                    onClick={() =>
+                                      setEditingRule({
+                                        rule,
+                                        index: fileIndex,
+                                        newText: rule.rule,
+                                      })
+                                    }
+                                    disabled={saving}
+                                    className="px-1 text-sm text-gray-600 transition-colors hover:text-accent disabled:opacity-50"
+                                    title="Edit rule"
+                                  >
+                                    ✎
+                                  </button>
+                                  <DeleteButton
+                                    onClick={() => void removeRule(rule)}
+                                    disabled={saving}
+                                    title="Remove rule"
+                                  />
+                                </>
+                              )}
                           </>
                         )}
                       </div>
                     );
                   })}
-                  {/* Add rule form */}
-                  <div className="flex items-center gap-2 px-4 py-2">
-                    <input
-                      type="text"
-                      value={newRule[type] ?? ""}
-                      onChange={(e) =>
-                        setNewRule((prev) => ({
-                          ...prev,
-                          [type]: e.target.value,
-                        }))
-                      }
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") void addRule(type);
-                      }}
-                      placeholder={`Add ${type} rule...`}
-                      disabled={saving}
-                      className="flex-1 rounded border border-border bg-bg px-3 py-1.5 font-mono text-sm text-gray-200 placeholder-gray-600 focus:border-accent focus:outline-none disabled:opacity-50"
-                    />
-                    <button
-                      onClick={() => void addRule(type)}
-                      disabled={saving || !newRule[type]?.trim()}
-                      className="rounded bg-accent/20 px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/30 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      Add
-                    </button>
-                  </div>
+                  {/* Add rule form - only in edit mode */}
+                  {editingMode && (
+                    <div className="flex items-center gap-2 px-4 py-2">
+                      <input
+                        type="text"
+                        value={newRule[type] ?? ""}
+                        onChange={(e) =>
+                          setNewRule((prev) => ({
+                            ...prev,
+                            [type]: e.target.value,
+                          }))
+                        }
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") void addRule(type);
+                        }}
+                        placeholder={`Add ${type} rule...`}
+                        disabled={saving}
+                        className="flex-1 rounded border border-border bg-bg px-3 py-1.5 font-mono text-sm text-gray-200 placeholder-gray-600 focus:border-accent focus:outline-none disabled:opacity-50"
+                      />
+                      <button
+                        onClick={() => void addRule(type)}
+                        disabled={saving || !newRule[type]?.trim()}
+                        className="rounded bg-accent/20 px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/30 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             );

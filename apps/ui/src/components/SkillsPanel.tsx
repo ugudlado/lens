@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useEditing } from "../context/EditingContext.js";
 import { ConfigScope, EntrySource } from "@lens/schema";
 import type { ConfigSnapshot } from "@lens/schema";
 import { ScopeIndicator } from "./ScopeIndicator";
@@ -25,6 +26,7 @@ interface Props {
 
 export function SkillsPanel({ config, onRescan }: Props) {
   const { skills } = config.skills;
+  const editingMode = useEditing();
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [view, setView] = useState<"effective" | "json">("effective");
@@ -236,9 +238,11 @@ TODO: Write your skill instructions here.
       title="Skills"
       subtitle={`${skills.length} skill${skills.length !== 1 ? "s" : ""} configured`}
       actions={
-        <AddButton onClick={() => setShowCreateForm((v) => !v)}>
-          {showCreateForm ? "Cancel" : "+ New Skill"}
-        </AddButton>
+        editingMode ? (
+          <AddButton onClick={() => setShowCreateForm((v) => !v)}>
+            {showCreateForm ? "Cancel" : "+ Add Skill"}
+          </AddButton>
+        ) : undefined
       }
       view={view}
       onViewChange={(v) => {
@@ -246,8 +250,16 @@ TODO: Write your skill instructions here.
         if (v === "effective") setJumpTarget(null);
       }}
       viewOptions={[
-        { value: "effective", label: "Effective" },
-        { value: "json", label: "Files" },
+        {
+          value: "effective",
+          label: "Effective",
+          title: "Merged view of all active config across scopes",
+        },
+        {
+          value: "json",
+          label: "Files",
+          title: "Per-file breakdown showing which scope defines each value",
+        },
       ]}
     >
       {showCreateForm && (
@@ -376,6 +388,7 @@ TODO: Write your skill instructions here.
                       </>
                     }
                     actions={
+                      editingMode &&
                       skill.source !== EntrySource.Plugin &&
                       skill.scope !== ConfigScope.Managed ? (
                         <>

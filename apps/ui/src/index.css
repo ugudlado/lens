@@ -1,15 +1,107 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* Typography */
+body,
+html {
+  font-family: "Geist", system-ui, sans-serif;
+}
+
+/* Warm amber palette overrides */
+.text-accent,
+.group:hover .group-hover\:text-accent-hover {
+  color: #c07b2e !important;
+}
+.bg-accent {
+  background-color: #c07b2e !important;
+}
+.bg-accent\/10,
+.hover\:bg-accent\/10:hover {
+  background-color: rgb(192 123 46 / 0.1) !important;
+}
+.bg-accent\/20,
+.hover\:bg-accent\/20:hover {
+  background-color: rgb(192 123 46 / 0.2) !important;
+}
+.bg-accent\/30,
+.hover\:bg-accent\/30:hover {
+  background-color: rgb(192 123 46 / 0.3) !important;
+}
+.bg-accent\/60 {
+  background-color: rgb(192 123 46 / 0.6) !important;
+}
+.border-accent {
+  border-color: #c07b2e !important;
+}
+.border-accent\/30,
+.hover\:border-accent\/30:hover {
+  border-color: rgb(192 123 46 / 0.3) !important;
+}
+.border-accent\/40,
+.hover\:border-accent\/40:hover {
+  border-color: rgb(192 123 46 / 0.4) !important;
+}
+.border-accent\/50,
+.hover\:border-accent\/50:hover {
+  border-color: rgb(192 123 46 / 0.5) !important;
+}
+.border-t-accent {
+  border-top-color: #c07b2e !important;
+}
+.text-accent-hover,
+.group:hover .group-hover\:text-accent-hover {
+  color: #d4922d !important;
+}
+.focus\:border-accent:focus {
+  border-color: #c07b2e !important;
+}
+.border-r-2.border-accent {
+  border-right-color: #c07b2e !important;
+}
+.bg-sidebar {
+  background-color: #100f0e !important;
+}
+.bg-bg {
+  background-color: #0c0b0a !important;
+}
+.bg-card {
+  background-color: #161412 !important;
+}
+.border-border {
+  border-color: #252220 !important;
+}
+.divide-border > :not([hidden]) ~ :not([hidden]) {
+  border-color: #252220 !important;
+}
+body {
+  background-color: #0c0b0a !important;
+}
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #1e1e2e transparent;
+  scrollbar-color: #252220 transparent;
 }
 
 [data-search-highlight] {
-  outline: 2px solid #6c5ce7;
+  outline: 2px solid #c07b2e;
   outline-offset: 2px;
   border-radius: 6px;
   transition: outline 0.15s ease;
+}
+
+/* Global transition defaults */
+button {
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Panel row tightening */
+.panel-row-compact {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+/* Subtle active sidebar indicator glow */
+.sidebar-active-glow {
+  box-shadow: inset -2px 0 8px -2px rgb(192 123 46 / 0.15);
 }

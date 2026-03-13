@@ -18,7 +18,7 @@ export function PanelRow({
   actions,
 }: PanelRowProps) {
   return (
-    <div className="rounded-lg border border-border bg-card">
+    <div className="group rounded-lg border border-border bg-card">
       <div className="flex items-center">
         <button
           type="button"

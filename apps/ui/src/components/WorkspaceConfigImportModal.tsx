@@ -852,13 +852,13 @@ export function WorkspaceConfigImportModal({
         }
         badge={(() => {
           const label = s.type;
-          let color: "purple" | "cyan" | "orange";
+          let color: "orange" | "teal" | "amber";
           if (s.type === McpServerType.Stdio) {
-            color = "purple";
-          } else if (s.type === McpServerType.Http) {
-            color = "cyan";
-          } else {
             color = "orange";
+          } else if (s.type === McpServerType.Http) {
+            color = "teal";
+          } else {
+            color = "amber";
           }
           return { label, color };
         })()}
@@ -962,7 +962,7 @@ export function WorkspaceConfigImportModal({
         onToggle={() => toggleItem("plugins", key)}
         title={p.name}
         subtitle={p.description ?? p.marketplace}
-        badge={{ label: p.marketplace, color: "purple" }}
+        badge={{ label: p.marketplace, color: "orange" }}
       />
     );
   }
@@ -1388,13 +1388,16 @@ export function WorkspaceConfigImportModal({
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
 const BADGE_COLOR_CLASSES: Record<string, string> = {
-  purple: "bg-purple-500/20 text-purple-400",
-  cyan: "bg-cyan-500/20 text-cyan-400",
   orange: "bg-orange-500/20 text-orange-400",
-  blue: "bg-blue-500/20 text-blue-400",
-  green: "bg-green-500/20 text-green-400",
-  red: "bg-red-500/20 text-red-400",
-  yellow: "bg-yellow-500/20 text-yellow-400",
+  teal: "bg-teal-500/20 text-teal-400",
+  amber: "bg-amber-500/20 text-amber-400",
+  sky: "bg-sky-500/20 text-sky-400",
+  rose: "bg-rose-500/20 text-rose-400",
+  green: "bg-teal-500/20 text-teal-400",
+  red: "bg-rose-500/20 text-rose-400",
+  yellow: "bg-amber-500/20 text-amber-400",
+  blue: "bg-sky-500/20 text-sky-400",
+  purple: "bg-orange-500/20 text-orange-400",
 };
 
 function ImportRow({
@@ -1447,7 +1450,7 @@ function ImportRow({
         type="checkbox"
         checked={checked}
         onChange={onToggle}
-        className="h-3.5 w-3.5 flex-shrink-0 accent-[#6c5ce7]"
+        className="h-3.5 w-3.5 flex-shrink-0 accent-accent"
       />
       <div className="min-w-0 flex-1">
         <div className="truncate text-xs font-medium text-gray-200">

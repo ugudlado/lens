@@ -9,20 +9,59 @@ interface NavItem {
   label: string;
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { key: NavSection.Overview, icon: "\u25CE", label: "Overview" },
-  { key: NavSection.ClaudeMd, icon: "\uD83D\uDCC4", label: "CLAUDE.md" },
-  { key: NavSection.Settings, icon: "\u2699", label: "Settings" },
-  { key: NavSection.Permissions, icon: "\uD83D\uDD12", label: "Permissions" },
-  { key: NavSection.Mcp, icon: "\uD83D\uDD0C", label: "MCP Servers" },
-  { key: NavSection.Hooks, icon: "\u26A1", label: "Hooks" },
-  { key: NavSection.Skills, icon: "\u2726", label: "Skills" },
-  { key: NavSection.Agents, icon: "\uD83E\uDD16", label: "Agents" },
-  { key: NavSection.Rules, icon: "\uD83D\uDCCF", label: "Rules" },
-  { key: NavSection.Commands, icon: "\u2318", label: "Commands" },
-  { key: NavSection.Memory, icon: "\uD83D\uDCBE", label: "Memory" },
-  { key: NavSection.Plugins, icon: "\uD83E\uDDE9", label: "Plugins" },
-  { key: NavSection.Sandbox, icon: "\uD83D\uDCE6", label: "Sandbox" },
+// Group nav items by logical sections with group metadata
+interface NavGroup {
+  label: string;
+  color: string;
+  items: NavItem[];
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    label: "",
+    color: "",
+    items: [{ key: NavSection.Overview, label: "Overview", icon: "▦" }],
+  },
+  {
+    label: "INSTRUCTIONS",
+    color: "text-gray-600",
+    items: [
+      { key: NavSection.ClaudeMd, label: "CLAUDE.md", icon: "◧" },
+      { key: NavSection.Rules, label: "Rules", icon: "▤" },
+      { key: NavSection.Memory, label: "Memory", icon: "◌" },
+    ],
+  },
+  {
+    label: "CAPABILITIES",
+    color: "text-gray-600",
+    items: [
+      { key: NavSection.Skills, label: "Skills", icon: "✦" },
+      { key: NavSection.Agents, label: "Agents", icon: "◫" },
+      { key: NavSection.Commands, label: "Commands", icon: "▷" },
+    ],
+  },
+  {
+    label: "INTEGRATIONS",
+    color: "text-gray-600",
+    items: [
+      { key: NavSection.Mcp, label: "MCP Servers", icon: "◉" },
+      { key: NavSection.Hooks, label: "Hooks", icon: "◆" },
+      { key: NavSection.Plugins, label: "Plugins", icon: "⬡" },
+    ],
+  },
+  {
+    label: "POLICY",
+    color: "text-gray-600",
+    items: [
+      { key: NavSection.Settings, label: "Settings", icon: "◎" },
+      { key: NavSection.Permissions, label: "Permissions", icon: "◈" },
+    ],
+  },
+  {
+    label: "",
+    color: "",
+    items: [{ key: NavSection.Sandbox, label: "Sandbox", icon: "◻" }],
+  },
 ];
 
 function getCount(
@@ -80,13 +119,13 @@ export function Sidebar({
   onRemoveWorkspace,
 }: SidebarProps) {
   return (
-    <aside className="flex min-h-screen w-56 flex-col border-r border-border bg-sidebar">
-      <div className="border-b border-border px-4 py-5">
+    <aside className="flex min-h-screen w-52 flex-col border-r-2 border-border/60 bg-sidebar">
+      <div className="border-b border-border px-4 py-4">
         <div className="flex items-baseline gap-2">
           <h1 className="text-xs font-bold uppercase tracking-widest text-accent">
             {APP_NAME}
           </h1>
-          <span className="text-[10px] text-gray-600">v{APP_VERSION}</span>
+          <span className="text-[10px] text-white/20">v{APP_VERSION}</span>
         </div>
       </div>
       <WorkspaceSwitcher
@@ -96,34 +135,40 @@ export function Sidebar({
         onAdd={onAddWorkspace}
         onRemove={onRemoveWorkspace}
       />
-      <nav className="flex-1 overflow-y-auto py-2">
-        {NAV_ITEMS.map((item) => {
-          const isActive = active === item.key;
-          const count = getCount(item.key, config);
-          return (
-            <button
-              key={item.key}
-              onClick={() => onNavigate(item.key)}
-              className={`flex w-full items-center gap-3 px-4 py-2 text-sm transition-colors ${
-                isActive
-                  ? "border-r-2 border-accent bg-accent/10 text-accent"
-                  : "text-gray-400 hover:bg-white/5 hover:text-gray-200"
-              }`}
-            >
-              <span className="w-5 text-center text-base">{item.icon}</span>
-              <span className="flex-1 text-left">{item.label}</span>
-              {count !== null && (
-                <span
-                  className={`text-xs tabular-nums ${
-                    isActive ? "text-accent" : "text-gray-500"
+      <nav className="flex-1 overflow-y-auto py-1.5">
+        {NAV_GROUPS.map((group, groupIdx) => (
+          <div key={groupIdx}>
+            {group.label && (
+              <div
+                className={`mb-1 mt-3 px-2 text-[9px] font-semibold uppercase tracking-wider opacity-40 ${group.color}`}
+              >
+                {group.label}
+              </div>
+            )}
+            {group.items.map((item) => {
+              const isActive = active === item.key;
+              const count = getCount(item.key, config);
+              return (
+                <button
+                  key={item.key}
+                  onClick={() => onNavigate(item.key)}
+                  className={`flex w-full items-center gap-2.5 px-3.5 py-1.5 text-xs transition-colors ${
+                    isActive
+                      ? "sidebar-active-glow border-r-2 border-accent bg-accent/10 text-accent"
+                      : "text-gray-400 hover:bg-white/[0.04] hover:text-gray-200"
                   }`}
                 >
-                  {count}
-                </span>
-              )}
-            </button>
-          );
-        })}
+                  <span className="flex-1 text-left">{item.label}</span>
+                  {count !== null && count > 0 && (
+                    <span className="min-w-[1.5rem] text-right text-xs tabular-nums text-slate-500">
+                      {count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        ))}
       </nav>
     </aside>
   );

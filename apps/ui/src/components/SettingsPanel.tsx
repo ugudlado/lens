@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ConfigScope } from "@lens/schema";
+import { useEditing } from "../context/EditingContext.js";
 import type { ConfigSnapshot, ScopedItem, SettingsFile } from "@lens/schema";
 import { ScopeIndicator } from "./ScopeIndicator";
 import { RawJsonView } from "./RawJsonView";
@@ -236,6 +237,7 @@ function AddSettingForm({
 
 export function SettingsPanel({ config, onRescan }: Props) {
   const { files, effective } = config.settings;
+  const editingMode = useEditing();
   const [view, setView] = useState<View>("effective");
   const [showAddForm, setShowAddForm] = useState(false);
   const [jumpTarget, setJumpTarget] = useState<JumpTarget | null>(null);
@@ -354,7 +356,7 @@ export function SettingsPanel({ config, onRescan }: Props) {
       title="Settings"
       subtitle={`${effectiveEntries.length} effective settings from ${files.length} file${files.length !== 1 ? "s" : ""}`}
       actions={
-        view === "effective" ? (
+        editingMode && view === "effective" ? (
           <AddButton variant="header" onClick={() => setShowAddForm((v) => !v)}>
             {showAddForm ? "Cancel" : "+ Add Setting"}
           </AddButton>
@@ -366,8 +368,16 @@ export function SettingsPanel({ config, onRescan }: Props) {
         setJumpTarget(null);
       }}
       viewOptions={[
-        { value: "effective", label: "Effective" },
-        { value: "by-file", label: "Files" },
+        {
+          value: "effective",
+          label: "Effective",
+          title: "Merged view of all active config across scopes",
+        },
+        {
+          value: "by-file",
+          label: "Files",
+          title: "Per-file breakdown showing which scope defines each value",
+        },
       ]}
     >
       {error && (
@@ -403,9 +413,9 @@ export function SettingsPanel({ config, onRescan }: Props) {
                   id={`setting-${slug(key)}-${item.scope}`}
                   className="flex items-center gap-3 px-4 py-3"
                 >
-                  <code className="min-w-0 flex-shrink-0 font-mono text-sm text-gray-200">
+                  <span className="min-w-0 flex-shrink-0 text-sm font-medium text-gray-200">
                     {key}
-                  </code>
+                  </span>
                   <EditableValue
                     settingKey={key}
                     item={item}
@@ -413,34 +423,38 @@ export function SettingsPanel({ config, onRescan }: Props) {
                     saving={saving}
                   />
                   <ScopeIndicator scope={item.scope} />
-                  <ScopeMoveButton
-                    saving={saving}
-                    options={COPYABLE_SCOPES.filter(
-                      (s) => s !== item.scope,
-                    ).flatMap((scope) => {
-                      const file = files.find((f) => f.scope === scope);
-                      if (!file?.editable) return [];
-                      const option: ScopeMoveOption = {
-                        label: scope,
-                        scope,
-                        filePath: file.filePath,
-                        onCopy: () => copyToScope(key, item.value, file),
-                        onMove:
-                          item.editable && item.scope !== ConfigScope.Managed
-                            ? async () =>
-                                moveToScope(key, item.value, file, item)
-                            : undefined,
-                      };
-                      return [option];
-                    })}
-                  />
-                  {item.editable && item.scope !== ConfigScope.Managed && (
-                    <DeleteButton
-                      onClick={() => deleteSetting(key, item)}
-                      disabled={saving}
-                      title={`Delete "${key}" from ${item.scope} scope`}
+                  {editingMode && (
+                    <ScopeMoveButton
+                      saving={saving}
+                      options={COPYABLE_SCOPES.filter(
+                        (s) => s !== item.scope,
+                      ).flatMap((scope) => {
+                        const file = files.find((f) => f.scope === scope);
+                        if (!file?.editable) return [];
+                        const option: ScopeMoveOption = {
+                          label: scope,
+                          scope,
+                          filePath: file.filePath,
+                          onCopy: () => copyToScope(key, item.value, file),
+                          onMove:
+                            item.editable && item.scope !== ConfigScope.Managed
+                              ? async () =>
+                                  moveToScope(key, item.value, file, item)
+                              : undefined,
+                        };
+                        return [option];
+                      })}
                     />
                   )}
+                  {editingMode &&
+                    item.editable &&
+                    item.scope !== ConfigScope.Managed && (
+                      <DeleteButton
+                        onClick={() => deleteSetting(key, item)}
+                        disabled={saving}
+                        title={`Delete "${key}" from ${item.scope} scope`}
+                      />
+                    )}
                   <button
                     onClick={() => jumpToFile(key, item.filePath)}
                     className="max-w-[180px] truncate font-mono text-xs text-gray-600 transition-colors hover:text-accent"

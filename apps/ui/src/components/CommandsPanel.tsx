@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ConfigScope, EntrySource } from "@lens/schema";
+import { useEditing } from "../context/EditingContext.js";
 import type { ConfigSnapshot } from "@lens/schema";
 import { ScopeIndicator } from "./ScopeIndicator";
 import { EditableContent } from "./EditableContent";
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export function CommandsPanel({ config, onRescan }: Props) {
+  const editingMode = useEditing();
   const { commands } = config.commands;
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [view, setView] = useState<"effective" | "json">("effective");
@@ -154,8 +156,16 @@ export function CommandsPanel({ config, onRescan }: Props) {
         if (v === "effective") setJumpTarget(null);
       }}
       viewOptions={[
-        { value: "effective", label: "Effective" },
-        { value: "json", label: "Files" },
+        {
+          value: "effective",
+          label: "Effective",
+          title: "Merged view of all active config across scopes",
+        },
+        {
+          value: "json",
+          label: "Files",
+          title: "Per-file breakdown showing which scope defines each value",
+        },
       ]}
     >
       {(() => {
@@ -212,6 +222,7 @@ export function CommandsPanel({ config, onRescan }: Props) {
                       </>
                     }
                     actions={
+                      editingMode &&
                       cmd.source !== EntrySource.Plugin &&
                       cmd.scope !== ConfigScope.Managed ? (
                         <ScopeMoveButton

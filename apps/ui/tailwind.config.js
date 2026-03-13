@@ -4,12 +4,12 @@ export default {
   theme: {
     extend: {
       colors: {
-        bg: "#0a0a0f",
-        sidebar: "#0f0f18",
-        card: "#14141f",
-        border: "#1e1e2e",
-        accent: "#6c5ce7",
-        "accent-hover": "#7c6ef7",
+        bg: "#0c0b0a",
+        sidebar: "#100f0e",
+        card: "#161412",
+        border: "#252220",
+        accent: "#c07b2e",
+        "accent-hover": "#d4922d",
       },
     },
   },

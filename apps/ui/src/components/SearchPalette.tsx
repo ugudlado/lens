@@ -14,11 +14,11 @@ interface Props {
 }
 
 const SCOPE_COLORS: Record<string, string> = {
-  global: "bg-blue-500/20 text-blue-400",
-  project: "bg-green-500/20 text-green-400",
-  local: "bg-yellow-500/20 text-yellow-400",
-  managed: "bg-gray-500/20 text-gray-400",
-  "n/a": "bg-gray-500/10 text-gray-600",
+  global: "bg-sky-500/20 text-sky-400",
+  project: "bg-teal-500/20 text-teal-400",
+  local: "bg-amber-500/20 text-amber-400",
+  managed: "bg-rose-500/20 text-rose-400",
+  "n/a": "bg-stone-500/10 text-stone-600",
 };
 
 interface WorkspaceItem {

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ConfigScope, EntrySource } from "@lens/schema";
+import { useEditing } from "../context/EditingContext.js";
 import type { ConfigSnapshot } from "@lens/schema";
 import { ScopeIndicator } from "./ScopeIndicator";
 import { EditableContent } from "./EditableContent";
@@ -25,6 +26,7 @@ interface Props {
 
 export function AgentsPanel({ config, onRescan }: Props) {
   const { agents } = config.agents;
+  const editingMode = useEditing();
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [view, setView] = useState<"effective" | "json">("effective");
@@ -235,9 +237,11 @@ TODO: Write agent instructions here.
       title="Agents"
       subtitle={`${agents.length} agent${agents.length !== 1 ? "s" : ""} configured`}
       actions={
-        <AddButton onClick={() => setShowCreateForm((v) => !v)}>
-          {showCreateForm ? "Cancel" : "+ New Agent"}
-        </AddButton>
+        editingMode ? (
+          <AddButton onClick={() => setShowCreateForm((v) => !v)}>
+            {showCreateForm ? "Cancel" : "+ Add Agent"}
+          </AddButton>
+        ) : undefined
       }
       view={view}
       onViewChange={(v) => {
@@ -245,8 +249,16 @@ TODO: Write agent instructions here.
         if (v === "effective") setJumpTarget(null);
       }}
       viewOptions={[
-        { value: "effective", label: "Effective" },
-        { value: "json", label: "Files" },
+        {
+          value: "effective",
+          label: "Effective",
+          title: "Merged view of all active config across scopes",
+        },
+        {
+          value: "json",
+          label: "Files",
+          title: "Per-file breakdown showing which scope defines each value",
+        },
       ]}
     >
       {showCreateForm && (
@@ -375,6 +387,7 @@ TODO: Write agent instructions here.
                       </>
                     }
                     actions={
+                      editingMode &&
                       agent.source !== EntrySource.Plugin &&
                       agent.scope !== ConfigScope.Managed ? (
                         <>
@@ -412,7 +425,7 @@ TODO: Write agent instructions here.
                             </span>
                           )}
                           {agent.memory && (
-                            <span className="rounded bg-purple-500/20 px-2 py-0.5 text-xs font-medium text-purple-400">
+                            <span className="rounded bg-orange-500/15 px-2 py-0.5 text-xs font-medium text-orange-400">
                               memory: {agent.memory}
                             </span>
                           )}
