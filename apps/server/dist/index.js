@@ -6662,7 +6662,7 @@ init_cjs_shim();
 // src/index.ts
 import { realpathSync as realpathSync5 } from "node:fs";
 import { readFile as readFile8, rm } from "node:fs/promises";
-import { homedir as homedir9 } from "node:os";
+import { homedir as homedir10 } from "node:os";
 import { dirname as dirname5, resolve as resolve7 } from "node:path";
 import { fileURLToPath as fileURLToPath3 } from "node:url";
 
@@ -14162,7 +14162,7 @@ var plugins_default = app4;
 init_cjs_shim();
 import { realpathSync as realpathSync3 } from "node:fs";
 import { resolve as resolve3 } from "node:path";
-import { homedir as homedir5 } from "node:os";
+import { homedir as homedir6 } from "node:os";
 
 // src/suggestions/index.ts
 init_cjs_shim();
@@ -14387,6 +14387,8 @@ function getSuggestions(config) {
 init_cjs_shim();
 import { access, mkdir as mkdir2, readFile as readFile5, writeFile as writeFile2 } from "node:fs/promises";
 import { join as join15 } from "node:path";
+import { homedir as homedir5 } from "node:os";
+var GLOBAL_DIR2 = join15(homedir5(), ".claude");
 var CLAUDE_MD_TEMPLATE = `# Project
 
 > **Getting started:** Consider installing these plugins to improve this file:
@@ -14438,13 +14440,14 @@ async function fixEnableSandbox(projectPath) {
   await writeFile2(target, JSON.stringify(existing, null, 2) + "\n");
 }
 async function fixCreateMemory(projectPath) {
-  const memoryDir = join15(projectPath, ".claude", "memory");
-  const target = join15(memoryDir, "AGENTS.md");
+  const projectDirName = projectPath.replace(/\//g, "-");
+  const memoryDir = join15(GLOBAL_DIR2, "projects", projectDirName, "memory");
+  const target = join15(memoryDir, "MEMORY.md");
   if (await fileExists(target)) return;
   await mkdir2(memoryDir, { recursive: true });
   await writeFile2(
     target,
-    `# Agent Memory
+    `# Memory
 
 <!-- Add persistent context for Claude here -->
 `
@@ -14484,9 +14487,9 @@ app5.post("/:id/fix", async (c) => {
   const abs = resolve3(projectPath);
   let realHome;
   try {
-    realHome = realpathSync3(homedir5());
+    realHome = realpathSync3(homedir6());
   } catch {
-    realHome = homedir5();
+    realHome = homedir6();
   }
   if (!abs.startsWith(realHome + "/") && abs !== realHome) {
     return c.json(
@@ -14514,7 +14517,7 @@ init_cjs_shim();
 import { readFile as readFile6, writeFile as writeFile3, mkdir as mkdir3 } from "node:fs/promises";
 import { realpathSync as realpathSync4 } from "node:fs";
 import { dirname as dirname2, resolve as resolve4 } from "node:path";
-import { homedir as homedir6 } from "node:os";
+import { homedir as homedir7 } from "node:os";
 var app6 = new Hono2();
 app6.patch("/", async (c) => {
   const body = await c.req.json();
@@ -14535,9 +14538,9 @@ app6.patch("/", async (c) => {
   const abs = resolve4(filePath);
   let realHome;
   try {
-    realHome = realpathSync4(homedir6());
+    realHome = realpathSync4(homedir7());
   } catch {
-    realHome = homedir6();
+    realHome = homedir7();
   }
   const isAllowed = abs.startsWith(realHome + "/") || abs === realHome;
   if (!isAllowed) {
@@ -14547,7 +14550,7 @@ app6.patch("/", async (c) => {
     );
   }
   const globalDir = resolve4(GLOBAL_DIR);
-  const globalDotClaudeJson = resolve4(homedir6(), ".claude.json");
+  const globalDotClaudeJson = resolve4(homedir7(), ".claude.json");
   const isGlobal = abs.startsWith(globalDir + "/") || abs === globalDir || abs === globalDotClaudeJson;
   if (isGlobal && !getAllowGlobalWrites()) {
     return c.json(
@@ -14614,7 +14617,7 @@ init_cjs_shim();
 import { readFile as readFile7, writeFile as writeFile4, mkdir as mkdir4 } from "node:fs/promises";
 import { existsSync as existsSync2 } from "node:fs";
 import { join as join19, basename as basename3 } from "node:path";
-import { homedir as homedir8 } from "node:os";
+import { homedir as homedir9 } from "node:os";
 
 // src/watcher.ts
 init_cjs_shim();
@@ -16314,7 +16317,7 @@ function watch(paths, options2 = {}) {
 
 // src/watcher.ts
 import { join as join18 } from "node:path";
-import { homedir as homedir7 } from "node:os";
+import { homedir as homedir8 } from "node:os";
 var listeners = /* @__PURE__ */ new Set();
 function onConfigChange(listener) {
   listeners.add(listener);
@@ -16350,7 +16353,7 @@ var GLOBAL_WATCH_SUBDIRS = [
   "mcp"
 ];
 function buildWatchPaths(projectRoots) {
-  const home = homedir7();
+  const home = homedir8();
   const claudeDir = join18(home, ".claude");
   const paths = GLOBAL_WATCH_SUBDIRS.map((sub) => join18(claudeDir, sub));
   for (const root of projectRoots) {
@@ -16391,7 +16394,7 @@ function restartWatcher(projectRoots) {
 }
 
 // src/routes/workspaces.ts
-var REGISTRY_DIR = join19(homedir8(), ".claude-config");
+var REGISTRY_DIR = join19(homedir9(), ".claude-config");
 var REGISTRY_FILE = join19(REGISTRY_DIR, "workspaces.json");
 async function readRegistry() {
   try {
@@ -16491,9 +16494,9 @@ app8.get("/api/file", async (c) => {
   if (!filePath) return c.json({ error: "Missing path" }, 400);
   let realHome;
   try {
-    realHome = realpathSync5(homedir9());
+    realHome = realpathSync5(homedir10());
   } catch {
-    realHome = homedir9();
+    realHome = homedir10();
   }
   const abs = resolve7(filePath);
   let realAbs;
@@ -16515,7 +16518,7 @@ app8.delete("/api/file", async (c) => {
   const filePath = c.req.query("path");
   if (!filePath) return c.json({ error: "Missing path" }, 400);
   const abs = resolve7(filePath);
-  const home = homedir9();
+  const home = homedir10();
   if (!abs.startsWith(home + "/") && !abs.startsWith(home + "\\")) {
     return c.json(
       { error: "Path not allowed \u2014 must be within home directory" },
