@@ -63,6 +63,7 @@ export const contextualRules: SuggestionRule[] = [
         title: "Plugins installed but no project settings",
         description:
           "You have plugins but no project-level settings file. Add one to configure plugin behavior consistently for your project.",
+        fix: { label: "Create settings.json" },
       },
     ];
   },

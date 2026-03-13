@@ -9,6 +9,7 @@ import type { Suggestion } from "@lens/schema";
 interface SuggestionsBoxProps {
   suggestions: Suggestion[] | null;
   onNavigate: (section: NavSection) => void;
+  activeProject?: string;
 }
 
 const CATEGORY_LABELS: Record<SuggestionCategory, string> = {
@@ -36,6 +37,8 @@ const NAV_LABELS: Partial<Record<NavSection, string>> = {
   [NavSection.Plugins]: "Plugins",
 };
 
+type FixState = "idle" | "loading" | "error";
+
 function SkeletonCards() {
   return (
     <div className="space-y-3">
@@ -60,32 +63,81 @@ function SkeletonCards() {
 function SuggestionCard({
   suggestion,
   onNavigate,
+  activeProject,
+  onDismiss,
 }: {
   suggestion: Suggestion;
   onNavigate: (section: NavSection) => void;
+  activeProject?: string;
+  onDismiss: (id: string) => void;
 }) {
+  const [fixState, setFixState] = useState<FixState>("idle");
+  const [fixError, setFixError] = useState<string | null>(null);
+
   const isWarning = suggestion.severity === SuggestionSeverity.Warning;
   const sectionLabel =
     NAV_LABELS[suggestion.navSection] ?? suggestion.navSection;
 
+  async function handleFix() {
+    setFixState("loading");
+    setFixError(null);
+    try {
+      const url = activeProject
+        ? `/api/suggestions/${encodeURIComponent(suggestion.id)}/fix?project=${encodeURIComponent(activeProject)}`
+        : `/api/suggestions/${encodeURIComponent(suggestion.id)}/fix`;
+      const res = await fetch(url, { method: "POST" });
+      const data = (await res.json()) as { success: boolean; error?: string };
+      if (data.success) {
+        onDismiss(suggestion.id);
+      } else {
+        setFixState("error");
+        setFixError(data.error ?? "Fix failed");
+      }
+    } catch {
+      setFixState("error");
+      setFixError("Network error");
+    }
+  }
+
   return (
-    <div className="flex items-center gap-2 rounded border border-border bg-card px-2.5 py-1.5 text-xs transition-all hover:border-accent/50 hover:bg-card/80">
-      <span
-        className={`flex-shrink-0 ${
-          isWarning ? "text-amber-400" : "text-blue-400"
-        }`}
-      >
-        {isWarning ? "\u26A0" : "\u2139"}
-      </span>
-      <span className="text-gray-200">{suggestion.title}</span>
-      <span className="text-gray-500">—</span>
-      <span className="text-gray-400">{suggestion.description}</span>
-      <button
-        onClick={() => onNavigate(suggestion.navSection)}
-        className="ml-auto flex-shrink-0 text-accent transition-colors hover:text-accent-hover"
-      >
-        {sectionLabel} &rarr;
-      </button>
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-2 rounded border border-border bg-card px-2.5 py-1.5 text-xs transition-all hover:border-accent/50 hover:bg-card/80">
+        <span
+          className={`flex-shrink-0 ${isWarning ? "text-amber-400" : "text-blue-400"}`}
+        >
+          {isWarning ? "\u26A0" : "\u2139"}
+        </span>
+        <span className="text-gray-200">{suggestion.title}</span>
+        <span className="text-gray-500">—</span>
+        <span className="truncate text-gray-400">{suggestion.description}</span>
+        <div className="ml-auto flex flex-shrink-0 items-center gap-2">
+          {suggestion.fix && (
+            <button
+              onClick={() => void handleFix()}
+              disabled={fixState === "loading"}
+              className="flex items-center gap-1 rounded bg-accent/20 px-1.5 py-0.5 text-accent transition-colors hover:bg-accent/30 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {fixState === "loading" ? (
+                <>
+                  <span className="inline-block h-2.5 w-2.5 animate-spin rounded-full border border-accent border-t-transparent" />
+                  Fixing…
+                </>
+              ) : (
+                suggestion.fix.label
+              )}
+            </button>
+          )}
+          <button
+            onClick={() => onNavigate(suggestion.navSection)}
+            className="flex-shrink-0 text-accent transition-colors hover:text-accent-hover"
+          >
+            {sectionLabel} &rarr;
+          </button>
+        </div>
+      </div>
+      {fixState === "error" && fixError && (
+        <p className="pl-2 text-xs text-red-400">{fixError}</p>
+      )}
     </div>
   );
 }
@@ -94,12 +146,20 @@ function CategoryGroup({
   category,
   suggestions,
   onNavigate,
+  activeProject,
+  dismissed,
+  onDismiss,
 }: {
   category: SuggestionCategory;
   suggestions: Suggestion[];
   onNavigate: (section: NavSection) => void;
+  activeProject?: string;
+  dismissed: Set<string>;
+  onDismiss: (id: string) => void;
 }) {
   const [expanded, setExpanded] = useState(true);
+  const visible = suggestions.filter((s) => !dismissed.has(s.id));
+  if (visible.length === 0) return null;
 
   return (
     <div>
@@ -125,8 +185,14 @@ function CategoryGroup({
       </button>
       {expanded && (
         <div className="mb-4 ml-5 space-y-1">
-          {suggestions.map((s) => (
-            <SuggestionCard key={s.id} suggestion={s} onNavigate={onNavigate} />
+          {visible.map((s) => (
+            <SuggestionCard
+              key={s.id}
+              suggestion={s}
+              onNavigate={onNavigate}
+              activeProject={activeProject}
+              onDismiss={onDismiss}
+            />
           ))}
         </div>
       )}
@@ -137,7 +203,14 @@ function CategoryGroup({
 export function SuggestionsBox({
   suggestions,
   onNavigate,
+  activeProject,
 }: SuggestionsBoxProps) {
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+
+  function handleDismiss(id: string) {
+    setDismissed((prev) => new Set([...prev, id]));
+  }
+
   // Loading state
   if (suggestions === null) {
     return (
@@ -148,8 +221,10 @@ export function SuggestionsBox({
     );
   }
 
+  const visibleSuggestions = suggestions.filter((s) => !dismissed.has(s.id));
+
   // Zero suggestions state
-  if (suggestions.length === 0) {
+  if (visibleSuggestions.length === 0) {
     return (
       <div className="mt-8">
         <h3 className="mb-4 text-sm font-medium text-gray-400">Suggestions</h3>
@@ -185,6 +260,9 @@ export function SuggestionsBox({
             category={cat}
             suggestions={categorySuggestions}
             onNavigate={onNavigate}
+            activeProject={activeProject}
+            dismissed={dismissed}
+            onDismiss={handleDismiss}
           />
         );
       })}

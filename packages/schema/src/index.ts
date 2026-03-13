@@ -473,6 +473,7 @@ export interface Suggestion {
   description: string;
   navSection: NavSection;
   severity: SuggestionSeverity;
+  fix?: { label: string };
 }
 
 export interface SuggestionsResponse {

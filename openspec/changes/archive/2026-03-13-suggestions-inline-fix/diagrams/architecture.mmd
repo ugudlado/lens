@@ -1,0 +1,42 @@
+graph TD
+    subgraph schema ["packages/schema/src/index.ts"]
+        SI["Suggestion interface<br/>+ fix?: { label: string }"]
+        SR["SuggestionFixResponse<br/>{ success: boolean; error?: string }"]
+    end
+
+    subgraph server_suggestions ["apps/server/src/suggestions/"]
+        HR["health-rules.ts<br/>adds fix field to:<br/>health-no-claude-md"]
+        BPR["best-practice-rules.ts<br/>adds fix field to:<br/>bp-no-project-settings<br/>bp-sandbox-disabled<br/>bp-no-memory"]
+        CTX["contextual-rules.ts<br/>adds fix field to:<br/>ctx-plugins-no-settings"]
+        FH["fix-handlers.ts  NEW<br/>Map of id to FixHandler<br/>5 handler functions<br/>writeFile / mkdir via node:fs/promises"]
+    end
+
+    subgraph server_routes ["apps/server/src/routes/"]
+        ROUTE["suggestions.ts<br/>GET / (existing)<br/>POST /:id/fix  NEW<br/>path validation → fixHandlers"]
+    end
+
+    subgraph server_core ["apps/server/src/"]
+        IDX["index.ts<br/>app.route('/api/suggestions', suggestionsRoutes)<br/>(already mounted — no change)"]
+        W["watcher.ts<br/>chokidar detects written files<br/>debouncedNotify → SSE listeners"]
+    end
+
+    subgraph ui_components ["apps/ui/src/components/"]
+        SB["SuggestionsBox.tsx<br/>SuggestionCard: idle/loading/dismissed/error<br/>Fix Now button (conditional on fix field)<br/>inline error + retry"]
+        DASH["Dashboard.tsx<br/>urgent-suggestion banner<br/>Fix Now button triggers same POST"]
+    end
+
+    SI -->|imported by| HR
+    SI -->|imported by| BPR
+    SI -->|imported by| CTX
+    SI -->|imported by| ROUTE
+    SR -->|imported by| ROUTE
+    SR -->|imported by| SB
+
+    FH -->|called by| ROUTE
+    FH -->|writes files| W
+
+    ROUTE -->|mounted in| IDX
+    W -->|SSE push| ui_components
+
+    SB -->|POST fix| ROUTE
+    DASH -->|POST fix| ROUTE

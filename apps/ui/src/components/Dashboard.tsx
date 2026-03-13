@@ -1,9 +1,9 @@
+import type { ConfigSnapshot, Suggestion, Workspace } from "@lens/schema";
+import { ConfigScope, NavSection } from "@lens/schema";
 import { useState } from "react";
-import { NavSection, ConfigScope } from "@lens/schema";
-import type { ConfigSnapshot, Workspace, Suggestion } from "@lens/schema";
-import { WorkspaceConfigImportModal } from "./WorkspaceConfigImportModal.js";
 import { ExportConfigModal } from "./ExportConfigModal.js";
 import { SuggestionsBox } from "./SuggestionsBox.js";
+import { WorkspaceConfigImportModal } from "./WorkspaceConfigImportModal.js";
 
 interface DashboardProps {
   config: ConfigSnapshot;
@@ -449,6 +449,7 @@ export function Dashboard({
                 onNavigate(section);
                 setShowSuggestions(false);
               }}
+              activeProject={activeProject}
             />
           </div>
         )}
@@ -509,8 +510,6 @@ export function Dashboard({
           );
         })}
       </div>
-
-      {/* Empty suggestions placeholder - removed to avoid dead weight */}
     </div>
   );
 }
