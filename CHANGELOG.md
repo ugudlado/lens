@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-03-15
+
+### UI
+
+- Added shadcn/ui component library foundation with CSS variables and Tailwind v3 compatibility
+- Added collapsible AppSidebar with Lucide icons and workspace-aware switcher
+- Added SidebarProvider layout integration for improved sidebar functionality
+- Added panel separator component for better visual hierarchy
+- Added persistent plugin source badge visibility across UI panels
+- Added inline "Fix Now" button to suggestion cards for immediate code fixes
+
+* Improved WorkspaceSwitcher positioning and dropdown visibility
+* Refactored legacy CSS overrides for cleaner styling architecture
+  ! Fixed SuggestionsBox styling misalignment with main layout
+  ! Fixed Tailwind v3 compatibility issues in shadcn components
+
+### Infrastructure & Tooling
+
+- Added project-specific release-prep command with automated version bumping
+  ! Fixed memory file location (AGENTS.md → MEMORY.md) for proper agent context loading
+
 ## [1.4.0] - 2026-03-14
 
 ### Added
