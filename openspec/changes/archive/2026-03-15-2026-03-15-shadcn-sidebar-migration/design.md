@@ -31,6 +31,7 @@ shadcn/ui requires a `components.json` configuration file at the UI package root
 Use the shadcn CLI (`npx shadcn@latest init`) from the `apps/ui/` directory to scaffold `components.json`, `cn()` utility, and CSS variables. Then use `npx shadcn@latest add <component>` to install individual components.
 
 Run from the UI package root:
+
 ```bash
 cd apps/ui
 npx shadcn@latest init --style new-york --base-color zinc --css-variables --no-src-dir
@@ -39,6 +40,7 @@ npx shadcn@latest init --style new-york --base-color zinc --css-variables --no-s
 This generates `components.json`, `src/lib/utils.ts` (with `cn()`), and updates `src/index.css` with CSS variable scaffolding. Then customize the generated CSS variables to match the Lens theme (see CSS Variable Mapping below).
 
 Install components via CLI:
+
 ```bash
 npx shadcn@latest add sidebar button separator tooltip collapsible dropdown-menu sheet input
 ```
@@ -48,6 +50,7 @@ npx shadcn@latest add sidebar button separator tooltip collapsible dropdown-menu
 shadcn components use `@/` imports. Configure this in both TypeScript and Vite.
 
 **`apps/ui/tsconfig.json`** -- add paths:
+
 ```json
 {
   "extends": "../../tsconfig.json",
@@ -63,6 +66,7 @@ shadcn components use `@/` imports. Configure this in both TypeScript and Vite.
 ```
 
 **`apps/ui/vite.config.ts`** -- add resolve alias:
+
 ```ts
 import path from "path";
 
@@ -103,13 +107,13 @@ shadcn uses HSL CSS variables for theming. The current Lens hex colors must be c
 
 ### Color Conversion Table
 
-| Current Name | Hex | HSL | shadcn Variable |
-|-------------|-----|-----|-----------------|
-| bg | #0c0b0a | 30 9% 3% | `--background` |
-| sidebar | #100f0e | 30 7% 5% | `--sidebar-background` |
-| card | #161412 | 30 10% 8% | `--card` |
-| border | #252220 | 24 11% 13% | `--border` |
-| accent | #c07b2e | 32 63% 47% | `--sidebar-accent`, `--primary` |
+| Current Name | Hex     | HSL        | shadcn Variable                                       |
+| ------------ | ------- | ---------- | ----------------------------------------------------- |
+| bg           | #0c0b0a | 30 9% 3%   | `--background`                                        |
+| sidebar      | #100f0e | 30 7% 5%   | `--sidebar-background`                                |
+| card         | #161412 | 30 10% 8%  | `--card`                                              |
+| border       | #252220 | 24 11% 13% | `--border`                                            |
+| accent       | #c07b2e | 32 63% 47% | `--sidebar-accent`, `--primary`                       |
 | accent-hover | #d4922d | 36 66% 50% | `--sidebar-accent-foreground`, `--primary-foreground` |
 
 ### CSS Variables Block (added to `src/index.css`)
@@ -246,34 +250,34 @@ The SidebarProvider manages open/collapsed state via React context. SidebarInset
 
 ### Component Mapping
 
-| Current Sidebar Element | shadcn Component | Notes |
-|------------------------|------------------|-------|
-| `<aside>` container | `<Sidebar collapsible="icon">` | Enables icon-collapse mode |
-| Logo + version header | `<SidebarHeader>` | Shows "LENS v1.3.0" |
-| WorkspaceSwitcher | `<SidebarFooter>` wrapping adapted WorkspaceSwitcher | Move to footer per sidebar block convention |
-| Nav group label | `<SidebarGroup>` + `<SidebarGroupLabel>` | "INSTRUCTIONS", "CAPABILITIES", etc. |
-| Nav item button | `<SidebarMenuItem>` + `<SidebarMenuButton>` | Each of the 13 items |
-| Unicode icon | Lucide React icon component | Mapped per section |
-| Count badge | `<SidebarMenuBadge>` or custom span | Right-aligned count |
-| Active glow effect | `data-active` attribute + CSS | Custom styling via shadcn's data attributes |
+| Current Sidebar Element | shadcn Component                                     | Notes                                       |
+| ----------------------- | ---------------------------------------------------- | ------------------------------------------- |
+| `<aside>` container     | `<Sidebar collapsible="icon">`                       | Enables icon-collapse mode                  |
+| Logo + version header   | `<SidebarHeader>`                                    | Shows "LENS v1.3.0"                         |
+| WorkspaceSwitcher       | `<SidebarFooter>` wrapping adapted WorkspaceSwitcher | Move to footer per sidebar block convention |
+| Nav group label         | `<SidebarGroup>` + `<SidebarGroupLabel>`             | "INSTRUCTIONS", "CAPABILITIES", etc.        |
+| Nav item button         | `<SidebarMenuItem>` + `<SidebarMenuButton>`          | Each of the 13 items                        |
+| Unicode icon            | Lucide React icon component                          | Mapped per section                          |
+| Count badge             | `<SidebarMenuBadge>` or custom span                  | Right-aligned count                         |
+| Active glow effect      | `data-active` attribute + CSS                        | Custom styling via shadcn's data attributes |
 
 ### Icon Mapping (Unicode to Lucide)
 
-| Section | Current | Lucide Icon | Import |
-|---------|---------|-------------|--------|
-| Overview | `▦` | `LayoutDashboard` | `lucide-react` |
-| CLAUDE.md | `◧` | `FileText` | `lucide-react` |
-| Rules | `▤` | `Scale` | `lucide-react` |
-| Memory | `◌` | `Brain` | `lucide-react` |
-| Skills | `✦` | `Sparkles` | `lucide-react` |
-| Agents | `◫` | `Bot` | `lucide-react` |
-| Commands | `▷` | `Terminal` | `lucide-react` |
-| MCP Servers | `◉` | `Server` | `lucide-react` |
-| Hooks | `◆` | `Webhook` | `lucide-react` |
-| Plugins | `⬡` | `Puzzle` | `lucide-react` |
-| Settings | `◎` | `Settings` | `lucide-react` |
-| Permissions | `◈` | `Shield` | `lucide-react` |
-| Sandbox | `◻` | `Box` | `lucide-react` |
+| Section     | Current | Lucide Icon       | Import         |
+| ----------- | ------- | ----------------- | -------------- |
+| Overview    | `▦`     | `LayoutDashboard` | `lucide-react` |
+| CLAUDE.md   | `◧`     | `FileText`        | `lucide-react` |
+| Rules       | `▤`     | `Scale`           | `lucide-react` |
+| Memory      | `◌`     | `Brain`           | `lucide-react` |
+| Skills      | `✦`     | `Sparkles`        | `lucide-react` |
+| Agents      | `◫`     | `Bot`             | `lucide-react` |
+| Commands    | `▷`     | `Terminal`        | `lucide-react` |
+| MCP Servers | `◉`     | `Server`          | `lucide-react` |
+| Hooks       | `◆`     | `Webhook`         | `lucide-react` |
+| Plugins     | `⬡`     | `Puzzle`          | `lucide-react` |
+| Settings    | `◎`     | `Settings`        | `lucide-react` |
+| Permissions | `◈`     | `Shield`          | `lucide-react` |
+| Sandbox     | `◻`     | `Box`             | `lucide-react` |
 
 ### AppSidebar Structure
 
@@ -346,6 +350,7 @@ The shadcn SidebarMenuButton supports `isActive` prop and `data-active` attribut
 The current WorkspaceSwitcher is a custom dropdown. For the shadcn sidebar, it moves to `SidebarFooter` and uses `DropdownMenu` from shadcn for the popup, or retains its custom dropdown but adapts to collapse behavior.
 
 **Strategy**: Keep the current WorkspaceSwitcher logic but wrap it so that:
+
 - In expanded mode: shows full workspace name + chevron (current behavior)
 - In collapsed mode: shows a folder icon that opens the dropdown on click
 
@@ -363,6 +368,7 @@ The `useSidebar()` hook provides `state` ("expanded" | "collapsed") to condition
 ### Backward Compatibility
 
 During migration, both old and new color systems coexist:
+
 - `bg-bg` (direct hex) and `bg-background` (CSS variable) both resolve to `#0c0b0a`
 - Panel components continue using direct hex class names
 - New shadcn components use CSS variable class names
@@ -370,13 +376,13 @@ During migration, both old and new color systems coexist:
 
 ### Risk Mitigation
 
-| Risk | Mitigation |
-|------|------------|
-| shadcn CLI fails in monorepo | Run CLI from `apps/ui/` directory; if it fails, fall back to manual file creation |
-| CSS variable conflicts with existing styles | Keep both systems; CSS specificity handles conflicts |
-| Bundle size increase | Only install needed components (~6 components, not the full library) |
-| Tailwind class conflicts | tailwind-merge (via `cn()`) deduplicates conflicting classes |
-| WorkspaceSwitcher breaks in new context | Test independently before integrating into sidebar footer |
+| Risk                                        | Mitigation                                                                        |
+| ------------------------------------------- | --------------------------------------------------------------------------------- |
+| shadcn CLI fails in monorepo                | Run CLI from `apps/ui/` directory; if it fails, fall back to manual file creation |
+| CSS variable conflicts with existing styles | Keep both systems; CSS specificity handles conflicts                              |
+| Bundle size increase                        | Only install needed components (~6 components, not the full library)              |
+| Tailwind class conflicts                    | tailwind-merge (via `cn()`) deduplicates conflicting classes                      |
+| WorkspaceSwitcher breaks in new context     | Test independently before integrating into sidebar footer                         |
 
 ## Data Flow
 

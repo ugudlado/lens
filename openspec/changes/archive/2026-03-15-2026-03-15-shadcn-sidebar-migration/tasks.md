@@ -221,6 +221,7 @@ T-1 (init CLI) --> T-2 (theme vars) --> T-3 (add components)
 ```
 
 Phase gates:
+
 - **Phase 1 complete**: T-1 through T-3 done, `pnpm type-check && pnpm lint` passes
 - **Phase 2 complete**: T-4 through T-7 done, AppSidebar renders independently
 - **Phase 3 complete**: T-8 through T-11 done, full app works with new sidebar layout
