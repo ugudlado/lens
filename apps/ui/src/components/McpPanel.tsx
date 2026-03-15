@@ -3,6 +3,7 @@ import { ConfigScope, PluginAction } from "@lens/schema";
 import { useEditing } from "../context/EditingContext.js";
 import type { ConfigSnapshot, McpServer } from "@lens/schema";
 import { ScopeIndicator } from "./ScopeIndicator.js";
+import { SourceBadge } from "./SourceBadge.js";
 import { RawJsonView } from "./RawJsonView.js";
 import { useConfigUpdate } from "../hooks/useConfigUpdate.js";
 import { usePluginAction } from "../hooks/usePluginAction.js";
@@ -139,7 +140,7 @@ function AddServerForm({
   }
 
   return (
-    <div className="mb-6 rounded-lg border border-accent/30 bg-card p-4">
+    <div className="border-accent/30 mb-6 rounded-lg border bg-card p-4">
       <h3 className="mb-3 text-sm font-semibold text-gray-200">
         Add MCP Server
       </h3>
@@ -188,7 +189,7 @@ function AddServerForm({
             value={serverName}
             onChange={(e) => setServerName(e.target.value)}
             placeholder="my-server"
-            className="mt-1 w-full rounded border border-border bg-bg px-3 py-1.5 font-mono text-sm text-gray-300 focus:border-accent/50 focus:outline-none"
+            className="focus:border-accent/50 mt-1 w-full rounded border border-border bg-bg px-3 py-1.5 font-mono text-sm text-gray-300 focus:outline-none"
           />
         </div>
       )}
@@ -206,7 +207,7 @@ function AddServerForm({
             }}
             placeholder="npx -y @modelcontextprotocol/server-foo"
             autoFocus
-            className="mt-1 w-full rounded border border-border bg-bg px-3 py-1.5 font-mono text-sm text-gray-300 focus:border-accent/50 focus:outline-none"
+            className="focus:border-accent/50 mt-1 w-full rounded border border-border bg-bg px-3 py-1.5 font-mono text-sm text-gray-300 focus:outline-none"
           />
           {commandInput.trim() && (
             <div className="mt-1.5 text-xs text-gray-500">
@@ -230,7 +231,7 @@ function AddServerForm({
             }}
             placeholder="https://example.com/mcp"
             autoFocus
-            className="mt-1 w-full rounded border border-border bg-bg px-3 py-1.5 font-mono text-sm text-gray-300 focus:border-accent/50 focus:outline-none"
+            className="focus:border-accent/50 mt-1 w-full rounded border border-border bg-bg px-3 py-1.5 font-mono text-sm text-gray-300 focus:outline-none"
           />
         </div>
       )}
@@ -252,7 +253,7 @@ function AddServerForm({
               value={nameOverride}
               onChange={(e) => setNameOverride(e.target.value)}
               placeholder={derivedName || "auto-derived"}
-              className="mt-1 w-full rounded border border-border bg-bg px-3 py-1.5 font-mono text-sm text-gray-300 focus:border-accent/50 focus:outline-none"
+              className="focus:border-accent/50 mt-1 w-full rounded border border-border bg-bg px-3 py-1.5 font-mono text-sm text-gray-300 focus:outline-none"
             />
           </div>
           <div>
@@ -262,7 +263,7 @@ function AddServerForm({
             <select
               value={type}
               onChange={(e) => setType(e.target.value as ServerType)}
-              className="mt-1 w-full rounded border border-border bg-bg px-3 py-1.5 text-sm text-gray-300 focus:border-accent/50 focus:outline-none"
+              className="focus:border-accent/50 mt-1 w-full rounded border border-border bg-bg px-3 py-1.5 text-sm text-gray-300 focus:outline-none"
             >
               <option value="stdio">stdio</option>
               <option value="http">http</option>
@@ -281,7 +282,7 @@ function AddServerForm({
         <button
           onClick={submit}
           disabled={saving || !effectiveName}
-          className="rounded bg-accent/20 px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/30 disabled:opacity-50"
+          className="bg-accent/20 hover:bg-accent/30 rounded px-3 py-1.5 text-xs font-medium text-accent transition-colors disabled:opacity-50"
         >
           {saving ? "Adding..." : "Add Server"}
         </button>
@@ -780,11 +781,7 @@ function McpServerCard({
                 {server.type}
               </span>
               <ScopeIndicator scope={server.scope} />
-              {isPlugin && server.pluginName && (
-                <span className="rounded bg-orange-500/15 px-2 py-0.5 text-xs font-medium text-orange-400">
-                  plugin:{server.pluginName}
-                </span>
-              )}
+              <SourceBadge pluginName={server.pluginName} />
             </>
           }
           actions={
@@ -796,7 +793,7 @@ function McpServerCard({
                       e.stopPropagation();
                       startEdit();
                     }}
-                    className="rounded bg-gray-500/10 px-2 py-0.5 text-xs text-gray-400 transition-colors hover:bg-accent/20 hover:text-accent"
+                    className="hover:bg-accent/20 rounded bg-gray-500/10 px-2 py-0.5 text-xs text-gray-400 transition-colors hover:text-accent"
                     title="Edit server"
                   >
                     Edit
@@ -867,7 +864,7 @@ function McpServerCard({
                           setEditing(false);
                       }}
                       autoFocus
-                      className="mt-1 w-full rounded border border-border bg-bg px-3 py-1.5 font-mono text-sm text-gray-300 focus:border-accent/50 focus:outline-none"
+                      className="focus:border-accent/50 mt-1 w-full rounded border border-border bg-bg px-3 py-1.5 font-mono text-sm text-gray-300 focus:outline-none"
                     />
                   </div>
                 ) : (
@@ -884,7 +881,7 @@ function McpServerCard({
                           setEditing(false);
                       }}
                       autoFocus
-                      className="mt-1 w-full rounded border border-border bg-bg px-3 py-1.5 font-mono text-sm text-gray-300 focus:border-accent/50 focus:outline-none"
+                      className="focus:border-accent/50 mt-1 w-full rounded border border-border bg-bg px-3 py-1.5 font-mono text-sm text-gray-300 focus:outline-none"
                     />
                   </div>
                 )}
@@ -908,7 +905,7 @@ function McpServerCard({
                                 [k]: e.target.value,
                               }))
                             }
-                            className="flex-1 rounded border border-border bg-bg px-2 py-0.5 font-mono text-xs text-gray-300 focus:border-accent/50 focus:outline-none"
+                            className="focus:border-accent/50 flex-1 rounded border border-border bg-bg px-2 py-0.5 font-mono text-xs text-gray-300 focus:outline-none"
                           />
                           <button
                             onClick={() => removeEnvVar(k)}
@@ -929,7 +926,7 @@ function McpServerCard({
                         if (e.key === "Enter") addEnvVar();
                       }}
                       placeholder="KEY"
-                      className="w-28 rounded border border-border bg-bg px-2 py-0.5 font-mono text-xs text-gray-300 focus:border-accent/50 focus:outline-none"
+                      className="focus:border-accent/50 w-28 rounded border border-border bg-bg px-2 py-0.5 font-mono text-xs text-gray-300 focus:outline-none"
                     />
                     <span className="text-xs text-gray-600">=</span>
                     <input
@@ -939,12 +936,12 @@ function McpServerCard({
                         if (e.key === "Enter") addEnvVar();
                       }}
                       placeholder="value"
-                      className="flex-1 rounded border border-border bg-bg px-2 py-0.5 font-mono text-xs text-gray-300 focus:border-accent/50 focus:outline-none"
+                      className="focus:border-accent/50 flex-1 rounded border border-border bg-bg px-2 py-0.5 font-mono text-xs text-gray-300 focus:outline-none"
                     />
                     <button
                       onClick={addEnvVar}
                       disabled={!newEnvKey.trim()}
-                      className="rounded bg-accent/10 px-2 py-0.5 text-xs text-accent transition-colors hover:bg-accent/20 disabled:opacity-50"
+                      className="bg-accent/10 hover:bg-accent/20 rounded px-2 py-0.5 text-xs text-accent transition-colors disabled:opacity-50"
                     >
                       Add
                     </button>
@@ -960,7 +957,7 @@ function McpServerCard({
                         ? !editCommand.trim()
                         : !editUrl.trim())
                     }
-                    className="rounded bg-accent/20 px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/30 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="bg-accent/20 hover:bg-accent/30 rounded px-3 py-1.5 text-xs font-medium text-accent transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {editSaving ? "Saving..." : "Save"}
                   </button>

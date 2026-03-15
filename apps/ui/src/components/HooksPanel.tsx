@@ -3,6 +3,7 @@ import { HookEvent, HookType, HookSource, ConfigScope } from "@lens/schema";
 import { useEditing } from "../context/EditingContext.js";
 import type { ConfigSnapshot, HookEntry } from "@lens/schema";
 import { ScopeIndicator } from "./ScopeIndicator.js";
+import { SourceBadge } from "./SourceBadge.js";
 import { RawJsonView } from "./RawJsonView.js";
 import { useConfigUpdate } from "../hooks/useConfigUpdate.js";
 import { SearchBar } from "./SearchBar.js";
@@ -468,7 +469,7 @@ export function HooksPanel({ config, onRescan }: Props) {
           {allGroupKeys.length > 0 && (
             <button
               onClick={toggleExpandAll}
-              className="rounded border border-border px-2.5 py-1.5 text-xs text-gray-400 transition-colors hover:border-border/80 hover:text-gray-200"
+              className="hover:border-border/80 rounded border border-border px-2.5 py-1.5 text-xs text-gray-400 transition-colors hover:text-gray-200"
             >
               {allExpanded ? "Collapse All" : "Expand All"}
             </button>
@@ -691,7 +692,7 @@ export function HooksPanel({ config, onRescan }: Props) {
                 <button
                   onClick={() => void addHook()}
                   disabled={saving || !addForm.value.trim()}
-                  className="rounded bg-accent/20 px-4 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/30 disabled:opacity-50"
+                  className="bg-accent/20 hover:bg-accent/30 rounded px-4 py-1.5 text-xs font-medium text-accent transition-colors disabled:opacity-50"
                 >
                   {saving ? "Saving..." : "Save Hook"}
                 </button>
@@ -761,8 +762,8 @@ export function HooksPanel({ config, onRescan }: Props) {
                               className={`rounded px-2 py-0.5 text-[10px] font-medium ${srcBadge.bg} ${srcBadge.text}`}
                             >
                               {hook.source}
-                              {hook.pluginName ? `:${hook.pluginName}` : ""}
                             </span>
+                            <SourceBadge pluginName={hook.pluginName} />
                             {hook.type !== HookType.Command && (
                               <span
                                 className={`rounded px-2 py-0.5 text-[10px] font-medium ${typeBadge.bg} ${typeBadge.text}`}
@@ -797,7 +798,7 @@ export function HooksPanel({ config, onRescan }: Props) {
                                       startEdit(hook, indexInEventFile)
                                     }
                                     disabled={saving}
-                                    className="flex h-6 w-6 items-center justify-center rounded text-gray-500 transition-colors hover:bg-accent/10 hover:text-accent disabled:opacity-50"
+                                    className="hover:bg-accent/10 flex h-6 w-6 items-center justify-center rounded text-gray-500 transition-colors hover:text-accent disabled:opacity-50"
                                     title="Edit hook"
                                   >
                                     <svg
@@ -869,7 +870,7 @@ export function HooksPanel({ config, onRescan }: Props) {
                                     ? "e.g. npm run lint"
                                     : "e.g. Check for issues"
                                 }
-                                className="w-full rounded border border-accent/30 bg-bg px-2 py-1 font-mono text-sm text-gray-200 placeholder:text-gray-600 focus:border-accent focus:outline-none"
+                                className="border-accent/30 w-full rounded border bg-bg px-2 py-1 font-mono text-sm text-gray-200 placeholder:text-gray-600 focus:border-accent focus:outline-none"
                               />
                               {/* Matcher input */}
                               <input
@@ -891,7 +892,7 @@ export function HooksPanel({ config, onRescan }: Props) {
                                     void saveEdit(hook, indexInEventFile)
                                   }
                                   disabled={saving || !editing.value.trim()}
-                                  className="rounded bg-accent/20 px-3 py-1 text-xs font-medium text-accent transition-colors hover:bg-accent/30 disabled:opacity-50"
+                                  className="bg-accent/20 hover:bg-accent/30 rounded px-3 py-1 text-xs font-medium text-accent transition-colors disabled:opacity-50"
                                 >
                                   {saving ? "Saving..." : "Save"}
                                 </button>
