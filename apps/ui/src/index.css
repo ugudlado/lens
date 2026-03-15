@@ -58,9 +58,11 @@ html {
 .focus\:border-accent:focus {
   border-color: #c07b2e !important;
 }
-.border-r-2.border-accent {
-  border-right-color: #c07b2e !important;
-}
+
+/* Legacy overrides for direct-hex color tokens (bg, sidebar, card, border)
+   These are needed because Tailwind's built-in 'bg' class conflicts with our
+   custom 'bg' color token. The CSS variables handle shadcn components, but
+   panel components still use bg-bg, bg-card, bg-sidebar, border-border. */
 .bg-sidebar {
   background-color: #100f0e !important;
 }
@@ -69,15 +71,6 @@ html {
 }
 .bg-card {
   background-color: #161412 !important;
-}
-.border-border {
-  border-color: #252220 !important;
-}
-.divide-border > :not([hidden]) ~ :not([hidden]) {
-  border-color: #252220 !important;
-}
-body {
-  background-color: #0c0b0a !important;
 }
 
 * {
@@ -102,11 +95,6 @@ button {
 .panel-row-compact {
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
-}
-
-/* Subtle active sidebar indicator glow */
-.sidebar-active-glow {
-  box-shadow: inset -2px 0 8px -2px rgb(192 123 46 / 0.15);
 }
 
 /* shadcn sidebar active menu button — warm amber */
