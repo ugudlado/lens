@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-03-15
+
+### Changed
+
+- Updated documentation and release prep command for consistency
+- Improved Dashboard component formatting and example paths
+
+### Infrastructure & Tooling
+
+- Refreshed dashboard screenshots in documentation
+
 ## [1.5.0] - 2026-03-15
 
 ### UI
