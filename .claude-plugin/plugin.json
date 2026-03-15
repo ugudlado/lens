@@ -5,5 +5,6 @@
   "author": {
     "name": "Mahesh"
   },
-  "commands": "./commands/"
+  "commands": "./commands/",
+  "hooks": "./hooks/hooks.json"
 }
