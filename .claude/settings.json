@@ -4,10 +4,12 @@
       "Bash",
       "Edit(./**)",
       "Write(./**)",
-      "mcp__*",
       "Skill",
       "WebFetch",
-      "WebSearch"
+      "WebSearch",
+      "mcp__chrome-devtools",
+      "mcp__plugin_context7_context7",
+      "mcp__plugin_claude-mem_mcp"
     ]
   },
   "enableAllProjectMcpServers": true
