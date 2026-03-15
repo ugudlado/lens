@@ -42,9 +42,9 @@ Every entry shows which scope it lives in — Global, Project, or Local. The **E
 
 ![MCP Servers with scope labels and expanded detail](docs/screenshots/mcp-servers-expanded.png)
 
-### Import from another workspace
+### Export and import
 
-Bootstrap a new project by pulling config from an existing one. Select a workspace, review what's new, pick what to import.
+Export your project config as a JSON bundle, or import from another workspace or file. Bootstrap a new project by pulling what you need — select a workspace, review what's new, pick what to import.
 
 ![Import workflow](docs/screenshots/import-loaded.png)
 

@@ -83,7 +83,7 @@ Update the `"version"` field to the new version (x.y.z, no v prefix):
 }
 ```
 
-**4c. Bump version in `/Users/spidey/code/claude-marketplace/.claude-plugin/marketplace.json`**
+**4c. Bump version in `$HOME/code/claude-marketplace/.claude-plugin/marketplace.json`**
 
 Find the `lens` entry in the `plugins` array and update its `"version"` field to x.y.z:
 
@@ -106,7 +106,7 @@ git add CHANGELOG.md .claude-plugin/plugin.json
 Also stage the marketplace file (separate repo, but same commit message for clarity — user will commit separately):
 
 ```bash
-# In /Users/spidey/code/claude-marketplace:
+# In $HOME/code/claude-marketplace:
 git add .claude-plugin/marketplace.json
 ```
 
@@ -127,5 +127,5 @@ Output:
 - Release version
 - Number of changelog entries
 - Tag name created
-- Files updated: CHANGELOG.md, .claude-plugin/plugin.json, /Users/spidey/code/claude-marketplace/.claude-plugin/marketplace.json
+- Files updated: CHANGELOG.md, .claude-plugin/plugin.json, $HOME/code/claude-marketplace/.claude-plugin/marketplace.json
 - Next steps: `git push origin main --tags` for this repo, commit + push marketplace repo

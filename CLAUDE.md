@@ -109,7 +109,7 @@ Lens supports exporting and importing project-level config via a JSON bundle.
 - **`EditingContext.allowGlobalWrites`** — Gates writes to global/managed-scope files only. Edit buttons for project/local scope must always be visible regardless of this toggle. Two separate concerns.
 - **MCP scope writes** — When copying MCPs to global/user scope, the target file is `.claude.json`, not `.mcp.json`.
 - **`installed_plugins.json` v2** — Stores version history as arrays. Use `allEntries[allEntries.length - 1]` for the latest entry. Cache dirs have one subdir per cached version — pick by most-recently-modified.
-- **Release prep** — Always bump `.claude-plugin/plugin.json` and `/Users/spidey/code/claude-marketplace/.claude-plugin/marketplace.json` in the same release commit as `CHANGELOG.md`.
+- **Release prep** — Always bump `.claude-plugin/plugin.json` and `$HOME/code/claude-marketplace/.claude-plugin/marketplace.json` in the same release commit as `CHANGELOG.md`.
 
 ## Agent Restrictions
 
