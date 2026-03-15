@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from "react";
+import { FolderOpen } from "lucide-react";
 import type { Workspace } from "@lens/schema";
+import { useSidebar } from "@/components/ui/sidebar";
 
 interface WorkspaceSwitcherProps {
   workspaces: Workspace[];
@@ -16,13 +18,20 @@ export function WorkspaceSwitcher({
   onAdd,
   onRemove,
 }: WorkspaceSwitcherProps) {
+  const { state: sidebarState } = useSidebar();
+  const isCollapsed = sidebarState === "collapsed";
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [newPath, setNewPath] = useState("");
   const [addError, setAddError] = useState<string | null>(null);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
+  const [dropdownPos, setDropdownPos] = useState<{
+    left: number;
+    bottom: number;
+  } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const activeWs = workspaces.find((w) => w.path === activeProject);
@@ -82,6 +91,19 @@ export function WorkspaceSwitcher({
     setShowAdd(false);
   }
 
+  function toggleOpen() {
+    setOpen((prev) => {
+      if (!prev && triggerRef.current) {
+        const rect = triggerRef.current.getBoundingClientRect();
+        setDropdownPos({
+          left: rect.left,
+          bottom: window.innerHeight - rect.top + 4,
+        });
+      }
+      return !prev;
+    });
+  }
+
   function handleSelect(path: string) {
     onSelect(path);
     setOpen(false);
@@ -89,43 +111,55 @@ export function WorkspaceSwitcher({
   }
 
   return (
-    <div
-      className="relative border-b border-border px-3 py-3"
-      ref={dropdownRef}
-    >
-      <label className="mb-1.5 block text-[10px] uppercase tracking-wider text-gray-500">
-        Workspace
-      </label>
-
-      {/* Dropdown trigger */}
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className={`flex w-full items-center gap-2 rounded border px-2.5 py-2 text-left text-xs transition-colors ${
-          open
-            ? "border-accent/50 bg-bg text-gray-200"
-            : "border-border bg-bg text-gray-200 hover:border-accent/30"
-        }`}
-      >
-        <span className="flex-1 truncate font-medium">
-          {activeWs?.name ?? "—"}
-        </span>
-        <svg
-          className={`h-3.5 w-3.5 flex-shrink-0 text-gray-500 transition-transform ${open ? "rotate-180" : ""}`}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
+    <div className="relative px-3 py-3" ref={dropdownRef}>
+      {isCollapsed ? (
+        <button
+          ref={triggerRef}
+          onClick={toggleOpen}
+          className="hover:bg-accent/10 flex w-full items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:text-accent"
+          title={activeWs?.name ?? "Workspace"}
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
-      </button>
+          <FolderOpen className="size-4" />
+        </button>
+      ) : (
+        <>
+          <label className="mb-1.5 block text-[10px] uppercase tracking-wider text-gray-500">
+            Workspace
+          </label>
+          <button
+            ref={triggerRef}
+            onClick={toggleOpen}
+            className={`flex w-full items-center gap-2 rounded border px-2.5 py-2 text-left text-xs transition-colors ${
+              open
+                ? "border-accent/50 bg-bg text-gray-200"
+                : "hover:border-accent/30 border-border bg-bg text-gray-200"
+            }`}
+          >
+            <span className="flex-1 truncate font-medium">
+              {activeWs?.name ?? "—"}
+            </span>
+            <svg
+              className={`h-3.5 w-3.5 flex-shrink-0 text-gray-500 transition-transform ${open ? "rotate-180" : ""}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </button>
+        </>
+      )}
 
-      {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 w-72 overflow-hidden rounded-lg border border-border bg-card shadow-2xl">
+      {open && dropdownPos && (
+        <div
+          className="fixed z-50 w-72 overflow-hidden rounded-lg border border-border bg-card shadow-2xl"
+          style={{ left: dropdownPos.left, bottom: dropdownPos.bottom }}
+        >
           {/* Search input */}
           <div className="flex items-center gap-2 border-b border-border px-3 py-2">
             <svg
@@ -190,7 +224,7 @@ export function WorkspaceSwitcher({
                     >
                       {ws.name}
                       {isActive && (
-                        <span className="ml-1.5 text-[10px] text-accent/60">
+                        <span className="text-accent/60 ml-1.5 text-[10px]">
                           active
                         </span>
                       )}
@@ -273,7 +307,7 @@ export function WorkspaceSwitcher({
                 <div className="flex gap-1.5">
                   <button
                     onClick={() => void handleAdd()}
-                    className="rounded bg-accent/20 px-2.5 py-1 text-xs text-accent transition-colors hover:bg-accent/30"
+                    className="bg-accent/20 hover:bg-accent/30 rounded px-2.5 py-1 text-xs text-accent transition-colors"
                   >
                     Add
                   </button>

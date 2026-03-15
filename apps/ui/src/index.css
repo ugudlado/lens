@@ -1,3 +1,4 @@
+@import "@fontsource-variable/geist";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -55,9 +56,11 @@ html {
 .focus\:border-accent:focus {
   border-color: #c07b2e !important;
 }
-.border-r-2.border-accent {
-  border-right-color: #c07b2e !important;
-}
+
+/* Legacy overrides for direct-hex color tokens (bg, sidebar, card, border)
+   These are needed because Tailwind's built-in 'bg' class conflicts with our
+   custom 'bg' color token. The CSS variables handle shadcn components, but
+   panel components still use bg-bg, bg-card, bg-sidebar, border-border. */
 .bg-sidebar {
   background-color: #100f0e !important;
 }
@@ -66,15 +69,6 @@ html {
 }
 .bg-card {
   background-color: #161412 !important;
-}
-.border-border {
-  border-color: #252220 !important;
-}
-.divide-border > :not([hidden]) ~ :not([hidden]) {
-  border-color: #252220 !important;
-}
-body {
-  background-color: #0c0b0a !important;
 }
 
 * {
@@ -101,7 +95,64 @@ button {
   padding-bottom: 0.5rem;
 }
 
-/* Subtle active sidebar indicator glow */
-.sidebar-active-glow {
+/* shadcn sidebar active menu button — warm amber */
+[data-sidebar="menu-button"][data-active="true"] {
+  background-color: rgb(192 123 46 / 0.1);
+  color: #c07b2e;
+  border-right: 2px solid #c07b2e;
   box-shadow: inset -2px 0 8px -2px rgb(192 123 46 / 0.15);
+}
+[data-sidebar="menu-button"]:not([data-active="true"]):hover {
+  background-color: rgb(255 255 255 / 0.04);
+  color: #e5e5e5;
+}
+
+@layer base {
+  :root {
+    /* Lens warm amber dark theme */
+    --background: oklch(0.09 0.003 60); /* #0c0b0a */
+    --foreground: oklch(0.93 0 0); /* near-white */
+    --card: oklch(0.14 0.005 55); /* #161412 */
+    --card-foreground: oklch(0.88 0 0);
+    --popover: oklch(0.14 0.005 55); /* same as card */
+    --popover-foreground: oklch(0.88 0 0);
+    --primary: oklch(0.62 0.15 60); /* #c07b2e warm amber */
+    --primary-foreground: oklch(1 0 0);
+    --secondary: oklch(0.18 0.004 50);
+    --secondary-foreground: oklch(0.8 0 0);
+    --muted: oklch(0.18 0.004 50);
+    --muted-foreground: oklch(0.55 0 0);
+    --accent: oklch(0.62 0.15 60); /* warm amber = primary */
+    --accent-foreground: oklch(1 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
+    --border: oklch(0.21 0.006 50); /* #252220 */
+    --input: oklch(0.21 0.006 50);
+    --ring: oklch(0.62 0.15 60); /* warm amber */
+    --chart-1: oklch(0.62 0.15 60);
+    --chart-2: oklch(0.55 0.12 200);
+    --chart-3: oklch(0.65 0.1 140);
+    --chart-4: oklch(0.7 0.12 320);
+    --chart-5: oklch(0.5 0.15 280);
+    --radius: 0.5rem;
+
+    /* Sidebar-specific */
+    --sidebar: oklch(0.11 0.003 60); /* #100f0e */
+    --sidebar-foreground: oklch(0.7 0 0);
+    --sidebar-primary: oklch(0.62 0.15 60); /* warm amber */
+    --sidebar-primary-foreground: oklch(1 0 0);
+    --sidebar-accent: oklch(0.62 0.15 60); /* warm amber */
+    --sidebar-accent-foreground: oklch(1 0 0);
+    --sidebar-border: oklch(0.21 0.006 50); /* #252220 */
+    --sidebar-ring: oklch(0.62 0.15 60);
+  }
+  .theme {
+    --font-sans: "Geist Variable", sans-serif;
+  }
+  * {
+    border-color: var(--border);
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
 }

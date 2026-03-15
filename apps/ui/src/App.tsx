@@ -6,7 +6,14 @@ import { EditingContext } from "./context/EditingContext.js";
 import { useUniversalSearch } from "./hooks/useUniversalSearch.js";
 import { SearchPalette } from "./components/SearchPalette.js";
 import { HeaderSearch } from "./components/HeaderSearch.js";
-import { Sidebar } from "./components/Sidebar";
+import { AppSidebar } from "./components/app-sidebar.js";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { Dashboard } from "./components/Dashboard";
 import { PermissionsPanel } from "./components/PermissionsPanel";
 import { McpPanel } from "./components/McpPanel";
@@ -325,82 +332,86 @@ export default function App() {
 
   return (
     <EditingContext.Provider value={true}>
-      <div className="flex min-h-screen bg-bg text-white">
-        <Sidebar
-          active={section}
-          onNavigate={navigate}
-          config={config}
-          workspaces={workspaces}
-          activeProject={activeProject}
-          onSelectWorkspace={handleSelectWorkspace}
-          onAddWorkspace={handleAddWorkspace}
-          onRemoveWorkspace={(name) => void handleRemoveWorkspace(name)}
-        />
-        <main className="flex flex-1 flex-col overflow-auto">
-          <div
-            className={`flex items-center gap-4 px-6 pb-2 pt-4 ${allowGlobalWrites ? "border-b-2 border-amber-500/40" : ""}`}
-          >
-            <HeaderSearch
-              search={search}
-              onNavigate={handleNavigateToResult}
-              onOpenPalette={(initialQuery) => {
-                setPaletteInitialQuery(initialQuery ?? "");
-                setPaletteOpen(true);
-              }}
-            />
-            <div
-              className={`flex items-center gap-2 rounded px-2 py-0.5 transition-colors ${
-                allowGlobalWrites
-                  ? "border border-amber-500/20 bg-amber-500/10"
-                  : ""
+      <TooltipProvider>
+        <SidebarProvider defaultOpen={true}>
+          <AppSidebar
+            active={section}
+            onNavigate={navigate}
+            config={config}
+            workspaces={workspaces}
+            activeProject={activeProject}
+            onSelectWorkspace={handleSelectWorkspace}
+            onAddWorkspace={handleAddWorkspace}
+            onRemoveWorkspace={(name) => void handleRemoveWorkspace(name)}
+          />
+          <SidebarInset>
+            <header
+              className={`flex h-12 shrink-0 items-center gap-2 border-b px-4 ${
+                allowGlobalWrites ? "border-amber-500/40" : "border-border"
               }`}
             >
-              <button
-                onClick={() => void toggleGlobalWrites()}
-                disabled={togglingGlobal}
-                title={
+              <SidebarTrigger className="text-muted-foreground -ml-1" />
+              <Separator orientation="vertical" className="mr-2 !h-4" />
+              <HeaderSearch
+                search={search}
+                onNavigate={handleNavigateToResult}
+                onOpenPalette={(initialQuery) => {
+                  setPaletteInitialQuery(initialQuery ?? "");
+                  setPaletteOpen(true);
+                }}
+              />
+              <div
+                className={`ml-auto flex items-center gap-2 rounded px-2 py-0.5 transition-colors ${
                   allowGlobalWrites
-                    ? "Editing enabled — click to disable"
-                    : "Editing disabled — click to enable"
-                }
-                className="flex items-center gap-2 disabled:opacity-50"
+                    ? "border border-amber-500/20 bg-amber-500/10"
+                    : ""
+                }`}
               >
-                <span
-                  className={`text-xs transition-colors ${allowGlobalWrites ? "font-semibold text-amber-400" : "text-slate-400"}`}
-                >
-                  Global edits
-                </span>
-                {/* Track */}
-                <span
-                  className={`relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border transition-colors duration-200 ${
+                <button
+                  onClick={() => void toggleGlobalWrites()}
+                  disabled={togglingGlobal}
+                  title={
                     allowGlobalWrites
-                      ? "border-amber-400/50 bg-amber-500/70"
-                      : "border-white/10 bg-white/10"
-                  }`}
+                      ? "Editing enabled — click to disable"
+                      : "Editing disabled — click to enable"
+                  }
+                  className="flex items-center gap-2 disabled:opacity-50"
                 >
-                  {/* Thumb */}
                   <span
-                    className={`pointer-events-none inline-block h-3.5 w-3.5 self-center rounded-full bg-white shadow transition-transform duration-200 ${
-                      allowGlobalWrites ? "translate-x-4" : "translate-x-0.5"
+                    className={`text-xs transition-colors ${allowGlobalWrites ? "font-semibold text-amber-400" : "text-slate-400"}`}
+                  >
+                    Global edits
+                  </span>
+                  <span
+                    className={`relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border transition-colors duration-200 ${
+                      allowGlobalWrites
+                        ? "border-amber-400/50 bg-amber-500/70"
+                        : "border-white/10 bg-white/10"
                     }`}
-                  />
-                </span>
-              </button>
-            </div>
-          </div>
-          <div className="flex-1 p-6">{renderContent()}</div>
-        </main>
-        <SearchPalette
-          open={paletteOpen}
-          initialQuery={paletteInitialQuery}
-          onClose={() => setPaletteOpen(false)}
-          onNavigate={handleNavigateToResult}
-          search={search}
-          workspaces={workspaces}
-          activeProject={activeProject}
-          onSelectWorkspace={handleSelectWorkspace}
-        />
-      </div>
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-3.5 w-3.5 self-center rounded-full bg-white shadow transition-transform duration-200 ${
+                        allowGlobalWrites ? "translate-x-4" : "translate-x-0.5"
+                      }`}
+                    />
+                  </span>
+                </button>
+              </div>
+            </header>
+            <div className="flex-1 p-6">{renderContent()}</div>
+          </SidebarInset>
+          <SearchPalette
+            open={paletteOpen}
+            initialQuery={paletteInitialQuery}
+            onClose={() => setPaletteOpen(false)}
+            onNavigate={handleNavigateToResult}
+            search={search}
+            workspaces={workspaces}
+            activeProject={activeProject}
+            onSelectWorkspace={handleSelectWorkspace}
+          />
+        </SidebarProvider>
+      </TooltipProvider>
     </EditingContext.Provider>
   );
 }

@@ -1,4 +1,5 @@
 import React from "react";
+import { Separator } from "@/components/ui/separator";
 import { ViewToggle } from "./ViewToggle.js";
 
 interface PanelShellProps {
@@ -37,7 +38,8 @@ export function PanelShell({
           </div>
         )}
       </div>
-      {subtitle && <p className="mb-6 text-sm text-gray-500">{subtitle}</p>}
+      {subtitle && <p className="mb-4 text-sm text-gray-500">{subtitle}</p>}
+      <Separator className="mb-6" />
       {children}
     </div>
   );
