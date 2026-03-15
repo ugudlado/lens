@@ -28,28 +28,19 @@ Use Headless UI for accessible primitives.
 
 shadcn/ui requires a `components.json` configuration file at the UI package root. Since this is a monorepo with the UI app at `apps/ui/`, the config lives there.
 
-[ASSUMPTION] We will manually create the shadcn config and component files rather than using `npx shadcn@latest init`, which has had issues with pnpm monorepos and worktrees (see memory: observation #6596). This avoids store path conflicts.
+Use the shadcn CLI (`npx shadcn@latest init`) from the `apps/ui/` directory to scaffold `components.json`, `cn()` utility, and CSS variables. Then use `npx shadcn@latest add <component>` to install individual components.
 
-**`apps/ui/components.json`**:
-```json
-{
-  "$schema": "https://ui.shadcn.com/schema.json",
-  "style": "new-york",
-  "rsc": false,
-  "tsx": true,
-  "tailwind": {
-    "config": "tailwind.config.js",
-    "css": "src/index.css",
-    "baseColor": "zinc",
-    "cssVariables": true
-  },
-  "aliases": {
-    "components": "@/components",
-    "utils": "@/lib/utils",
-    "ui": "@/components/ui",
-    "hooks": "@/hooks"
-  }
-}
+Run from the UI package root:
+```bash
+cd apps/ui
+npx shadcn@latest init --style new-york --base-color zinc --css-variables --no-src-dir
+```
+
+This generates `components.json`, `src/lib/utils.ts` (with `cn()`), and updates `src/index.css` with CSS variable scaffolding. Then customize the generated CSS variables to match the Lens theme (see CSS Variable Mapping below).
+
+Install components via CLI:
+```bash
+npx shadcn@latest add sidebar button separator tooltip collapsible dropdown-menu sheet input
 ```
 
 ### Path Alias Configuration
@@ -381,7 +372,7 @@ During migration, both old and new color systems coexist:
 
 | Risk | Mitigation |
 |------|------------|
-| shadcn CLI fails in monorepo/worktree | Manual component file creation (no CLI dependency) |
+| shadcn CLI fails in monorepo | Run CLI from `apps/ui/` directory; if it fails, fall back to manual file creation |
 | CSS variable conflicts with existing styles | Keep both systems; CSS specificity handles conflicts |
 | Bundle size increase | Only install needed components (~6 components, not the full library) |
 | Tailwind class conflicts | tailwind-merge (via `cn()`) deduplicates conflicting classes |
