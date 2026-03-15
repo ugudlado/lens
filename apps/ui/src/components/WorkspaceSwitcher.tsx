@@ -26,7 +26,12 @@ export function WorkspaceSwitcher({
   const [newPath, setNewPath] = useState("");
   const [addError, setAddError] = useState<string | null>(null);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
+  const [dropdownPos, setDropdownPos] = useState<{
+    left: number;
+    bottom: number;
+  } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const activeWs = workspaces.find((w) => w.path === activeProject);
@@ -86,6 +91,19 @@ export function WorkspaceSwitcher({
     setShowAdd(false);
   }
 
+  function toggleOpen() {
+    setOpen((prev) => {
+      if (!prev && triggerRef.current) {
+        const rect = triggerRef.current.getBoundingClientRect();
+        setDropdownPos({
+          left: rect.left,
+          bottom: window.innerHeight - rect.top + 4,
+        });
+      }
+      return !prev;
+    });
+  }
+
   function handleSelect(path: string) {
     onSelect(path);
     setOpen(false);
@@ -96,7 +114,8 @@ export function WorkspaceSwitcher({
     <div className="relative px-3 py-3" ref={dropdownRef}>
       {isCollapsed ? (
         <button
-          onClick={() => setOpen((o) => !o)}
+          ref={triggerRef}
+          onClick={toggleOpen}
           className="hover:bg-accent/10 flex w-full items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:text-accent"
           title={activeWs?.name ?? "Workspace"}
         >
@@ -108,7 +127,8 @@ export function WorkspaceSwitcher({
             Workspace
           </label>
           <button
-            onClick={() => setOpen((o) => !o)}
+            ref={triggerRef}
+            onClick={toggleOpen}
             className={`flex w-full items-center gap-2 rounded border px-2.5 py-2 text-left text-xs transition-colors ${
               open
                 ? "border-accent/50 bg-bg text-gray-200"
@@ -135,8 +155,11 @@ export function WorkspaceSwitcher({
         </>
       )}
 
-      {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 w-72 overflow-hidden rounded-lg border border-border bg-card shadow-2xl">
+      {open && dropdownPos && (
+        <div
+          className="fixed z-50 w-72 overflow-hidden rounded-lg border border-border bg-card shadow-2xl"
+          style={{ left: dropdownPos.left, bottom: dropdownPos.bottom }}
+        >
           {/* Search input */}
           <div className="flex items-center gap-2 border-b border-border px-3 py-2">
             <svg

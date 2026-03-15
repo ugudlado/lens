@@ -22,6 +22,7 @@ import { WorkspaceSwitcher } from "./WorkspaceSwitcher.js";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -152,13 +153,6 @@ export function AppSidebar({
             v{APP_VERSION}
           </span>
         </div>
-        <WorkspaceSwitcher
-          workspaces={workspaces}
-          activeProject={activeProject}
-          onSelect={onSelectWorkspace}
-          onAdd={onAddWorkspace}
-          onRemove={onRemoveWorkspace}
-        />
       </SidebarHeader>
 
       <SidebarContent>
@@ -197,6 +191,16 @@ export function AppSidebar({
           </SidebarGroup>
         ))}
       </SidebarContent>
+
+      <SidebarFooter>
+        <WorkspaceSwitcher
+          workspaces={workspaces}
+          activeProject={activeProject}
+          onSelect={onSelectWorkspace}
+          onAdd={onAddWorkspace}
+          onRemove={onRemoveWorkspace}
+        />
+      </SidebarFooter>
     </Sidebar>
   );
 }
