@@ -97,7 +97,7 @@ export function WorkspaceSwitcher({
       {isCollapsed ? (
         <button
           onClick={() => setOpen((o) => !o)}
-          className="text-muted-foreground flex w-full items-center justify-center rounded p-1.5 transition-colors hover:bg-accent/10 hover:text-accent"
+          className="hover:bg-accent/10 flex w-full items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:text-accent"
           title={activeWs?.name ?? "Workspace"}
         >
           <FolderOpen className="size-4" />
@@ -112,7 +112,7 @@ export function WorkspaceSwitcher({
             className={`flex w-full items-center gap-2 rounded border px-2.5 py-2 text-left text-xs transition-colors ${
               open
                 ? "border-accent/50 bg-bg text-gray-200"
-                : "border-border bg-bg text-gray-200 hover:border-accent/30"
+                : "hover:border-accent/30 border-border bg-bg text-gray-200"
             }`}
           >
             <span className="flex-1 truncate font-medium">
@@ -201,7 +201,7 @@ export function WorkspaceSwitcher({
                     >
                       {ws.name}
                       {isActive && (
-                        <span className="ml-1.5 text-[10px] text-accent/60">
+                        <span className="text-accent/60 ml-1.5 text-[10px]">
                           active
                         </span>
                       )}
@@ -284,7 +284,7 @@ export function WorkspaceSwitcher({
                 <div className="flex gap-1.5">
                   <button
                     onClick={() => void handleAdd()}
-                    className="rounded bg-accent/20 px-2.5 py-1 text-xs text-accent transition-colors hover:bg-accent/30"
+                    className="bg-accent/20 hover:bg-accent/30 rounded px-2.5 py-1 text-xs text-accent transition-colors"
                   >
                     Add
                   </button>

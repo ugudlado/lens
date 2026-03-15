@@ -22,7 +22,6 @@ import { WorkspaceSwitcher } from "./WorkspaceSwitcher.js";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -146,13 +145,20 @@ export function AppSidebar({
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className="flex items-baseline gap-2 px-2 py-1 group-data-[collapsible=icon]:hidden">
-          <span className="text-primary text-xs font-bold uppercase tracking-widest">
+          <span className="text-xs font-bold uppercase tracking-widest text-primary">
             {APP_NAME}
           </span>
-          <span className="text-muted-foreground text-[10px]">
+          <span className="text-[10px] text-muted-foreground">
             v{APP_VERSION}
           </span>
         </div>
+        <WorkspaceSwitcher
+          workspaces={workspaces}
+          activeProject={activeProject}
+          onSelect={onSelectWorkspace}
+          onAdd={onAddWorkspace}
+          onRemove={onRemoveWorkspace}
+        />
       </SidebarHeader>
 
       <SidebarContent>
@@ -179,7 +185,7 @@ export function AppSidebar({
                         <span>{item.label}</span>
                       </SidebarMenuButton>
                       {count !== null && count > 0 && (
-                        <SidebarMenuBadge className="text-muted-foreground tabular-nums">
+                        <SidebarMenuBadge className="tabular-nums text-muted-foreground">
                           {count}
                         </SidebarMenuBadge>
                       )}
@@ -191,16 +197,6 @@ export function AppSidebar({
           </SidebarGroup>
         ))}
       </SidebarContent>
-
-      <SidebarFooter>
-        <WorkspaceSwitcher
-          workspaces={workspaces}
-          activeProject={activeProject}
-          onSelect={onSelectWorkspace}
-          onAdd={onAddWorkspace}
-          onRemove={onRemoveWorkspace}
-        />
-      </SidebarFooter>
     </Sidebar>
   );
 }
