@@ -109,6 +109,18 @@ button {
   box-shadow: inset -2px 0 8px -2px rgb(192 123 46 / 0.15);
 }
 
+/* shadcn sidebar active menu button — warm amber */
+[data-sidebar="menu-button"][data-active="true"] {
+  background-color: rgb(192 123 46 / 0.1);
+  color: #c07b2e;
+  border-right: 2px solid #c07b2e;
+  box-shadow: inset -2px 0 8px -2px rgb(192 123 46 / 0.15);
+}
+[data-sidebar="menu-button"]:not([data-active="true"]):hover {
+  background-color: rgb(255 255 255 / 0.04);
+  color: #e5e5e5;
+}
+
 @layer base {
   :root {
     /* Lens warm amber dark theme */
