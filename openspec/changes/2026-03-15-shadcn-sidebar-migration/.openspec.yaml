@@ -1,0 +1,6 @@
+schema: feature-rapid
+feature_id: 2026-03-15-shadcn-sidebar-migration
+title: Migrate Lens UI to shadcn/ui with Sidebar Layout
+created: 2026-03-15
+worktree: ~/code/feature_worktrees/2026-03-15-shadcn-sidebar-migration
+branch: feature/2026-03-15-shadcn-sidebar-migration
