@@ -187,7 +187,7 @@ const CARD_GROUPS: CardGroup[] = [
         getScopes: (c) => scopedItems(c.permissions.rules),
         getPreviewItems: (c) =>
           c.permissions.rules.slice(0, 3).map((r) => {
-            // Truncate long glob paths: "Edit(//Users/spidey/code/**)" → "Edit(~/code/**)"
+            // Truncate long glob paths: "Edit(/Users/jane/code/**)" → "Edit(~/code/**)"
             return r.rule
               .replace(/\/Users\/[^/]+/g, "~")
               .replace(/\(\/~/, "(~")
@@ -435,7 +435,7 @@ export function Dashboard({
             )}
             <button
               onClick={() => setShowExport(true)}
-              className="flex-shrink-0 rounded border border-accent/50 bg-accent/20 px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/30"
+              className="border-accent/50 bg-accent/20 hover:bg-accent/30 flex-shrink-0 rounded border px-3 py-1.5 text-xs font-medium text-accent transition-colors"
             >
               ↓ Export
             </button>
