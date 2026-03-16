@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.5.2] - 2026-03-16
+
+### Changed
+
+- Centralized APP_VERSION to read from plugin.json via Vite define, eliminating manual version sync
+
 ## [1.5.1] - 2026-03-15
 
 ### Changed

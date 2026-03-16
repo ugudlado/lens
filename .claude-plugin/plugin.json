@@ -1,6 +1,6 @@
 {
   "name": "lens",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "A web dashboard to scan, browse, and edit all Claude Code configuration surfaces across all scope levels",
   "author": {
     "name": "Mahesh"
