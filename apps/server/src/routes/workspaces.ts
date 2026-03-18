@@ -7,7 +7,7 @@ import type { Workspace } from "@lens/schema";
 import { restartWatcher } from "../watcher.js";
 import { detectProjectRoot } from "../scanner/utils.js";
 
-const REGISTRY_DIR = join(homedir(), ".claude-config");
+const REGISTRY_DIR = join(homedir(), ".config", "lens");
 const REGISTRY_FILE = join(REGISTRY_DIR, "workspaces.json");
 
 async function readRegistry(): Promise<Workspace[]> {

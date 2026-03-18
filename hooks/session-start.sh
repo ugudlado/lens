@@ -2,6 +2,16 @@
 # Start the Lens server in the background if it's not already running.
 # Runs async on SessionStart so it doesn't block Claude from starting.
 
+# TODO: Remove this migration block in v1.7.0
+# Migrate workspaces.json from old location (added in v1.6.0)
+OLD_WS="$HOME/.claude-config/workspaces.json"
+NEW_WS_DIR="$HOME/.config/lens"
+if [ -f "$OLD_WS" ] && [ ! -f "$NEW_WS_DIR/workspaces.json" ]; then
+  mkdir -p "$NEW_WS_DIR"
+  mv "$OLD_WS" "$NEW_WS_DIR/workspaces.json"
+  rmdir "$HOME/.claude-config" 2>/dev/null || true
+fi
+
 if curl -s http://localhost:37001/api/health &>/dev/null; then
   exit 0
 fi
