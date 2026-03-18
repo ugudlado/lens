@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.5.3] - 2026-03-19
+
+### Changed
+
+- Added comprehensive tasks.md format documentation and gotchas to CLAUDE.md
+- Updated UI build artifacts with latest asset hashes
+
 ## [1.5.2] - 2026-03-19
 
 ### Changed
