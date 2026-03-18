@@ -103,6 +103,45 @@ Lens supports exporting and importing project-level config via a JSON bundle.
 
 **UI**: Dashboard header has "↑ Export Config" button → `ExportConfigModal`. Import modal has "From Workspace" / "From File" tabs.
 
+## tasks.md Format Reference
+
+The canonical format for `tasks.md` (generated mirror of native tasks). Used by `/specify` (initial generation), `/implement` (live sync), and the local-review UI (parsing).
+
+```markdown
+# Tasks: [FEATURE_ID]
+
+## [status] Phase N: [Name]
+
+### [status] T-N: [Task title]
+
+**Why**: [Which requirement/bug this satisfies]
+
+**Files**: [Files to create or modify]
+
+**Verify**: [Concrete verification steps]
+
+---
+
+### [status] T-N+1: [Task title] (depends: T-N)
+
+**Why**: ...
+
+**Files**: ...
+
+**Verify**: ...
+
+**Skipped**: [Reason — only for deleted/skipped tasks]
+```
+
+**Format rules:**
+
+- Phase headings: `## [status] Phase N: Name` — `[x]` if all tasks done, `[~]` if any skipped
+- Task headings: `### [status] T-N: Title` — append `(depends: T-1, T-2)` from blockedBy
+- Status markers: `[x]` completed, `[ ]` pending, `[→]` in_progress, `[~]` deleted/skipped
+- Metadata: `**Why**:`, `**Files**:`, `**Verify**:` as standalone lines (from task description)
+- Add `**Skipped**: [reason]` for deleted tasks
+- Separate tasks with `---`
+
 ## Gotchas
 
 - **`tsx watch` hot-reloads from source** — No rebuild needed during `pnpm dev`. Changes to `apps/server/src/` are live immediately at `localhost:3000`. `dist/` is only read by the Claude Code plugin loader, not the dev server.
@@ -110,6 +149,12 @@ Lens supports exporting and importing project-level config via a JSON bundle.
 - **MCP scope writes** — When copying MCPs to global/user scope, the target file is `.claude.json`, not `.mcp.json`.
 - **`installed_plugins.json` v2** — Stores version history as arrays. Use `allEntries[allEntries.length - 1]` for the latest entry. Cache dirs have one subdir per cached version — pick by most-recently-modified.
 - **Release prep** — Always bump `.claude-plugin/plugin.json` and `$HOME/code/claude-marketplace/.claude-plugin/marketplace.json` in the same release commit as `CHANGELOG.md`.
+- **Schema dist build order** — Run `pnpm --filter @lens/schema build` before `pnpm type-check` when schema types change. Server imports from `dist/`, not source — stale dist causes misleading type errors.
+- **Stale tsx processes** — If `pnpm dev:server` fails to bind port 37001, run `lsof -i :37001` to find and kill lingering tsx processes from previous sessions.
+- **Chrome DevTools UIDs go stale** — Always call `take_snapshot` immediately before using a UID for `click`/`fill`/`hover`. React re-renders invalidate all UIDs. Never cache UIDs across async operations. `click` requires `uid`, not text.
+- **Plugin duplicate detection** — Filter by target scope only when checking for existing plugins. Checking all scopes blocks legitimate project-scoped imports of globally-installed plugins.
+- **Plugin version comparison** — Use semver parsing, not string matching. String comparison treats "1.10" < "1.9", causing incorrect upgrade/downgrade detection.
+- **shadcn CLI on Tailwind v3** — `npx shadcn@latest add` generates TW v4 syntax regardless of project version. After any shadcn add/init, grep generated files for: `w-(--var)`, `outline-hidden`, `data-open:`, `size-8!` suffix, `(--spacing(4))`. Fix to v3 equivalents before committing.
 
 ## Agent Restrictions
 

@@ -16394,7 +16394,7 @@ function restartWatcher(projectRoots) {
 }
 
 // src/routes/workspaces.ts
-var REGISTRY_DIR = join19(homedir9(), ".claude-config");
+var REGISTRY_DIR = join19(homedir9(), ".config", "lens");
 var REGISTRY_FILE = join19(REGISTRY_DIR, "workspaces.json");
 async function readRegistry() {
   try {
