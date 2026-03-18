@@ -4,11 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [1.5.2] - 2026-03-16
+## [1.5.2] - 2026-03-19
 
 ### Changed
 
 - Centralized APP_VERSION to read from plugin.json via Vite define, eliminating manual version sync
+- Migrated workspaces registry from .claude-config to XDG Base Directory compliant location (~/.config/lens/workspaces.json)
+
+### Infrastructure & Tooling
+
+- Added automatic migration logic to session-start hook for existing workspace registries
 
 ## [1.5.1] - 2026-03-15
 
