@@ -16,6 +16,7 @@ if curl -s http://localhost:37001/api/health &>/dev/null; then
   exit 0
 fi
 
+
 # Prefer the live repo if it exists (for local development), otherwise find in cache
 LIVE_REPO="$HOME/code/lens"
 if [ -f "$LIVE_REPO/apps/server/dist/index.js" ]; then
