@@ -25,6 +25,22 @@ Validate with `pnpm type-check && pnpm lint`.
 
 - `PORT` — port to listen on (default: `37001`)
 
+## Runtime Verification (Dev Server)
+
+For runtime verification during `/implement`, start the dev server and verify against it:
+
+```bash
+PORT=3000 pnpm dev &                    # Start server + UI (background)
+# Wait for ready:
+for i in $(seq 1 15); do curl -sf http://localhost:3000/api/config > /dev/null && break; sleep 1; done
+```
+
+- **Single URL**: `http://localhost:3000` — Vite proxies `/api/*` and `/events` to backend
+- **Backend verification**: `curl -sf http://localhost:3000/api/<endpoint> | jq .`
+- **UI verification**: Chrome DevTools MCP → `navigate_page` to `http://localhost:3000`
+- **Watch mode**: `pnpm dev` includes watch for both server and UI — no restart needed between phases
+- **Teardown**: Kill via PID registry (`/tmp/claude-dev-servers/`) when done
+
 ## Architecture
 
 This is **Lens** — a web dashboard that scans, displays, and edits all 13 Claude Code configuration surfaces (CLAUDE.md, settings, permissions, MCP servers, hooks, skills, agents, rules, commands, plugins, models, memory, sandbox) across all scope levels (managed, global, project, local).
@@ -161,10 +177,9 @@ The canonical format for `tasks.md` (generated mirror of native tasks). Used by 
 When running as a spawned agent:
 
 - **NO git push** — Never push to any remote. Commits are local only.
-- **NO dev servers** — Never run `pnpm dev`, `npm run dev`, `npx vite`, or any server. The dev server is managed externally.
-- **NO process management** — Never run `kill`, `killall`, `pkill`, or similar.
+- **Dev servers allowed for UI verification** — Agents may start `pnpm dev`, `pnpm dev:server`, or `pnpm dev:ui` for UI verification via Chrome DevTools MCP. Only one dev server per worktree/branch — kill the existing one before starting another.
+- **Only kill what you started** — Kill commands are restricted to PIDs registered by the `process-kill-guard` hook. The hook tracks server PIDs in `/tmp/claude-dev-servers/`. Unregistered PIDs, `killall`, and `pkill` are blocked.
 - **NO destructive operations** — Never `rm -rf /`, `rm -rf ~`, or delete files outside the project.
-- **Type-check only** — For validation, use `pnpm type-check` instead of starting servers.
 - **Write within project** — Only write files within this repository.
 
 ## Linear Issue Tracking
