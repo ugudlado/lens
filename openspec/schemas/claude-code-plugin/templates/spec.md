@@ -29,6 +29,12 @@ linear-ticket: HL-XXX
 <!-- Testable scenarios using Given/When/Then or equivalent -->
 <!-- TDD mode: specify test file paths and coverage targets -->
 
+## Alternatives Considered
+
+<!-- For each major design choice, list at least one alternative approach that was evaluated.
+     Format: Alternative → Why rejected (or why chosen approach is better).
+     This section ensures the architect actively challenged assumptions rather than going with the first idea. -->
+
 ## Decisions
 
 <!-- Key decisions made and rationale -->
