@@ -7,7 +7,6 @@
 set -euo pipefail
 
 CACHE_DIR="$HOME/.claude/plugins/cache/ugudlado/lens"
-INSTALLED_JSON="$HOME/.claude/plugins/installed_plugins.json"
 LOG_PREFIX="[$(date '+%Y-%m-%d %H:%M:%S')]"
 
 # Exit early if cache directory doesn't exist or has < 2 versions
@@ -20,27 +19,16 @@ if [ "$version_count" -lt 2 ]; then
   exit 0
 fi
 
-# Read active version from installed_plugins.json (source of truth for what Claude Code uses)
-if [ ! -f "$INSTALLED_JSON" ]; then
-  echo "$LOG_PREFIX WARNING: installed_plugins.json not found, skipping cleanup" >&2
+# Latest = most recently modified directory (the one Claude Code just installed)
+latest_dir=$(ls -dt "$CACHE_DIR"/*/ 2>/dev/null | head -1)
+latest_version=$(basename "$latest_dir")
+
+if [ -z "$latest_version" ]; then
+  echo "$LOG_PREFIX WARNING: Could not determine latest version, skipping cleanup" >&2
   exit 0
 fi
 
-active_version=$(python3 -c "
-import json, sys, os
-try:
-    data = json.load(open(sys.argv[1]))
-    entries = data.get('plugins', {}).get('lens@ugudlado', [])
-    if entries:
-        print(os.path.basename(entries[0]['installPath']))
-except Exception:
-    pass
-" "$INSTALLED_JSON" 2>/dev/null)
-
-if [ -z "$active_version" ]; then
-  echo "$LOG_PREFIX WARNING: Could not determine active version, skipping cleanup" >&2
-  exit 0
-fi
+echo "$LOG_PREFIX Active version (most recent): $latest_version" >&2
 
 # Kill processes running from old versions, then remove the directories
 removed=0
@@ -48,7 +36,7 @@ bytes_freed=0
 server_killed=false
 for dir in "$CACHE_DIR"/*/; do
   dir_name=$(basename "$dir")
-  if [ "$dir_name" = "$active_version" ]; then
+  if [ "$dir_name" = "$latest_version" ]; then
     continue
   fi
 
@@ -73,7 +61,7 @@ for dir in "$CACHE_DIR"/*/; do
 done
 
 if [ "$removed" -gt 0 ]; then
-  echo "$LOG_PREFIX Cleanup complete: removed $removed version(s), freed ${bytes_freed}K. Active: $active_version" >&2
+  echo "$LOG_PREFIX Cleanup complete: removed $removed version(s), freed ${bytes_freed}K. Active: $latest_version" >&2
 fi
 
 # Signal to caller that server needs restart
