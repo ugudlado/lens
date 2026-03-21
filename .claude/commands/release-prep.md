@@ -95,12 +95,22 @@ Find the `lens` entry in the `plugins` array and update its `"version"` field to
 }
 ```
 
-### 5. Commit and Tag
+### 5. Build Dist Artifacts
 
-Stage all changed files and commit:
+Run a full build so that committed dist artifacts match the release version:
 
 ```bash
-git add CHANGELOG.md .claude-plugin/plugin.json
+pnpm build
+```
+
+Verify the build succeeds before proceeding. This ensures the plugin's dist (used by `node apps/server/dist/index.js` at runtime) matches the source.
+
+### 6. Commit and Tag
+
+Stage all changed files including rebuilt dist:
+
+```bash
+git add CHANGELOG.md .claude-plugin/plugin.json apps/server/dist/ apps/ui/dist/ packages/schema/dist/
 ```
 
 Also stage the marketplace file (separate repo, but same commit message for clarity — user will commit separately):
@@ -120,7 +130,7 @@ git tag vx.y.z
 
 Remind the user to also commit the marketplace repo separately.
 
-### 6. Report
+### 7. Report
 
 Output:
 

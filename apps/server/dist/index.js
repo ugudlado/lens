@@ -14878,9 +14878,25 @@ app8.delete("/api/file", async (c) => {
     );
   }
 });
-app8.get("/api/health", (c) => c.json({ status: "ok" }));
 var __filename = fileURLToPath3(import.meta.url);
 var __dirname = dirname3(__filename);
+app8.get("/api/health", async (c) => {
+  const pluginJsonPath = resolve5(
+    __dirname,
+    "..",
+    "..",
+    "..",
+    ".claude-plugin",
+    "plugin.json"
+  );
+  let version = "unknown";
+  try {
+    const raw2 = await readFile8(pluginJsonPath, "utf-8");
+    version = JSON.parse(raw2).version ?? "unknown";
+  } catch {
+  }
+  return c.json({ status: "ok", version });
+});
 var uiDistPath = resolve5(__dirname, "..", "..", "ui", "dist");
 app8.use("/*", serveStatic({ root: uiDistPath }));
 app8.get("/*", async (c) => {
