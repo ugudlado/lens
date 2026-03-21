@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.5.7] - 2026-03-21
+
+! Fixed session-start hook to detect and kill stale processes on port 37001, with health check timeout
+
 ## [1.5.6] - 2026-03-21
 
 - Replaced chokidar file watcher with native fs.watch for config monitoring
