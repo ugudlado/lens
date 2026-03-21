@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Start the Lens server in the background if it's not already running.
+# Ensures the latest version is always running — kills older versions.
 # Runs async on SessionStart so it doesn't block Claude from starting.
+
+PORT=37001
 
 # Clean up old cached versions (blocking — may kill server running from old version)
 cleanup_result=$("${BASH_SOURCE%/*}/cleanup-cache.sh" 2>>/tmp/lens-cleanup.log) || true
@@ -15,31 +18,46 @@ if [ -f "$OLD_WS" ] && [ ! -f "$NEW_WS_DIR/workspaces.json" ]; then
   rmdir "$HOME/.claude-config" 2>/dev/null || true
 fi
 
-# Skip "already running" check if cleanup just killed an old server
-if [ "$cleanup_result" != "SERVER_KILLED" ]; then
-  if curl -s --max-time 2 http://localhost:37001/api/health &>/dev/null; then
-    exit 0
-  fi
-  # Port may be occupied by a stale/crashed process — kill it
-  STALE_PID=$(lsof -ti :37001 -sTCP:LISTEN 2>/dev/null || true)
-  if [ -n "$STALE_PID" ]; then
-    kill "$STALE_PID" 2>/dev/null || true
-    sleep 1
-  fi
-fi
-
-# Prefer the live repo if it exists (for local development), otherwise find in cache
+# Determine where to run from: live repo (dev) or latest cached version (by mtime)
 LIVE_REPO="$HOME/code/lens"
+CACHE_DIR="$HOME/.claude/plugins/cache/ugudlado/lens"
+PLUGIN_ROOT=""
+
 if [ -f "$LIVE_REPO/apps/server/dist/index.js" ]; then
   PLUGIN_ROOT="$LIVE_REPO"
 else
-  DIST=$(find ~/.claude/plugins/cache -name "index.js" -path "*/lens/*/apps/server/dist/index.js" 2>/dev/null | head -1)
-  PLUGIN_ROOT="${DIST:+${DIST%/apps/server/dist/index.js}}"
+  latest_dir=$(ls -dt "$CACHE_DIR"/*/ 2>/dev/null | head -1)
+  if [ -n "$latest_dir" ] && [ -f "$latest_dir/apps/server/dist/index.js" ]; then
+    PLUGIN_ROOT="$latest_dir"
+  fi
 fi
 
 if [ -z "$PLUGIN_ROOT" ]; then
   exit 0
 fi
 
-cd "$PLUGIN_ROOT"
-nohup node apps/server/dist/index.js >/tmp/lens-server.log 2>&1 &
+# Read the version we expect to be running
+expected_version=$(python3 -c "import json; print(json.load(open('$PLUGIN_ROOT/.claude-plugin/plugin.json')).get('version',''))" 2>/dev/null || true)
+
+# Check if a server is already running on the port
+needs_start=true
+if [ "$cleanup_result" != "SERVER_KILLED" ] && lsof -i :"$PORT" -sTCP:LISTEN &>/dev/null; then
+  running_version=$(curl -s --max-time 2 "http://localhost:$PORT/api/health" 2>/dev/null \
+    | python3 -c "import json,sys; print(json.load(sys.stdin).get('version',''))" 2>/dev/null || true)
+
+  if [ -n "$expected_version" ] && [ "$running_version" = "$expected_version" ]; then
+    needs_start=false
+  else
+    # Wrong version or unresponsive — kill it
+    STALE_PID=$(lsof -ti :"$PORT" -sTCP:LISTEN 2>/dev/null || true)
+    if [ -n "$STALE_PID" ]; then
+      kill "$STALE_PID" 2>/dev/null || true
+      sleep 1
+    fi
+  fi
+fi
+
+if [ "$needs_start" = true ]; then
+  cd "$PLUGIN_ROOT"
+  nohup node apps/server/dist/index.js >/tmp/lens-server.log 2>&1 &
+fi
