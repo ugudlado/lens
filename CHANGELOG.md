@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.5.5] - 2026-03-21
+
+- Added cleanup-cache hook to remove old cached lens plugin versions on session startup
+- Integrated cache cleanup into session-start.sh to prevent disk bloat from accumulated versions
+
 ## [1.5.4] - 2026-03-21
 
 ### Changed
