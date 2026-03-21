@@ -16,10 +16,17 @@ if [ -f "$OLD_WS" ] && [ ! -f "$NEW_WS_DIR/workspaces.json" ]; then
 fi
 
 # Skip "already running" check if cleanup just killed an old server
-if [ "$cleanup_result" != "SERVER_KILLED" ] && curl -s http://localhost:37001/api/health &>/dev/null; then
-  exit 0
+if [ "$cleanup_result" != "SERVER_KILLED" ]; then
+  if curl -s --max-time 2 http://localhost:37001/api/health &>/dev/null; then
+    exit 0
+  fi
+  # Port may be occupied by a stale/crashed process — kill it
+  STALE_PID=$(lsof -ti :37001 -sTCP:LISTEN 2>/dev/null || true)
+  if [ -n "$STALE_PID" ]; then
+    kill "$STALE_PID" 2>/dev/null || true
+    sleep 1
+  fi
 fi
-
 
 # Prefer the live repo if it exists (for local development), otherwise find in cache
 LIVE_REPO="$HOME/code/lens"
