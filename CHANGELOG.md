@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.5.4] - 2026-03-21
+
+### Changed
+
+- Migrated OpenSpec schemas to centralized location
+- Enhanced Alternatives Considered section in spec template
+- Fixed formatting in session-start.sh hook
+- Updated developer docs with runtime verification and agent dev server policy
+- Removed unused hooks entry from plugin.json
+
 ## [1.5.3] - 2026-03-19
 
 ### Changed
