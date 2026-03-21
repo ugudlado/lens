@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.5.8] - 2026-03-21
+
+- Added version field to /api/health endpoint for version detection
+
+* Improved session-start hook with mtime-based cache version detection
+  ! Fixed stale server detection and cleanup by using directory timestamps instead of installed_plugins.json parsing
+
 ## [1.5.7] - 2026-03-21
 
 ! Fixed session-start hook to detect and kill stale processes on port 37001, with health check timeout
