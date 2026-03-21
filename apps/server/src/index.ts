@@ -118,4 +118,4 @@ const port = Number(process.env.PORT) || 37001;
 console.log(`Lens server on http://localhost:${port}`);
 serve({ fetch: app.fetch, port });
 
-startWatcher();
+void startWatcher();

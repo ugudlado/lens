@@ -58,7 +58,7 @@ This is **Lens** — a web dashboard that scans, displays, and edits all 13 Clau
 3. Server returns aggregated config with effective values (merged across scopes)
 4. UI displays config in a browsable dashboard with scope-level detail
 5. User edits config → `PATCH /api/update` writes changes back to the appropriate file
-6. File watcher (chokidar) detects changes and pushes updates via SSE (`GET /api/events`)
+6. File watcher (`fs.watch` recursive/FSEvents) detects changes and pushes updates via SSE (`GET /api/events`)
 
 ### Server Internals
 
@@ -72,8 +72,8 @@ This is **Lens** — a web dashboard that scans, displays, and edits all 13 Clau
 
 **Watcher** (`src/watcher.ts`):
 
-- Uses chokidar to watch config file paths for changes
-- Triggers SSE events to connected clients on file changes
+- Uses native `fs.watch({ recursive: true })` — FSEvents on macOS (single kernel watcher per tree)
+- Filters events to config-relevant paths only, triggers SSE to connected clients
 
 **Key patterns**:
 

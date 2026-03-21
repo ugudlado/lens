@@ -15,15 +15,18 @@ Lens is a pnpm monorepo with three packages:
 Hono 4 on Node.js. Pure filesystem reads/writes — no database. SSE for live reload.
 
 **Scanner** (`apps/server/src/scanner/`):
+
 - Individual scanner modules for each of the 13 config surfaces
 - Each scanner knows file paths for all scope levels (managed, global, project, local)
 - Returns typed config objects with source file metadata
 
 **Watcher** (`apps/server/src/watcher.ts`):
-- chokidar watches config file paths for changes
-- Triggers SSE events to connected clients on file changes
+
+- Uses native `fs.watch({ recursive: true })` — FSEvents on macOS (single kernel watcher per tree)
+- Filters events to config-relevant paths only, triggers SSE to connected clients
 
 **Key patterns:**
+
 - Route files export `new Hono()` instances mounted in `index.ts`
 - Scanner modules export scan functions returning typed config objects
 - SSE stream for live config reload (no WebSocket)
@@ -40,31 +43,31 @@ React 19 SPA with Tailwind CSS. No router library — `useState`-based navigatio
 
 ## API
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/config` | GET | Scan and return all config surfaces |
-| `/api/update` | PATCH | Write config changes back to files |
-| `/api/events` | GET | SSE stream for live config reload |
+| Endpoint      | Method | Description                         |
+| ------------- | ------ | ----------------------------------- |
+| `/api/config` | GET    | Scan and return all config surfaces |
+| `/api/update` | PATCH  | Write config changes back to files  |
+| `/api/events` | GET    | SSE stream for live config reload   |
 
 ## Config Surfaces
 
 Lens reads and writes 13 Claude Code configuration surfaces:
 
-| Surface | Description |
-|---------|-------------|
-| CLAUDE.md | Project instructions and guidance |
-| settings.json | Configuration preferences |
-| Permissions | Tool and resource access control |
-| MCP Servers | Tool server integrations |
-| Hooks | Event-driven automations |
-| Skills | Reusable agent capabilities |
-| Agents | Configured sub-agents |
-| Rules | Path-scoped behavior rules |
-| Commands | Custom slash commands |
-| Memory | Persistent context storage |
-| Plugins | Marketplace extensions |
-| Models | Model configuration |
-| Sandbox | Sandbox configuration |
+| Surface       | Description                       |
+| ------------- | --------------------------------- |
+| CLAUDE.md     | Project instructions and guidance |
+| settings.json | Configuration preferences         |
+| Permissions   | Tool and resource access control  |
+| MCP Servers   | Tool server integrations          |
+| Hooks         | Event-driven automations          |
+| Skills        | Reusable agent capabilities       |
+| Agents        | Configured sub-agents             |
+| Rules         | Path-scoped behavior rules        |
+| Commands      | Custom slash commands             |
+| Memory        | Persistent context storage        |
+| Plugins       | Marketplace extensions            |
+| Models        | Model configuration               |
+| Sandbox       | Sandbox configuration             |
 
 ## Scope Levels
 
