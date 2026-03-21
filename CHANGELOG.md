@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.5.6] - 2026-03-21
+
+- Replaced chokidar file watcher with native fs.watch for config monitoring
+- Improved event filtering to reduce noise from non-config paths
+- Enhanced documentation for fs.watch migration and FSEvents on macOS
+- Removed chokidar dependency for lighter dependency footprint
+
 ## [1.5.5] - 2026-03-21
 
 - Added cleanup-cache hook to remove old cached lens plugin versions on session startup
