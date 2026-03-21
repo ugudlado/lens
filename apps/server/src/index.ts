@@ -95,12 +95,30 @@ app.delete("/api/file", async (c) => {
   }
 });
 
-app.get("/api/health", (c) => c.json({ status: "ok" }));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+app.get("/api/health", async (c) => {
+  const pluginJsonPath = resolve(
+    __dirname,
+    "..",
+    "..",
+    "..",
+    ".claude-plugin",
+    "plugin.json",
+  );
+  let version = "unknown";
+  try {
+    const raw = await readFile(pluginJsonPath, "utf-8");
+    version = JSON.parse(raw).version ?? "unknown";
+  } catch {
+    // plugin.json not found — running outside plugin structure
+  }
+  return c.json({ status: "ok", version });
+});
 
 // Serve built UI static files (production/plugin mode)
 // Use absolute path derived from __dirname so it works regardless of CWD
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 const uiDistPath = resolve(__dirname, "..", "..", "ui", "dist");
 app.use("/*", serveStatic({ root: uiDistPath }));
 // SPA fallback: serve index.html for client-side routing
