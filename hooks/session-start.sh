@@ -2,6 +2,9 @@
 # Start the Lens server in the background if it's not already running.
 # Runs async on SessionStart so it doesn't block Claude from starting.
 
+# Clean up old cached versions (blocking — may kill server running from old version)
+cleanup_result=$("${BASH_SOURCE%/*}/cleanup-cache.sh" 2>>/tmp/lens-cleanup.log) || true
+
 # TODO: Remove this migration block in v1.7.0
 # Migrate workspaces.json from old location (added in v1.6.0)
 OLD_WS="$HOME/.claude-config/workspaces.json"
@@ -12,7 +15,8 @@ if [ -f "$OLD_WS" ] && [ ! -f "$NEW_WS_DIR/workspaces.json" ]; then
   rmdir "$HOME/.claude-config" 2>/dev/null || true
 fi
 
-if curl -s http://localhost:37001/api/health &>/dev/null; then
+# Skip "already running" check if cleanup just killed an old server
+if [ "$cleanup_result" != "SERVER_KILLED" ] && curl -s http://localhost:37001/api/health &>/dev/null; then
   exit 0
 fi
 
